@@ -1,0 +1,16 @@
+team: playoff-best-ball
+ticket_systems:
+  primary:
+    system: github
+    project: Gerner-Ventures/playoff-best-ball
+
+specs:
+  auto_tickets: false
+  require_review: false
+  doc_paths:
+    - "docs/specs/*.md"
+
+agents:
+  doc_updates: true
+  pr_analysis: true
+  stale_detection: 30d

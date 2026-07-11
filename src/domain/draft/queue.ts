@@ -1,6 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { PlayerUnavailableError } from "../errors";
 
+// Phase 4: multi-entry leagues will need an explicit entryId param.
 async function entryForUser(db: PrismaClient, leagueId: string, userId: string) {
   const membership = await db.membership.findUnique({
     where: { leagueId_userId: { leagueId, userId } },

@@ -43,6 +43,7 @@ export const notifyOnTheClock = inngest.createFunction(
   { id: "draft-notify-on-the-clock", triggers: { event: "draft/turn.started" } },
   async ({ event, step }) => {
     await step.run("send", async () => {
+      // Phase 4 multi-entry: entry→membership→user is 1:1 today; multi-entry needs per-entry contact resolution.
       const entry = await db.entry.findUniqueOrThrow({
         where: { id: event.data.entryId },
         include: { membership: { include: { user: true } }, league: true },
@@ -64,18 +65,20 @@ export const notifyOnTheClock = inngest.createFunction(
 export const notifyDraftComplete = inngest.createFunction(
   { id: "draft-notify-complete", triggers: { event: "draft/completed" } },
   async ({ event, step }) => {
-    await step.run("send-all", async () => {
-      const memberships = await db.membership.findMany({
+    const memberships = await step.run("load-members", () =>
+      db.membership.findMany({
         where: { leagueId: event.data.leagueId },
         include: { user: true, league: true },
-      });
-      for (const m of memberships) {
-        await notifyUser(m.user, {
+      }),
+    );
+    for (const m of memberships) {
+      await step.run(`send-${m.id}`, () =>
+        notifyUser(m.user, {
           subject: `${m.league.name}: the draft is complete`,
           text: `All picks are in. See every roster: ${process.env.BETTER_AUTH_URL}/leagues/${event.data.leagueId}/draft`,
-        });
-      }
-    });
+        }),
+      );
+    }
   },
 );
 

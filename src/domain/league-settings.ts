@@ -92,11 +92,12 @@ export function buildDefaultSettings(
   preset: ScoringPresetName,
   pickClockHours: PickClockHours,
 ): LeagueSettings {
+  // Copies, not references: callers may mutate settings before persisting.
   return {
     settingsVersion: 1,
     scoringPreset: preset,
-    scoring: SCORING_PRESETS[preset],
-    rosterSlots: DEFAULT_ROSTER_SLOTS,
+    scoring: { ...SCORING_PRESETS[preset] },
+    rosterSlots: DEFAULT_ROSTER_SLOTS.map((s) => ({ ...s })),
     pickClockHours,
     overnightPause: true,
     substitutionsEnabled: false,

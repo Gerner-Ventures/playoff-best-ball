@@ -26,6 +26,7 @@ describe("buildDefaultSettings", () => {
     expect(settings.rosterSlots).toEqual(DEFAULT_ROSTER_SLOTS);
     expect(settings.maxEntries).toBe(10);
     expect(settings.substitutionsEnabled).toBe(false);
+    expect(settings.overnightPause).toBe(true);
     expect(settings.settingsVersion).toBe(1);
     // round-trips through its own schema (what we store in League.settings JSON)
     expect(leagueSettingsSchema.parse(settings)).toEqual(settings);

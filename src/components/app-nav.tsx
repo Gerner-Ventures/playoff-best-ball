@@ -16,6 +16,7 @@ export function AppNav({ userName }: { userName: string }) {
         <button
           onClick={async () => {
             await authClient.signOut();
+            router.refresh();
             router.push("/");
           }}
           className="text-gray-500 hover:underline"

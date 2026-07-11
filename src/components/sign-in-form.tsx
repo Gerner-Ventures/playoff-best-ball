@@ -23,20 +23,30 @@ export function SignInForm({ callbackURL = "/dashboard" }: { callbackURL?: strin
   return (
     <div className="flex w-full max-w-sm flex-col gap-4">
       <button
-        onClick={() => authClient.signIn.social({ provider: "google", callbackURL })}
+        type="button"
+        onClick={async () => {
+          const { error } = await authClient.signIn.social({ provider: "google", callbackURL });
+          if (error) setError(error.message ?? "Google sign-in failed.");
+        }}
         className="rounded-lg border px-4 py-3 font-medium hover:bg-gray-50"
       >
         Continue with Google
       </button>
       <button
-        onClick={() => authClient.signIn.social({ provider: "apple", callbackURL })}
+        type="button"
+        onClick={async () => {
+          const { error } = await authClient.signIn.social({ provider: "apple", callbackURL });
+          if (error) setError(error.message ?? "Apple sign-in failed.");
+        }}
         className="rounded-lg border px-4 py-3 font-medium hover:bg-gray-50"
       >
         Continue with Apple
       </button>
       <div className="text-center text-sm text-gray-500">or</div>
       <form onSubmit={sendLink} className="flex flex-col gap-2">
+        <label htmlFor="email" className="sr-only">Email address</label>
         <input
+          id="email"
           type="email"
           required
           value={email}

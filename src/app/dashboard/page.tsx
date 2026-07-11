@@ -10,7 +10,7 @@ export default async function DashboardPage() {
 
   const memberships = await db.membership.findMany({
     where: { userId: user.id },
-    include: { league: true, entries: true },
+    include: { league: true, entries: { take: 1, orderBy: { createdAt: "asc" } } },
     orderBy: { createdAt: "desc" },
   });
 

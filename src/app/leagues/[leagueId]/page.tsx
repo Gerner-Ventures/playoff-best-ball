@@ -22,7 +22,7 @@ export default async function LeaguePage({
   const league = await db.league.findUniqueOrThrow({
     where: { id: leagueId },
     include: {
-      entries: { include: { membership: { include: { user: true } } }, orderBy: { createdAt: "asc" } },
+      entries: { include: { membership: { include: { user: { select: { name: true } } } } }, orderBy: { createdAt: "asc" } },
     },
   });
   const settings = leagueSettingsSchema.parse(league.settings);
@@ -37,7 +37,7 @@ export default async function LeaguePage({
             <h1 className="text-2xl font-bold">{league.name}</h1>
             <p className="text-sm text-gray-500">
               {league.season} playoffs · {league.entries.length}/{settings.maxEntries} teams ·{" "}
-              {settings.scoringPreset.replace("_", " ")} scoring
+              {settings.scoringPreset.replaceAll("_", " ")} scoring
             </p>
           </div>
           {isCommissioner && <InviteLinkButton code={league.inviteCode} />}

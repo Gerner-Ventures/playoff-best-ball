@@ -6,7 +6,7 @@ async function signUp(page: Page, name: string, email: string) {
   const res = await page.request.post("/api/auth/sign-up/email", {
     data: { name, email, password: "e2e-password-123" },
   });
-  expect(res.ok()).toBeTruthy();
+  expect(res.ok(), `sign-up failed: ${res.status()} ${await res.text()}`).toBeTruthy();
 }
 
 test("create league, invite, join", async ({ browser }) => {

@@ -7,6 +7,7 @@ function makeTestPrismaClient() {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) throw new Error("DATABASE_URL is not set");
   const pool = new Pool({ connectionString });
+  pool.on("error", (err) => console.error("pg pool idle client error", err));
   const adapter = new PrismaPg(pool, { disposeExternalPool: true });
   return new PrismaClient({ adapter });
 }

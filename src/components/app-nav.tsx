@@ -15,9 +15,17 @@ export function AppNav({ userName }: { userName: string }) {
         <span className="text-gray-600">{userName}</span>
         <button
           onClick={async () => {
-            await authClient.signOut();
-            router.refresh();
-            router.push("/");
+            try {
+              const { error } = await authClient.signOut();
+              if (error) {
+                window.alert("Sign out failed — please try again.");
+                return;
+              }
+              router.refresh();
+              router.push("/");
+            } catch {
+              window.alert("Sign out failed — please try again.");
+            }
           }}
           className="text-gray-500 hover:underline"
         >

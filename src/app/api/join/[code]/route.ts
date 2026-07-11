@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
+import { z, ZodError } from "zod";
 import { db } from "@/lib/db";
 import { getSessionUser } from "@/lib/session";
 import { joinLeague } from "@/domain/leagues/join-league";
@@ -30,6 +30,12 @@ export async function POST(req: Request, { params }: Params) {
     }
     if (err instanceof LeagueFullError) {
       return NextResponse.json({ error: err.message, code: "LEAGUE_FULL" }, { status: 409 });
+    }
+    if (err instanceof ZodError) {
+      return NextResponse.json(
+        { error: "This league's configuration is broken. Ask your commissioner to contact support." },
+        { status: 500 },
+      );
     }
     throw err;
   }

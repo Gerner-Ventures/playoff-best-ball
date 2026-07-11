@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { getSessionUser } from "@/lib/session";
-import { leagueSettingsSchema } from "@/domain/league-settings";
+import { tryParseLeagueSettings } from "@/domain/league-settings";
 import { AppNav } from "@/components/app-nav";
 import { InviteLinkButton } from "@/components/invite-link-button";
 
@@ -25,7 +25,18 @@ export default async function LeaguePage({
       entries: { include: { membership: { include: { user: { select: { name: true } } } } }, orderBy: { createdAt: "asc" } },
     },
   });
-  const settings = leagueSettingsSchema.parse(league.settings);
+  const settings = tryParseLeagueSettings(league.settings);
+  if (!settings) {
+    return (
+      <>
+        <AppNav userName={user.name} />
+        <main className="mx-auto max-w-2xl p-6">
+          <h1 className="text-2xl font-bold">Something&apos;s wrong with this league</h1>
+          <p className="mt-2 text-gray-600">Ask your commissioner to contact support.</p>
+        </main>
+      </>
+    );
+  }
   const isCommissioner = membership.role === "COMMISSIONER";
 
   return (

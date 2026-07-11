@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { getSessionUser } from "@/lib/session";
-import { leagueSettingsSchema } from "@/domain/league-settings";
+import { tryParseLeagueSettings } from "@/domain/league-settings";
 import { JoinLeagueForm } from "@/components/join-league-form";
 
 export default async function JoinPage({ params }: { params: Promise<{ code: string }> }) {
@@ -11,7 +11,10 @@ export default async function JoinPage({ params }: { params: Promise<{ code: str
 
   const league = await db.league.findUnique({
     where: { inviteCode: code.toUpperCase() },
-    include: { _count: { select: { entries: true } }, memberships: { where: { userId: user.id } } },
+    include: {
+      _count: { select: { entries: true } },
+      memberships: { where: { userId: user.id }, include: { entries: { orderBy: { createdAt: "asc" } } } },
+    },
   });
 
   if (!league) {
@@ -23,10 +26,12 @@ export default async function JoinPage({ params }: { params: Promise<{ code: str
     );
   }
 
-  if (league.memberships.length > 0) redirect(`/leagues/${league.id}`);
+  // Only redirect if the member already has an entry; a membership without an entry falls through
+  // to the join form so joinLeague can self-heal the orphaned membership.
+  if ((league.memberships[0]?.entries.length ?? 0) > 0) redirect(`/leagues/${league.id}`);
 
-  const parsedSettings = leagueSettingsSchema.safeParse(league.settings);
-  if (!parsedSettings.success) {
+  const settings = tryParseLeagueSettings(league.settings);
+  if (!settings) {
     return (
       <main className="mx-auto max-w-md p-8 text-center">
         <h1 className="text-xl font-bold">Something&apos;s wrong with this league</h1>
@@ -35,7 +40,6 @@ export default async function JoinPage({ params }: { params: Promise<{ code: str
     );
   }
 
-  const settings = parsedSettings.data;
   const isFull = league._count.entries >= settings.maxEntries;
 
   return (

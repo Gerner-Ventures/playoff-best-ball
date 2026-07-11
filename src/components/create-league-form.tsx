@@ -29,17 +29,22 @@ export function CreateLeagueForm() {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
-    const res = await fetch("/api/leagues", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ name, teamName, scoringPreset: preset, pickClockHours: clock }),
-    });
-    if (res.ok) {
-      const { leagueId } = await res.json();
-      router.push(`/leagues/${leagueId}`);
-    } else {
+    try {
+      const res = await fetch("/api/leagues", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name, teamName, scoringPreset: preset, pickClockHours: clock }),
+      });
+      if (res.ok) {
+        const { leagueId } = await res.json();
+        router.push(`/leagues/${leagueId}`);
+        return;
+      }
       const body = await res.json().catch(() => ({}));
       setError(body.error ?? "Something went wrong.");
+    } catch {
+      setError("Couldn't reach the server. Check your connection and try again.");
+    } finally {
       setSubmitting(false);
     }
   }

@@ -88,6 +88,20 @@ export const leagueSettingsSchema = z.object({
 });
 export type LeagueSettings = z.infer<typeof leagueSettingsSchema>;
 
+/**
+ * Single entry point for reading League.settings JSON. When settingsVersion 2
+ * arrives, the v1→v2 upcast lives here and nowhere else.
+ */
+export function parseLeagueSettings(json: unknown): LeagueSettings {
+  return leagueSettingsSchema.parse(json);
+}
+
+/** safeParse variant for surfaces that must degrade gracefully instead of throwing. */
+export function tryParseLeagueSettings(json: unknown): LeagueSettings | null {
+  const result = leagueSettingsSchema.safeParse(json);
+  return result.success ? result.data : null;
+}
+
 export function buildDefaultSettings(
   preset: ScoringPresetName,
   pickClockHours: PickClockHours,

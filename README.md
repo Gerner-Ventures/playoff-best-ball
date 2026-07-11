@@ -57,4 +57,5 @@ legacy/       # Archived v0 prototype — reference only, removed after Phase 3
 
 ## Docs
 
-- **Product + technical design:** `docs/specs/`
+- **Product & technical design:** `docs/superpowers/specs/2026-07-10-playoff-best-ball-v1-design.md`
+- **Phase implementation plans:** `docs/superpowers/plans/`

@@ -1,7 +1,9 @@
 import { PrismaClient } from "@prisma/client";
+import type { PlayerPosition } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 import { randomUUID } from "node:crypto";
+import { CURRENT_SEASON } from "@/domain/season";
 
 function makeTestPrismaClient() {
   const connectionString = process.env.DATABASE_URL;
@@ -16,9 +18,13 @@ export const testDb = makeTestPrismaClient(); // DATABASE_URL comes from .env.te
 
 export async function resetDb() {
   // Order matters: children before parents (cascades cover most, be explicit anyway)
+  await testDb.draftQueueItem.deleteMany();
+  await testDb.draftPick.deleteMany();
+  await testDb.draft.deleteMany();
   await testDb.entry.deleteMany();
   await testDb.membership.deleteMany();
   await testDb.league.deleteMany();
+  await testDb.player.deleteMany();
   await testDb.session.deleteMany();
   await testDb.account.deleteMany();
   await testDb.verification.deleteMany();
@@ -33,4 +39,40 @@ export async function createTestUser(name = "Test User") {
       email: `${randomUUID()}@example.com`,
     },
   });
+}
+
+let playerCounter = 0;
+
+/** Creates a player with a unique name; lower defaultRank = drafted earlier by fallback autodraft. */
+export async function createTestPlayer(
+  position: PlayerPosition,
+  overrides: { defaultRank?: number; name?: string; season?: number } = {},
+) {
+  playerCounter += 1;
+  return testDb.player.create({
+    data: {
+      season: overrides.season ?? CURRENT_SEASON,
+      name: overrides.name ?? `Player ${playerCounter} (${position})`,
+      position,
+      nflTeam: "KC",
+      defaultRank: overrides.defaultRank ?? playerCounter,
+    },
+  });
+}
+
+/** A pool big enough to fully draft `entryCount` standard 9-slot rosters. */
+export async function createStandardPool(entryCount: number) {
+  const counts: [PlayerPosition, number][] = [
+    ["QB", 2 * entryCount],
+    ["RB", 3 * entryCount],
+    ["WR", 3 * entryCount],
+    ["TE", 2 * entryCount],
+    ["K", entryCount + 1],
+    ["DST", entryCount + 1],
+  ];
+  const players = [];
+  for (const [position, n] of counts) {
+    for (let i = 0; i < n; i++) players.push(await createTestPlayer(position));
+  }
+  return players;
 }

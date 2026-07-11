@@ -1,0 +1,41 @@
+import { describe, it, expect } from "vitest";
+import {
+  buildDefaultSettings,
+  SCORING_PRESETS,
+  DEFAULT_ROSTER_SLOTS,
+  leagueSettingsSchema,
+} from "./league-settings";
+
+describe("SCORING_PRESETS", () => {
+  it("differ only in ppr across the three presets", () => {
+    expect(SCORING_PRESETS.standard.ppr).toBe(0);
+    expect(SCORING_PRESETS.half_ppr.ppr).toBe(0.5);
+    expect(SCORING_PRESETS.full_ppr.ppr).toBe(1);
+    const { ppr: _a, ...std } = SCORING_PRESETS.standard;
+    const { ppr: _b, ...half } = SCORING_PRESETS.half_ppr;
+    expect(std).toEqual(half);
+  });
+});
+
+describe("buildDefaultSettings", () => {
+  it("builds valid settings from a preset and pick clock", () => {
+    const settings = buildDefaultSettings("half_ppr", 8);
+    expect(settings.scoringPreset).toBe("half_ppr");
+    expect(settings.scoring.ppr).toBe(0.5);
+    expect(settings.pickClockHours).toBe(8);
+    expect(settings.rosterSlots).toEqual(DEFAULT_ROSTER_SLOTS);
+    expect(settings.maxEntries).toBe(10);
+    expect(settings.substitutionsEnabled).toBe(false);
+    expect(settings.settingsVersion).toBe(1);
+    // round-trips through its own schema (what we store in League.settings JSON)
+    expect(leagueSettingsSchema.parse(settings)).toEqual(settings);
+  });
+});
+
+describe("DEFAULT_ROSTER_SLOTS", () => {
+  it("is the spec's fixed v1 shape, ordered", () => {
+    expect(DEFAULT_ROSTER_SLOTS.map((s) => s.slot)).toEqual([
+      "QB", "RB", "RB", "WR", "WR", "TE", "FLEX", "K", "DST",
+    ]);
+  });
+});

@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: pbb
+      POSTGRES_PASSWORD: pbb
+      POSTGRES_DB: pbb_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - pbb_pgdata:/var/lib/postgresql/data
+  db-test:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: pbb
+      POSTGRES_PASSWORD: pbb
+      POSTGRES_DB: pbb_test
+    ports:
+      - "5433:5432"
+volumes:
+  pbb_pgdata:

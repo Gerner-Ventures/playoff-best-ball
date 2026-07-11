@@ -15,12 +15,15 @@ export async function GET(_req: Request, { params }: Params) {
     include: { _count: { select: { entries: true } } },
   });
   if (!league) return NextResponse.json({ error: "Invalid invite" }, { status: 404 });
-  const settings = leagueSettingsSchema.parse(league.settings);
+  const settings = leagueSettingsSchema.safeParse(league.settings);
+  if (!settings.success) {
+    return NextResponse.json({ error: "League configuration error" }, { status: 500 });
+  }
   return NextResponse.json({
     name: league.name,
     season: league.season,
     entryCount: league._count.entries,
-    maxEntries: settings.maxEntries,
+    maxEntries: settings.data.maxEntries,
   });
 }
 

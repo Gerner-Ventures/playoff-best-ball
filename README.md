@@ -1,36 +1,60 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Playoff Best Ball
 
-## Getting Started
+A hosted multi-tenant NFL playoff best ball league platform. Commissioners create leagues, friends join via invite links, and teams are assembled through an async slow-snake draft with notifications. Scoring runs automatically through the playoffs using optimal best-ball lineup selection. Phase 1 currently implements auth, league creation, and the invite/join flow.
 
-First, run the development server:
+## Local Setup
+
+**Prerequisites:** Node 22+, Docker
 
 ```bash
+docker compose up -d
+cp .env.example .env
+npm install
+npm run db:push
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- Dev DB runs on port **5434** (to avoid conflicts with other local Postgres instances)
+- Test DB runs on port **5433**
+- Magic links are logged to the dev console when `RESEND_API_KEY` is empty
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Testing
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+# Unit/integration tests (Vitest — requires docker test DB on 5433)
+npm test
 
-## Learn More
+# End-to-end tests (Playwright)
+npx playwright install chromium  # first run only
+npm run test:e2e
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Scripts
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Script | Description |
+|---|---|
+| `npm run dev` | Start dev server (Turbopack) |
+| `npm run build` | Production build |
+| `npm run lint` | ESLint |
+| `npm run typecheck` | TypeScript type check (no emit) |
+| `npm test` | Vitest unit/integration tests |
+| `npm run test:e2e` | Playwright end-to-end tests |
+| `npm run db:push` | Push schema to dev DB (5434) |
+| `npm run db:push:test` | Push schema to test DB (5433) |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Project Structure
 
-## Deploy on Vercel
+```
+src/
+  domain/     # Pure business logic (no framework deps)
+  lib/        # DB client, auth config, session helpers
+  app/        # Next.js routes and API handlers
+  components/ # Shared UI components
+tests/        # Vitest unit/integration tests
+e2e/          # Playwright end-to-end tests
+legacy/       # Archived v0 prototype — reference only, removed after Phase 3
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Docs
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Product + technical design:** `docs/specs/`

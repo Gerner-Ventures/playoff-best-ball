@@ -11,7 +11,8 @@
     "test:watch": "dotenv -e .env.test -- vitest",
     "db:push": "dotenv -e .env -- prisma db push",
     "db:push:test": "dotenv -e .env.test -- prisma db push",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",

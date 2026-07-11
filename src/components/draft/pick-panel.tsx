@@ -54,6 +54,7 @@ export function PickPanel({
   }, [leagueId]);
 
   async function saveQueue(next: string[]) {
+    const prev = queue;
     setQueue(next); // optimistic
     try {
       const res = await fetch(`/api/leagues/${leagueId}/queue`, {
@@ -61,8 +62,12 @@ export function PickPanel({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ playerIds: next }),
       });
-      if (!res.ok) setError("Couldn't save your queue.");
+      if (!res.ok) {
+        setQueue(prev);
+        setError("Couldn't save your queue.");
+      }
     } catch {
+      setQueue(prev);
       setError("Couldn't save your queue.");
     }
   }

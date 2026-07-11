@@ -69,5 +69,6 @@ export async function getDraftState(db: PrismaClient, leagueId: string, userId: 
 }
 
 // NOTE: the union discriminates NOT_STARTED vs ACTIVE|COMPLETE (one branch carries both
-// statuses). Extract<DraftState, {status:"ACTIVE"}> is `never` — narrow with === instead.
+// statuses). Extract<DraftState, {status:"ACTIVE"|"COMPLETE"}> selects the draft branch;
+// a single-literal Extract (e.g. {status:"ACTIVE"}) is `never` — narrow with === instead.
 export type DraftState = Awaited<ReturnType<typeof getDraftState>>;

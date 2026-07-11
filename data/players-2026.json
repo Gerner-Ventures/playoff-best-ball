@@ -37,6 +37,8 @@
     { "name": "Eagles D/ST", "position": "DST", "nflTeam": "PHI", "defaultRank": 35 },
     { "name": "Chiefs D/ST", "position": "DST", "nflTeam": "KC", "defaultRank": 38 },
     { "name": "Lions D/ST", "position": "DST", "nflTeam": "DET", "defaultRank": 39 },
-    { "name": "Bills D/ST", "position": "DST", "nflTeam": "BUF", "defaultRank": 40 }
+    { "name": "Bills D/ST", "position": "DST", "nflTeam": "BUF", "defaultRank": 40 },
+    { "name": "Evan McPherson", "position": "K", "nflTeam": "CIN", "defaultRank": 41 },
+    { "name": "T.J. Hockenson", "position": "TE", "nflTeam": "MIN", "defaultRank": 42 }
   ]
 }

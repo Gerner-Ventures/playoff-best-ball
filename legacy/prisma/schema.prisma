@@ -1,0 +1,244 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Owner {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  rosters   Roster[]
+}
+
+model Player {
+  id          String             @id @default(cuid())
+  name        String
+  position    Position
+  team        String?
+  espnId      String?            @unique
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  rosters     Roster[]
+  scores      PlayerScore[]
+  projections PlayerProjection[]
+  props       PlayerProp[]
+  // Substitution relations - player can be original (injured) or substitute
+  substitutionsAsOriginal   Substitution[] @relation("OriginalPlayer")
+  substitutionsAsSubstitute Substitution[] @relation("SubstitutePlayer")
+
+  @@unique([name, position])
+}
+
+model Roster {
+  id            String         @id @default(cuid())
+  owner         Owner          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId       String
+  player        Player         @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  playerId      String
+  rosterSlot    RosterSlot
+  year          Int
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  substitutions Substitution[] // Substitutions for this roster slot
+
+  @@unique([ownerId, playerId, year])
+  @@index([ownerId, year])
+}
+
+model PlayerScore {
+  id         String   @id @default(cuid())
+  player     Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  playerId   String
+  week       Int
+  year       Int
+  points     Float    @default(0)
+  breakdown  Json?    // Detailed scoring breakdown
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([playerId, week, year])
+  @@index([year, week])
+}
+
+model ScoringSettings {
+  id                 String @id @default(cuid())
+  year               Int    @unique
+  passYardsPerPoint  Float  @default(30)
+  passTd             Float  @default(6)
+  passInt            Float  @default(-2)
+  rushYardsPerPoint  Float  @default(10)
+  rushTd             Float  @default(6)
+  recYardsPerPoint   Float  @default(10)
+  recTd              Float  @default(6)
+  ppr                Float  @default(0.5)
+  twoPtConv          Float  @default(2)
+  fumbleLost         Float  @default(-2)
+  returnTd           Float  @default(6)
+  fg0_19             Float  @default(3)
+  fg20_29            Float  @default(3)
+  fg30_39            Float  @default(3)
+  fg40_49            Float  @default(4)
+  fg50Plus           Float  @default(5)
+  fgMiss             Float  @default(-1)
+  xpMade             Float  @default(1)
+  xpMiss             Float  @default(-1)
+  sack               Float  @default(1)
+  defInt             Float  @default(2)
+  fumRec             Float  @default(2)
+  dstTd              Float  @default(6)
+  safety             Float  @default(4)
+  block              Float  @default(2)
+  pa0                Float  @default(10)
+  pa1_6              Float  @default(7)
+  pa7_13             Float  @default(4)
+  pa14_20            Float  @default(1)
+  pa21_27            Float  @default(0)
+  pa28_34            Float  @default(-1)
+  pa35Plus           Float  @default(-3)
+}
+
+enum Position {
+  QB
+  RB
+  WR
+  TE
+  K
+  DST
+}
+
+enum PropType {
+  PASS_YARDS
+  PASS_TDS
+  RUSH_YARDS
+  REC_YARDS
+  RECEPTIONS
+  ANYTIME_TD
+}
+
+enum RosterSlot {
+  QB
+  RB1
+  RB2
+  WR1
+  WR2
+  TE
+  FLEX
+  K
+  DST
+}
+
+model PlayerProjection {
+  id              String   @id @default(cuid())
+  player          Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  playerId        String
+  week            Int      // 1=WC, 2=DIV, 3=CONF, 5=SB
+  year            Int
+  projectedPoints Float    @default(0)
+  teamWinProb     Float?   // 0-1 probability team wins/advances
+  expectedValue   Float?   // projectedPoints * teamWinProb
+  breakdown       Json?    // Projected stat breakdown
+  source          String   @default("calculated") // calculated, manual, etc.
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([playerId, week, year])
+  @@index([year, week])
+}
+
+model TeamOdds {
+  id        String   @id @default(cuid())
+  team      String   // NFL team abbreviation
+  week      Int
+  year      Int
+  opponent  String   // Opponent team abbreviation
+  winProb   Float    // 0-1 implied probability
+  moneyline Int?     // Raw American odds
+  source    String   @default("the-odds-api")
+  gameTime  DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([team, week, year])
+  @@index([year, week])
+}
+
+// Substitution model for tracking injured player replacements
+// Enables dual scoring: original player's pre-injury points + substitute's post-injury points
+model Substitution {
+  id                 String   @id @default(cuid())
+  roster             Roster   @relation(fields: [rosterId], references: [id], onDelete: Cascade)
+  rosterId           String
+  originalPlayer     Player   @relation("OriginalPlayer", fields: [originalPlayerId], references: [id], onDelete: Cascade)
+  originalPlayerId   String
+  substitutePlayer   Player   @relation("SubstitutePlayer", fields: [substitutePlayerId], references: [id], onDelete: Cascade)
+  substitutePlayerId String
+  effectiveWeek      Int      // Week when substitute takes over (1=WC, 2=DIV, 3=CC, 5=SB)
+  year               Int
+  reason             String?  // Optional reason (e.g., "ACL injury", "Concussion")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@unique([rosterId, year]) // One active substitution per roster slot per year
+  @@index([year])
+}
+
+// Player prop betting lines from sportsbooks
+model PlayerProp {
+  id          String   @id @default(cuid())
+  player      Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  playerId    String
+  week        Int      // 1=WC, 2=DIV, 3=CONF, 5=SB
+  year        Int
+  propType    PropType
+  line        Float    // O/U line (e.g., 250.5 yards)
+  overOdds    Int      // American odds for over (-110)
+  underOdds   Int      // American odds for under (-110)
+  impliedOver Float    // Calculated probability for over (0.52)
+  bookmaker   String?  // draftkings, fanduel, betmgm
+  eventId     String?  // ESPN event ID for game correlation
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([playerId, week, year, propType, bookmaker])
+  @@index([year, week])
+  @@index([playerId])
+}
+
+// Weather data for NFL games
+model GameWeather {
+  id            String   @id @default(cuid())
+  eventId       String   @unique // ESPN event ID
+  week          Int
+  year          Int
+  temperature   Float?   // Fahrenheit
+  windSpeed     Float?   // MPH
+  windDirection String?  // N, NE, E, SE, S, SW, W, NW
+  precipitation Float?   // Probability 0-1
+  condition     String?  // Clear, Cloudy, Rain, Snow, etc.
+  isDome        Boolean  @default(false)
+  fetchedAt     DateTime @default(now())
+
+  @@index([year, week])
+}
+
+// Live tracking of prop progress during games
+model LivePropStatus {
+  id          String   @id @default(cuid())
+  playerId    String
+  eventId     String   // ESPN event ID
+  week        Int
+  year        Int
+  propType    PropType
+  line        Float    // Original prop line
+  currentStat Float    // Current in-game stat value
+  hitStatus   String   // UNDER, TRACKING, OVER
+  updatedAt   DateTime @updatedAt
+
+  @@unique([playerId, eventId, propType])
+  @@index([eventId])
+  @@index([year, week])
+}

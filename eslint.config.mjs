@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Legacy prototype - excluded from new toolchain
+    "legacy/**",
   ]),
 ]);
 

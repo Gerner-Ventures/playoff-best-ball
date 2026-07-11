@@ -1,0 +1,41 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: pbb
+          POSTGRES_PASSWORD: pbb
+          POSTGRES_DB: pbb_test
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U pbb" --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          # Node 24 bundles npm 11 — must match the npm major that generates
+          # package-lock.json locally, or `npm ci` rejects the lockfile shape
+          # (npm 11 omits entries for platform-skipped optional wasm deps).
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npm run db:push:test
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+        env:
+          DATABASE_URL: postgresql://pbb:pbb@localhost:5433/pbb_test
+          BETTER_AUTH_SECRET: ci-secret-0123456789abcdef0123456789abcdef
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e

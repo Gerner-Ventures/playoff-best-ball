@@ -1,162 +1,64 @@
-# Playoff Best Ball 2025
+# Playoff Best Ball
 
-A fantasy football playoff best ball tracker built with Next.js, Prisma, and Neon DB. Features live scoring from ESPN and a fun chalk-on-pavement UI theme.
+A hosted multi-tenant NFL playoff best ball league platform. Commissioners create leagues, friends join via invite links, and teams are assembled through an async slow-snake draft with notifications. Scoring runs automatically through the playoffs using optimal best-ball lineup selection. Phase 1 currently implements auth, league creation, and the invite/join flow.
 
-## Features
+## Local Setup
 
-- **Live Leaderboard** - Real-time standings with weekly breakdowns
-- **Roster Management** - View all team rosters with player scores
-- **Explainable Scoring** - Click any player to see game-by-game scoring breakdowns
-- **ESPN Integration** - Automatic score syncing from ESPN box scores
-- **Best Ball Format** - Optimal lineup selection each week
+**Prerequisites:** Node 24+ (bundles npm 11 — lockfile changes must be generated with npm 11), Docker
 
-## Tech Stack
+```bash
+docker compose up -d
+cp .env.example .env
+npm install
+npm run db:push
+npm run dev
+```
 
-- **Framework**: Next.js 16 (App Router)
-- **Database**: Neon (Serverless Postgres) + Prisma 7
-- **Styling**: Tailwind CSS 4
-- **Deployment**: Vercel
+- Dev DB runs on port **5434** (to avoid conflicts with other local Postgres instances)
+- Test DB runs on port **5433**
+- Magic links are logged to the dev console when `RESEND_API_KEY` is empty
 
-## Getting Started
+## Testing
 
-### Prerequisites
+```bash
+# One-time setup: push schema to the test DB (also re-run after schema changes)
+npm run db:push:test
 
-- Node.js 18+
-- A [Neon](https://neon.tech) database
+# Unit/integration tests (Vitest — requires docker test DB on 5433)
+npm test
 
-### Installation
-
-1. Clone the repository:
-
-   ```bash
-   git clone https://github.com/yourusername/playoff-best-ball.git
-   cd playoff-best-ball
-   ```
-
-2. Install dependencies:
-
-   ```bash
-   npm install
-   ```
-
-3. Set up environment variables:
-
-   ```bash
-   cp .env.example .env
-   ```
-
-   Edit `.env` with your Neon database credentials:
-
-   ```
-   DATABASE_URL="postgresql://..."
-   DIRECT_URL="postgresql://..."
-   ```
-
-4. Push the database schema:
-
-   ```bash
-   npm run db:push
-   ```
-
-5. Seed the rosters:
-
-   ```bash
-   npm run db:seed
-   ```
-
-6. Start the development server:
-
-   ```bash
-   npm run dev
-   ```
-
-   Open [http://localhost:3000](http://localhost:3000) to view the app.
+# End-to-end tests (Playwright — requires docker test DB on 5433)
+npx playwright install chromium  # first run only
+npm run test:e2e
+```
 
 ## Scripts
 
-| Command             | Description                    |
-| ------------------- | ------------------------------ |
-| `npm run dev`       | Start development server       |
-| `npm run build`     | Build for production           |
-| `npm run start`     | Start production server        |
-| `npm run lint`      | Run ESLint                     |
-| `npm run typecheck` | Run TypeScript type checking   |
-| `npm run db:push`   | Push Prisma schema to database |
-| `npm run db:seed`   | Seed database with rosters     |
-| `npm run db:studio` | Open Prisma Studio             |
+| Script | Description |
+|---|---|
+| `npm run dev` | Start dev server (Turbopack) |
+| `npm run build` | Production build |
+| `npm run lint` | ESLint |
+| `npm run typecheck` | TypeScript type check (no emit) |
+| `npm test` | Vitest unit/integration tests |
+| `npm run test:e2e` | Playwright end-to-end tests |
+| `npm run db:push` | Push schema to dev DB (5434) |
+| `npm run db:push:test` | Push schema to test DB (5433) |
 
 ## Project Structure
 
 ```
 src/
-├── app/                    # Next.js App Router pages
-│   ├── api/               # API routes
-│   │   ├── cron/          # Vercel cron job endpoint
-│   │   ├── scores/        # Live scores endpoint
-│   │   └── sync/          # Database sync endpoint
-│   ├── admin/             # Admin page
-│   ├── player/[playerId]/ # Player detail page
-│   ├── rosters/           # All rosters page
-│   ├── scoring/           # Scoring rules page
-│   └── page.tsx           # Home/leaderboard
-├── components/            # React components
-│   ├── ui/               # Base UI components
-│   ├── leaderboard.tsx   # Standings table
-│   ├── roster-card.tsx   # Team roster card
-│   ├── player-row.tsx    # Player row in roster
-│   └── scoring-breakdown.tsx # Game scoring details
-├── lib/                   # Utilities and services
-│   ├── db/               # Prisma client
-│   ├── espn/             # ESPN API client & parser
-│   └── scoring/          # Scoring calculator
-└── types/                # TypeScript types
-
-prisma/
-├── schema.prisma         # Database schema
-└── seed.ts              # Seed script
+  domain/     # Pure business logic (no framework deps)
+  lib/        # DB client, auth config, session helpers
+  app/        # Next.js routes and API handlers
+  components/ # Shared UI components
+tests/        # Vitest unit/integration tests
+e2e/          # Playwright end-to-end tests
+legacy/       # Archived v0 prototype — reference only, removed after Phase 3
 ```
 
-## Scoring Rules
+## Docs
 
-- **Passing**: 1 pt/30 yds, 6 pts/TD, -2 pts/INT
-- **Rushing**: 1 pt/10 yds, 6 pts/TD
-- **Receiving**: 1 pt/10 yds, 6 pts/TD, 0.5 PPR
-- **Kicking**: 3-5 pts/FG (by distance), 1 pt/XP
-- **Defense**: Points for sacks, INTs, fumbles, TDs, safeties
-
-See the `/scoring` page for full details.
-
-## Deployment
-
-### Vercel
-
-1. Push your code to GitHub
-2. Import the project in Vercel
-3. Add environment variables:
-   - `DATABASE_URL`
-   - `DIRECT_URL`
-4. Deploy
-
-The app includes a Vercel cron job (`/api/cron`) that syncs scores automatically.
-
-## Development
-
-### Commit Hooks
-
-This project uses Husky and lint-staged for pre-commit checks:
-
-- TypeScript type checking
-- ESLint with auto-fix
-- Prettier formatting
-
-### Adding/Updating Rosters
-
-Edit the roster data in `prisma/seed.ts` and run:
-
-```bash
-npm run db:seed
-```
-
-## License
-
-MIT
+- **Product & technical design:** `docs/superpowers/specs/2026-07-10-playoff-best-ball-v1-design.md`
+- **Phase implementation plans:** `docs/superpowers/plans/`

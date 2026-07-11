@@ -4,6 +4,7 @@ import { getSessionUser } from "@/lib/session";
 import { tryParseLeagueSettings } from "@/domain/league-settings";
 import { AppNav } from "@/components/app-nav";
 import { InviteLinkButton } from "@/components/invite-link-button";
+import { DraftCard } from "@/components/draft-card";
 
 export default async function LeaguePage({
   params,
@@ -23,6 +24,7 @@ export default async function LeaguePage({
     where: { id: leagueId },
     include: {
       entries: { include: { membership: { include: { user: { select: { name: true } } } } }, orderBy: { createdAt: "asc" } },
+      draft: { select: { status: true } },
     },
   });
   const settings = tryParseLeagueSettings(league.settings);
@@ -67,10 +69,14 @@ export default async function LeaguePage({
           ))}
         </ul>
 
-        <p className="mt-8 rounded-lg bg-gray-50 p-4 text-sm text-gray-600">
-          The draft opens once your league is set. Drafting, live scoring, and the leaderboard
-          arrive in the next phases of the build.
-        </p>
+        <div className="mt-8">
+          <DraftCard
+            leagueId={league.id}
+            isCommissioner={isCommissioner}
+            draftStatus={league.draft?.status ?? "NOT_STARTED"}
+            entryCount={league.entries.length}
+          />
+        </div>
       </main>
     </>
   );

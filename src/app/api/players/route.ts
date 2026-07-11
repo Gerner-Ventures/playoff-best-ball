@@ -12,5 +12,8 @@ export async function GET() {
     orderBy: { defaultRank: "asc" },
     select: { id: true, name: true, position: true, nflTeam: true, defaultRank: true },
   });
-  return NextResponse.json({ players });
+  return NextResponse.json(
+    { players },
+    { headers: { "Cache-Control": "private, max-age=300" } },
+  );
 }

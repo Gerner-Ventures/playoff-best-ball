@@ -1,5 +1,5 @@
 import { Prisma, type PrismaClient } from "@prisma/client";
-import { InvalidInviteError, LeagueFullError } from "../errors";
+import { DraftAlreadyStartedError, InvalidInviteError, LeagueFullError } from "../errors";
 import { parseLeagueSettings } from "../league-settings";
 
 export interface JoinLeagueInput {
@@ -11,6 +11,7 @@ export interface JoinLeagueInput {
 export async function joinLeague(db: PrismaClient, input: JoinLeagueInput) {
   const league = await db.league.findUnique({
     where: { inviteCode: input.inviteCode.toUpperCase() },
+    include: { draft: { select: { id: true } } },
   });
   if (!league) throw new InvalidInviteError();
 
@@ -19,8 +20,13 @@ export async function joinLeague(db: PrismaClient, input: JoinLeagueInput) {
     where: { leagueId_userId: { leagueId: league.id, userId: input.userId } },
     include: { entries: { orderBy: { createdAt: "asc" } } },
   });
-  // teamName is ignored on rejoin — first write wins.
+  // teamName is ignored on rejoin — first write wins. Rejoining members bypass the draft-started
+  // guard because they're already in the draft order; only new joiners are blocked.
   if (existing?.entries[0]) return existing.entries[0];
+
+  // Block new members from joining once a draft has been created — they would not appear in the
+  // snake order and would sit out the entire draft silently.
+  if (league.draft) throw new DraftAlreadyStartedError();
 
   const settings = parseLeagueSettings(league.settings);
   const entryCount = await db.entry.count({ where: { leagueId: league.id } });

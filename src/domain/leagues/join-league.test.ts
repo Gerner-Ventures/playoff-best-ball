@@ -2,7 +2,8 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { testDb, resetDb, createTestUser } from "../../../tests/helpers/db";
 import { createLeague } from "./create-league";
 import { joinLeague } from "./join-league";
-import { InvalidInviteError, LeagueFullError } from "../errors";
+import { startDraft } from "../draft/start-draft";
+import { InvalidInviteError, LeagueFullError, DraftAlreadyStartedError } from "../errors";
 
 async function setupLeague() {
   const commish = await createTestUser("Commish");
@@ -107,5 +108,31 @@ describe("joinLeague", () => {
     });
     expect(second.leagueId).toBe(league.id);
     expect(second.name).toBe("EarlyBird Team"); // first-write-wins
+  });
+
+  it("rejects new joins once the draft has started", async () => {
+    const { commish, league } = await setupLeague();
+    const second = await createTestUser("Second");
+    await joinLeague(testDb, {
+      userId: second.id, inviteCode: league.inviteCode, teamName: "T2",
+    });
+    await startDraft(testDb, { leagueId: league.id, userId: commish.id });
+    const late = await createTestUser("Late");
+    await expect(
+      joinLeague(testDb, { userId: late.id, inviteCode: league.inviteCode, teamName: "Late" }),
+    ).rejects.toThrow(DraftAlreadyStartedError);
+  });
+
+  it("still returns the existing entry for a rejoining member after draft start", async () => {
+    const { commish, league } = await setupLeague();
+    const second = await createTestUser("Second");
+    const entry = await joinLeague(testDb, {
+      userId: second.id, inviteCode: league.inviteCode, teamName: "T2",
+    });
+    await startDraft(testDb, { leagueId: league.id, userId: commish.id });
+    const again = await joinLeague(testDb, {
+      userId: second.id, inviteCode: league.inviteCode, teamName: "T2",
+    });
+    expect(again.id).toBe(entry.id);
   });
 });

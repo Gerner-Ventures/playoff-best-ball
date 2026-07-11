@@ -1,5 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
-import { PlayerUnavailableError } from "../errors";
+import { NotLeagueMemberError, PlayerUnavailableError } from "../errors";
 
 // Phase 4: multi-entry leagues will need an explicit entryId param.
 async function entryForUser(db: PrismaClient, leagueId: string, userId: string) {
@@ -8,7 +8,7 @@ async function entryForUser(db: PrismaClient, leagueId: string, userId: string) 
     include: { entries: { orderBy: { createdAt: "asc" } } },
   });
   const entry = membership?.entries[0];
-  if (!entry) throw new Error("not a member of this league");
+  if (!entry) throw new NotLeagueMemberError();
   return entry;
 }
 

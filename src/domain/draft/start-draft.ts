@@ -1,6 +1,7 @@
 import { Prisma, type PrismaClient } from "@prisma/client";
 import {
   DraftAlreadyStartedError,
+  InsufficientPlayerPoolError,
   NotCommissionerError,
   TooFewEntriesError,
 } from "../errors";
@@ -37,6 +38,28 @@ export async function startDraft(db: PrismaClient, input: StartDraftInput) {
   }
 
   const settings = parseLeagueSettings(league.settings);
+
+  // The pool must be able to fill every roster or the draft wedges mid-way
+  // (autodraft finds no legal player; humans get NO_SLOT_FOR_POSITION forever).
+  const pool = await db.player.groupBy({
+    by: ["position"],
+    where: { season: league.season },
+    _count: { _all: true },
+  });
+  const available = new Map(pool.map((g) => [g.position, g._count._all]));
+  const entriesCount = league.entries.length;
+  let flexEligibleSurplus = 0;
+  for (const slotType of ["QB", "RB", "WR", "TE", "K", "DST"] as const) {
+    const needed = settings.rosterSlots.filter((s) => s.slot === slotType).length * entriesCount;
+    const have = available.get(slotType) ?? 0;
+    if (have < needed) throw new InsufficientPlayerPoolError();
+    if (slotType === "RB" || slotType === "WR" || slotType === "TE") {
+      flexEligibleSurplus += have - needed;
+    }
+  }
+  const flexNeeded = settings.rosterSlots.filter((s) => s.slot === "FLEX").length * entriesCount;
+  if (flexEligibleSurplus < flexNeeded) throw new InsufficientPlayerPoolError();
+
   const deadline = computePickDeadline(new Date(), settings.pickClockHours, settings.overnightPause);
 
   try {

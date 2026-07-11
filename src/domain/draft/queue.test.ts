@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { testDb, resetDb, createTestUser, createTestPlayer } from "../../../tests/helpers/db";
 import { createLeague } from "../leagues/create-league";
 import { setQueue, getQueue } from "./queue";
-import { PlayerUnavailableError } from "../errors";
+import { NotLeagueMemberError, PlayerUnavailableError } from "../errors";
 
 async function setup() {
   const user = await createTestUser();
@@ -49,6 +49,6 @@ describe("queue", () => {
     const p = await createTestPlayer("RB");
     await expect(
       setQueue(testDb, { leagueId: league.id, userId: outsider.id, playerIds: [p.id] }),
-    ).rejects.toThrow(/not a member/i);
+    ).rejects.toThrow(NotLeagueMemberError);
   });
 });

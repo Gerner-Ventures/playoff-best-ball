@@ -1,10 +1,11 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { testDb, resetDb, createTestUser } from "../../../tests/helpers/db";
+import { testDb, resetDb, createTestUser, createTestPlayer, createStandardPool } from "../../../tests/helpers/db";
 import { createLeague } from "../leagues/create-league";
 import { joinLeague } from "../leagues/join-league";
 import { startDraft } from "./start-draft";
 import {
   DraftAlreadyStartedError,
+  InsufficientPlayerPoolError,
   NotCommissionerError,
   TooFewEntriesError,
 } from "../errors";
@@ -22,6 +23,8 @@ async function leagueWithMembers(memberCount: number) {
     await joinLeague(testDb, { userId: u.id, inviteCode: league.inviteCode, teamName: `T${i}` });
     members.push(u);
   }
+  // Seed a pool large enough to cover every entry's roster slots.
+  await createStandardPool(1 + memberCount);
   return { commish, league, members };
 }
 
@@ -75,5 +78,31 @@ describe("startDraft", () => {
     await expect(
       startDraft(testDb, { leagueId: league.id, userId: commish.id }),
     ).rejects.toThrow(DraftAlreadyStartedError);
+  });
+
+  it("rejects starting when the pool can't fill every roster", async () => {
+    const { commish, league } = await leagueWithMembers(1);
+    // wipe the pool seeded by the helper, then provide too few players
+    await testDb.draftQueueItem.deleteMany();
+    await testDb.draftPick.deleteMany();
+    await testDb.player.deleteMany();
+    await createTestPlayer("QB");
+    await expect(
+      startDraft(testDb, { leagueId: league.id, userId: commish.id }),
+    ).rejects.toThrow(InsufficientPlayerPoolError);
+  });
+
+  it("rejects when a single position runs short even if totals suffice", async () => {
+    const { commish, league } = await leagueWithMembers(1); // 2 entries → need 2 K
+    await testDb.draftQueueItem.deleteMany();
+    await testDb.draftPick.deleteMany();
+    await testDb.player.deleteMany();
+    // plenty of players overall but only 1 K
+    for (const pos of ["QB", "QB", "RB", "RB", "RB", "RB", "RB", "RB", "WR", "WR", "WR", "WR", "WR", "WR", "TE", "TE", "TE", "K", "DST", "DST", "DST"] as const) {
+      await createTestPlayer(pos);
+    }
+    await expect(
+      startDraft(testDb, { leagueId: league.id, userId: commish.id }),
+    ).rejects.toThrow(InsufficientPlayerPoolError);
   });
 });

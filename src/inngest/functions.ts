@@ -1,5 +1,7 @@
 import { NonRetriableError } from "inngest";
 import { db } from "@/lib/db";
+
+const APP_URL = process.env.BETTER_AUTH_URL ?? "http://localhost:3000";
 import { inngest } from "@/lib/inngest";
 import { notifyUser } from "@/lib/notify";
 import { autodraftCurrentPick } from "@/domain/draft/autodraft";
@@ -54,7 +56,7 @@ export const notifyOnTheClock = inngest.createFunction(
         text: [
           `It's your pick in ${entry.league.name} (pick ${event.data.pickIndex + 1}).`,
           `Your clock runs out ${deadline.toLocaleString("en-US", { timeZone: "America/New_York" })} ET — after that we'll autodraft from your queue.`,
-          `Make your pick: ${process.env.BETTER_AUTH_URL}/leagues/${event.data.leagueId}/draft`,
+          `Make your pick: ${APP_URL}/leagues/${event.data.leagueId}/draft`,
         ].join("\n\n"),
       });
     });
@@ -75,7 +77,7 @@ export const notifyDraftComplete = inngest.createFunction(
       await step.run(`send-${m.id}`, () =>
         notifyUser(m.user, {
           subject: `${m.league.name}: the draft is complete`,
-          text: `All picks are in. See every roster: ${process.env.BETTER_AUTH_URL}/leagues/${event.data.leagueId}/draft`,
+          text: `All picks are in. See every roster: ${APP_URL}/leagues/${event.data.leagueId}/draft`,
         }),
       );
     }

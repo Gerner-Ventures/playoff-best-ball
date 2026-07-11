@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { testDb, resetDb, createTestUser } from "../../../tests/helpers/db";
+import { testDb, resetDb, createTestUser, createStandardPool } from "../../../tests/helpers/db";
 import { createLeague } from "./create-league";
 import { joinLeague } from "./join-league";
 import { startDraft } from "../draft/start-draft";
@@ -116,6 +116,7 @@ describe("joinLeague", () => {
     await joinLeague(testDb, {
       userId: second.id, inviteCode: league.inviteCode, teamName: "T2",
     });
+    await createStandardPool(2);
     await startDraft(testDb, { leagueId: league.id, userId: commish.id });
     const late = await createTestUser("Late");
     await expect(
@@ -129,6 +130,7 @@ describe("joinLeague", () => {
     const entry = await joinLeague(testDb, {
       userId: second.id, inviteCode: league.inviteCode, teamName: "T2",
     });
+    await createStandardPool(2);
     await startDraft(testDb, { leagueId: league.id, userId: commish.id });
     const again = await joinLeague(testDb, {
       userId: second.id, inviteCode: league.inviteCode, teamName: "T2",

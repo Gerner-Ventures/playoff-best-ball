@@ -23,6 +23,7 @@ async function draftSetup() {
     scoringPreset: "standard", pickClockHours: 8,
   });
   await joinLeague(testDb, { userId: friend.id, inviteCode: league.inviteCode, teamName: "FT" });
+  await createStandardPool(2);
   const entries = await testDb.entry.findMany({
     where: { leagueId: league.id }, orderBy: { createdAt: "asc" },
   });

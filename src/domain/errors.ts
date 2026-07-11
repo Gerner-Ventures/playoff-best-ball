@@ -82,3 +82,18 @@ export class PickConflictError extends DomainError {
     super("Someone else's pick landed first — refresh and try again.", "PICK_CONFLICT");
   }
 }
+
+export class InsufficientPlayerPoolError extends DomainError {
+  constructor() {
+    super(
+      "The player pool can't fill every roster in this league. Contact support.",
+      "INSUFFICIENT_PLAYER_POOL",
+    );
+  }
+}
+
+export class NotLeagueMemberError extends DomainError {
+  constructor() {
+    super("You're not a member of this league.", "NOT_LEAGUE_MEMBER");
+  }
+}

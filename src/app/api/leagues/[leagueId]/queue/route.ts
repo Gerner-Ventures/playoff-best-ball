@@ -3,7 +3,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { getSessionUser } from "@/lib/session";
 import { getQueue, setQueue } from "@/domain/draft/queue";
-import { DomainError } from "@/domain/errors";
+import { DomainError, NotLeagueMemberError } from "@/domain/errors";
 
 type Params = { params: Promise<{ leagueId: string }> };
 
@@ -17,7 +17,7 @@ export async function GET(_req: Request, { params }: Params) {
       queue: items.map((q) => ({ playerId: q.playerId, rank: q.rank })),
     });
   } catch (err) {
-    if (err instanceof Error && /not a member/i.test(err.message)) {
+    if (err instanceof NotLeagueMemberError) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
     throw err;
@@ -38,11 +38,11 @@ export async function PUT(req: Request, { params }: Params) {
     await setQueue(db, { leagueId, userId: user.id, playerIds: parsed.data.playerIds });
     return NextResponse.json({ ok: true });
   } catch (err) {
+    if (err instanceof NotLeagueMemberError) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
     if (err instanceof DomainError) {
       return NextResponse.json({ error: err.message, code: err.code }, { status: 409 });
-    }
-    if (err instanceof Error && /not a member/i.test(err.message)) {
-      return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
     throw err;
   }

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ZodError } from "zod";
 import { db } from "@/lib/db";
 import { getSessionUser } from "@/lib/session";
 import { getDraftState } from "@/lib/draft-state";
@@ -35,6 +36,12 @@ export async function POST(_req: Request, { params }: Params) {
     await safeAnnounceDraftState(db, leagueId); // arms the first pick clock + notification
     return NextResponse.json(await getDraftState(db, leagueId, auth.user.id), { status: 201 });
   } catch (err) {
+    if (err instanceof ZodError) {
+      return NextResponse.json(
+        { error: "This league's configuration is broken. Ask your commissioner to contact support." },
+        { status: 500 },
+      );
+    }
     if (err instanceof DomainError) {
       const status = err.code === "NOT_COMMISSIONER" ? 403 : 409;
       return NextResponse.json({ error: err.message, code: err.code }, { status });

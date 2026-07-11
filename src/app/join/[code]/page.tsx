@@ -13,6 +13,7 @@ export default async function JoinPage({ params }: { params: Promise<{ code: str
     where: { inviteCode: code.toUpperCase() },
     include: {
       _count: { select: { entries: true } },
+      draft: { select: { id: true } },
       memberships: { where: { userId: user.id }, include: { entries: { orderBy: { createdAt: "asc" } } } },
     },
   });
@@ -41,6 +42,8 @@ export default async function JoinPage({ params }: { params: Promise<{ code: str
   }
 
   const isFull = league._count.entries >= settings.maxEntries;
+  const isUserMember = (league.memberships[0]?.entries.length ?? 0) > 0;
+  const draftStarted = league.draft !== null;
 
   return (
     <main className="mx-auto flex max-w-md flex-col items-center gap-6 p-8">
@@ -50,7 +53,11 @@ export default async function JoinPage({ params }: { params: Promise<{ code: str
           {league.season} playoffs · {league._count.entries}/{settings.maxEntries} teams
         </p>
       </div>
-      {isFull ? (
+      {draftStarted && !isUserMember ? (
+        <p className="text-center text-red-600">
+          The draft has already started — this league is closed to new teams.
+        </p>
+      ) : isFull ? (
         <p className="text-center text-red-600">
           This league is full. The commissioner can upgrade to Premium for more spots.
         </p>

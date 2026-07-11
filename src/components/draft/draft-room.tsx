@@ -3,10 +3,10 @@
 import { useDraftState } from "./use-draft-state";
 import { Countdown } from "./countdown";
 import { DraftBoard } from "./draft-board";
+import { PickPanel } from "./pick-panel";
 
 export function DraftRoom({ leagueId, leagueName }: { leagueId: string; leagueName: string }) {
   const { state, error, refetch } = useDraftState(leagueId);
-  void refetch; // Task 16 wires this into <PickPanel onPicked>
 
   if (error) return <p className="p-6 text-red-600">{error}</p>;
   if (!state) return <p className="p-6 text-gray-500">Loading draft…</p>;
@@ -41,7 +41,7 @@ export function DraftRoom({ leagueId, leagueName }: { leagueId: string; leagueNa
       <div className="mt-6">
         <DraftBoard state={state} />
       </div>
-      {/* Task 16 mounts <PickPanel state={state} leagueId={leagueId} onPicked={refetch} /> here */}
+      <PickPanel state={state} leagueId={leagueId} onPicked={() => void refetch()} />
     </div>
   );
 }

@@ -9,7 +9,10 @@ import { makePick } from "./make-pick";
 import { entryIdForPick, draftOrderSchema } from "./snake-order";
 import {
   DraftNotActiveError, NotYourTurnError, PlayerUnavailableError, NoSlotForPositionError,
+  PickConflictError,
 } from "../errors";
+import { parseLeagueSettings } from "../league-settings";
+import { applyPickAndAdvance } from "./advance";
 
 /** 2-user league with a started draft using a fixed order [commishEntry, friendEntry]. */
 async function draftSetup() {
@@ -81,6 +84,26 @@ describe("makePick", () => {
     await expect(
       makePick(testDb, { leagueId: league.id, userId: commish.id, playerId: qb3.id }),
     ).rejects.toThrow(NoSlotForPositionError);
+  });
+
+  it("a stale draft snapshot loses the advance race (PickConflictError)", async () => {
+    const { league, order } = await draftSetup();
+    const rbA = await createTestPlayer("RB");
+    const rbB = await createTestPlayer("RB");
+    const draft = await testDb.draft.findUniqueOrThrow({ where: { leagueId: league.id } });
+    const leagueRow = await testDb.league.findUniqueOrThrow({ where: { id: league.id } });
+    const settings = parseLeagueSettings(leagueRow.settings);
+    const parsedOrder = draftOrderSchema.parse(draft.order);
+    const base = { settings, order: parsedOrder, entryId: order[0], autodrafted: false };
+
+    await applyPickAndAdvance(testDb, { ...base, draft, playerId: rbA.id, slotIndex: 1 });
+    // same stale draft snapshot (currentPickIndex 0), different player + slot to dodge the P2002 uniques
+    // (fails via the [draftId,pickIndex] unique or the count guard — both map to PickConflictError)
+    await expect(
+      applyPickAndAdvance(testDb, { ...base, draft, playerId: rbB.id, slotIndex: 2 }),
+    ).rejects.toThrow(PickConflictError);
+    // and the failed attempt left no partial state: exactly 1 pick recorded
+    expect(await testDb.draftPick.count({ where: { draftId: draft.id } })).toBe(1);
   });
 
   it("completes the draft on the final pick", async () => {

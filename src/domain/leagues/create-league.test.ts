@@ -3,6 +3,9 @@ import { testDb, resetDb, createTestUser } from "../../../tests/helpers/db";
 import { createLeague } from "./create-league";
 import { FreeLeagueLimitError } from "../errors";
 import { CURRENT_SEASON } from "../season";
+import { buildDefaultSettings } from "../league-settings";
+import { generateInviteCode } from "../invite-code";
+import type { Prisma } from "@prisma/client";
 
 describe("createLeague", () => {
   beforeEach(resetDb);
@@ -57,6 +60,33 @@ describe("createLeague", () => {
     await expect(createLeague(testDb, { ...input, name: "Second" })).rejects.toThrow(
       FreeLeagueLimitError,
     );
+  });
+
+  it("free-league gate is scoped to the current season (a prior-season FREE league is not counted)", async () => {
+    const user = await createTestUser("PriorSeason");
+    const settings = buildDefaultSettings("standard", 8);
+    // Directly insert a league from a prior season with a COMMISSIONER membership
+    const oldLeague = await testDb.league.create({
+      data: {
+        name: "Old League",
+        season: 2025,
+        inviteCode: generateInviteCode(),
+        settings: settings as Prisma.InputJsonValue,
+      },
+    });
+    await testDb.membership.create({
+      data: { leagueId: oldLeague.id, userId: user.id, role: "COMMISSIONER" },
+    });
+    // Creating a league in CURRENT_SEASON must still succeed
+    await expect(
+      createLeague(testDb, {
+        userId: user.id,
+        name: "Current Season League",
+        teamName: "T",
+        scoringPreset: "standard",
+        pickClockHours: 8,
+      }),
+    ).resolves.toMatchObject({ season: CURRENT_SEASON });
   });
 
   it("allows commissioning a league even when a member of others", async () => {

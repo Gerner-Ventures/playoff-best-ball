@@ -4,7 +4,7 @@ A hosted multi-tenant NFL playoff best ball league platform. Commissioners creat
 
 ## Local Setup
 
-**Prerequisites:** Node 22+, Docker
+**Prerequisites:** Node 24+ (bundles npm 11 — lockfile changes must be generated with npm 11), Docker
 
 ```bash
 docker compose up -d
@@ -21,10 +21,13 @@ npm run dev
 ## Testing
 
 ```bash
+# One-time setup: push schema to the test DB (also re-run after schema changes)
+npm run db:push:test
+
 # Unit/integration tests (Vitest — requires docker test DB on 5433)
 npm test
 
-# End-to-end tests (Playwright)
+# End-to-end tests (Playwright — requires docker test DB on 5433)
 npx playwright install chromium  # first run only
 npm run test:e2e
 ```

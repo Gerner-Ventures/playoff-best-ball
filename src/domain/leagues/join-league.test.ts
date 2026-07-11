@@ -40,6 +40,7 @@ describe("joinLeague", () => {
       userId: joiner.id, inviteCode: league.inviteCode, teamName: "Different",
     });
     expect(second.id).toBe(first.id);
+    expect(second.name).toBe(first.name); // first-write-wins: teamName is pinned on join
     expect(await testDb.entry.count({ where: { leagueId: league.id } })).toBe(2); // commish + joiner
   });
 
@@ -69,5 +70,42 @@ describe("joinLeague", () => {
     await expect(
       joinLeague(testDb, { userId: eleventh.id, inviteCode: league.inviteCode, teamName: "T" }),
     ).rejects.toThrow(LeagueFullError);
+  });
+
+  it("self-heals an orphaned membership (membership exists but no entry)", async () => {
+    const { league } = await setupLeague();
+    const user = await createTestUser("Orphan");
+    // Simulate an incomplete prior join: membership present, no entry
+    const membership = await testDb.membership.create({
+      data: { leagueId: league.id, userId: user.id, role: "MEMBER" },
+    });
+    const entry = await joinLeague(testDb, {
+      userId: user.id, inviteCode: league.inviteCode, teamName: "Recovery Team",
+    });
+    expect(entry.leagueId).toBe(league.id);
+    expect(entry.name).toBe("Recovery Team");
+    // Exactly one membership for this user in the league
+    expect(
+      await testDb.membership.count({ where: { leagueId: league.id, userId: user.id } }),
+    ).toBe(1);
+    // Membership ID is the pre-existing one
+    expect(entry.membershipId).toBe(membership.id);
+  });
+
+  it("existing member rejoining a full league gets their entry back (not LeagueFullError)", async () => {
+    const { league } = await setupLeague(); // entry 1 = commissioner
+    const joiner = await createTestUser("EarlyBird");
+    await joinLeague(testDb, { userId: joiner.id, inviteCode: league.inviteCode, teamName: "EarlyBird Team" });
+    // Fill remaining 8 slots
+    for (let i = 0; i < 8; i++) {
+      const u = await createTestUser(`Filler${i}`);
+      await joinLeague(testDb, { userId: u.id, inviteCode: league.inviteCode, teamName: `Filler${i}` });
+    }
+    // League is now full (10/10). EarlyBird rejoining must return their existing entry.
+    const second = await joinLeague(testDb, {
+      userId: joiner.id, inviteCode: league.inviteCode, teamName: "Different Name",
+    });
+    expect(second.leagueId).toBe(league.id);
+    expect(second.name).toBe("EarlyBird Team"); // first-write-wins
   });
 });

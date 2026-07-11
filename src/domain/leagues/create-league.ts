@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient, Prisma } from "@prisma/client";
 import { generateInviteCode } from "../invite-code";
 import { FreeLeagueLimitError } from "../errors";
 import { CURRENT_SEASON } from "../season";
@@ -17,6 +17,8 @@ export interface CreateLeagueInput {
 }
 
 export async function createLeague(db: PrismaClient, input: CreateLeagueInput) {
+  // TOCTOU: two concurrent calls could both pass this check. Accepted — soft
+  // monetization gate, low traffic; revisit if it's ever abused.
   const existingFree = await db.league.count({
     where: {
       season: CURRENT_SEASON,
@@ -35,7 +37,7 @@ export async function createLeague(db: PrismaClient, input: CreateLeagueInput) {
         name: input.name,
         season: CURRENT_SEASON,
         inviteCode: generateInviteCode(),
-        settings: settings as object,
+        settings: settings as Prisma.InputJsonValue,
       },
     });
     const membership = await tx.membership.create({

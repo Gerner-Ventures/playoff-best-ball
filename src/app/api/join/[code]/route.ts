@@ -26,10 +26,10 @@ export async function POST(req: Request, { params }: Params) {
     return NextResponse.json({ leagueId: entry.leagueId }, { status: 201 });
   } catch (err) {
     if (err instanceof InvalidInviteError) {
-      return NextResponse.json({ error: err.message, code: "INVALID_INVITE" }, { status: 404 });
+      return NextResponse.json({ error: err.message, code: err.code }, { status: 404 });
     }
     if (err instanceof LeagueFullError) {
-      return NextResponse.json({ error: err.message, code: "LEAGUE_FULL" }, { status: 409 });
+      return NextResponse.json({ error: err.message, code: err.code }, { status: 409 });
     }
     if (err instanceof ZodError) {
       return NextResponse.json(

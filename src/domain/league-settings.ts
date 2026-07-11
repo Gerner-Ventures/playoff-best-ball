@@ -1,38 +1,40 @@
 import { z } from "zod";
 
+const points = z.number().finite();
+
 export const scoringSettingsSchema = z.object({
-  passYardsPerPoint: z.number(),
-  passTd: z.number(),
-  passInt: z.number(),
-  rushYardsPerPoint: z.number(),
-  rushTd: z.number(),
-  recYardsPerPoint: z.number(),
-  recTd: z.number(),
-  ppr: z.number(),
-  twoPtConv: z.number(),
-  fumbleLost: z.number(),
-  returnTd: z.number(),
-  fg0_19: z.number(),
-  fg20_29: z.number(),
-  fg30_39: z.number(),
-  fg40_49: z.number(),
-  fg50Plus: z.number(),
-  fgMiss: z.number(),
-  xpMade: z.number(),
-  xpMiss: z.number(),
-  sack: z.number(),
-  defInt: z.number(),
-  fumRec: z.number(),
-  dstTd: z.number(),
-  safety: z.number(),
-  block: z.number(),
-  pa0: z.number(),
-  pa1_6: z.number(),
-  pa7_13: z.number(),
-  pa14_20: z.number(),
-  pa21_27: z.number(),
-  pa28_34: z.number(),
-  pa35Plus: z.number(),
+  passYardsPerPoint: points,
+  passTd: points,
+  passInt: points,
+  rushYardsPerPoint: points,
+  rushTd: points,
+  recYardsPerPoint: points,
+  recTd: points,
+  ppr: points,
+  twoPtConv: points,
+  fumbleLost: points,
+  returnTd: points,
+  fg0_19: points,
+  fg20_29: points,
+  fg30_39: points,
+  fg40_49: points,
+  fg50Plus: points,
+  fgMiss: points,
+  xpMade: points,
+  xpMiss: points,
+  sack: points,
+  defInt: points,
+  fumRec: points,
+  dstTd: points,
+  safety: points,
+  block: points,
+  pa0: points,
+  pa1_6: points,
+  pa7_13: points,
+  pa14_20: points,
+  pa21_27: points,
+  pa28_34: points,
+  pa35Plus: points,
 });
 export type ScoringSettings = z.infer<typeof scoringSettingsSchema>;
 
@@ -57,9 +59,9 @@ export const SCORING_PRESETS = {
 export const scoringPresetNameSchema = z.enum(["standard", "half_ppr", "full_ppr"]);
 export type ScoringPresetName = z.infer<typeof scoringPresetNameSchema>;
 
-export const positionSchema = z.enum(["QB", "RB", "WR", "TE", "K", "DST", "FLEX"]);
+export const slotTypeSchema = z.enum(["QB", "RB", "WR", "TE", "K", "DST", "FLEX"]);
 export const rosterSlotSchema = z.object({
-  slot: positionSchema, // FLEX is a slot type; eligibility rules arrive with the draft (Phase 2)
+  slot: slotTypeSchema, // FLEX is a slot type; eligibility rules arrive with the draft (Phase 2)
 });
 export type RosterSlotDef = z.infer<typeof rosterSlotSchema>;
 

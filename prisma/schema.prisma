@@ -110,17 +110,16 @@ model Membership {
   entries   Entry[]
 
   @@unique([leagueId, userId])
+  @@unique([id, leagueId])
   @@index([userId])
 }
 
-// Entry.leagueId is denormalized from membership.leagueId for league-scoped
-// queries (cap counts, league pages). Write paths MUST set it from the
-// membership's league; there is no DB-level enforcement.
+// Entry.leagueId is denormalized from membership.leagueId for league-scoped queries. The composite FK (membershipId, leagueId) → Membership(id, leagueId) makes the DB reject any mismatch.
 model Entry {
   id           String     @id @default(cuid())
   league       League     @relation(fields: [leagueId], references: [id], onDelete: Cascade)
   leagueId     String
-  membership   Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  membership   Membership @relation(fields: [membershipId, leagueId], references: [id, leagueId], onDelete: Cascade)
   membershipId String
   name         String // team name
   createdAt    DateTime   @default(now())

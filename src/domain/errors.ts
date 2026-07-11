@@ -33,3 +33,52 @@ export class LeagueFullError extends DomainError {
     );
   }
 }
+
+export class NotCommissionerError extends DomainError {
+  constructor() {
+    super("Only the commissioner can do that.", "NOT_COMMISSIONER");
+  }
+}
+
+export class TooFewEntriesError extends DomainError {
+  constructor() {
+    super("You need at least 2 teams before starting the draft.", "TOO_FEW_ENTRIES");
+  }
+}
+
+export class DraftAlreadyStartedError extends DomainError {
+  constructor() {
+    super("The draft has already started.", "DRAFT_ALREADY_STARTED");
+  }
+}
+
+export class DraftNotActiveError extends DomainError {
+  constructor() {
+    super("The draft isn't active.", "DRAFT_NOT_ACTIVE");
+  }
+}
+
+export class NotYourTurnError extends DomainError {
+  constructor() {
+    super("It's not your pick.", "NOT_YOUR_TURN");
+  }
+}
+
+export class PlayerUnavailableError extends DomainError {
+  constructor() {
+    super("That player isn't available.", "PLAYER_UNAVAILABLE");
+  }
+}
+
+export class NoSlotForPositionError extends DomainError {
+  constructor(position: string) {
+    super(`You have no open roster slot for a ${position}.`, "NO_SLOT_FOR_POSITION");
+  }
+}
+
+/** A concurrent pick advanced the draft first; the caller should refetch and retry. */
+export class PickConflictError extends DomainError {
+  constructor() {
+    super("Someone else's pick landed first — refresh and try again.", "PICK_CONFLICT");
+  }
+}

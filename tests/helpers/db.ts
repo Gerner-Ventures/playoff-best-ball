@@ -4,8 +4,10 @@ import { Pool } from "pg";
 import { randomUUID } from "node:crypto";
 
 function makeTestPrismaClient() {
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-  const adapter = new PrismaPg(pool);
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) throw new Error("DATABASE_URL is not set");
+  const pool = new Pool({ connectionString });
+  const adapter = new PrismaPg(pool, { disposeExternalPool: true });
   return new PrismaClient({ adapter });
 }
 

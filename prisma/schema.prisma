@@ -35,6 +35,7 @@ model Session {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([userId])
   @@map("session")
 }
 
@@ -54,6 +55,7 @@ model Account {
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
+  @@index([userId])
   @@map("account")
 }
 
@@ -65,6 +67,7 @@ model Verification {
   createdAt  DateTime? @default(now())
   updatedAt  DateTime? @updatedAt
 
+  @@index([identifier])
   @@map("verification")
 }
 
@@ -110,6 +113,9 @@ model Membership {
   @@index([userId])
 }
 
+// Entry.leagueId is denormalized from membership.leagueId for league-scoped
+// queries (cap counts, league pages). Write paths MUST set it from the
+// membership's league; there is no DB-level enforcement.
 model Entry {
   id           String     @id @default(cuid())
   league       League     @relation(fields: [leagueId], references: [id], onDelete: Cascade)
@@ -121,4 +127,5 @@ model Entry {
   updatedAt    DateTime   @updatedAt
 
   @@index([leagueId])
+  @@index([membershipId])
 }

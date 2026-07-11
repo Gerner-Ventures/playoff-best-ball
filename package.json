@@ -9,7 +9,7 @@
     "lint": "eslint",
     "test": "dotenv -e .env.test -- vitest run",
     "test:watch": "dotenv -e .env.test -- vitest",
-    "db:push": "prisma db push",
+    "db:push": "dotenv -e .env -- prisma db push",
     "db:push:test": "dotenv -e .env.test -- prisma db push"
   },
   "dependencies": {

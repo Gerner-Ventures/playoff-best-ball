@@ -36,6 +36,7 @@ export async function createLeague(db: PrismaClient, input: CreateLeagueInput) {
       data: {
         name: input.name,
         season: CURRENT_SEASON,
+        // Collision odds at 31^8 are negligible; a P2002 here is acceptable as a rare 500.
         inviteCode: generateInviteCode(),
         settings: settings as Prisma.InputJsonValue,
       },

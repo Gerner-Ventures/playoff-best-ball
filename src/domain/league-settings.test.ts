@@ -11,9 +11,8 @@ describe("SCORING_PRESETS", () => {
     expect(SCORING_PRESETS.standard.ppr).toBe(0);
     expect(SCORING_PRESETS.half_ppr.ppr).toBe(0.5);
     expect(SCORING_PRESETS.full_ppr.ppr).toBe(1);
-    const { ppr: _a, ...std } = SCORING_PRESETS.standard;
-    const { ppr: _b, ...half } = SCORING_PRESETS.half_ppr;
-    expect(std).toEqual(half);
+    expect({ ...SCORING_PRESETS.standard, ppr: 0.5 }).toEqual(SCORING_PRESETS.half_ppr);
+    expect({ ...SCORING_PRESETS.standard, ppr: 1 }).toEqual(SCORING_PRESETS.full_ppr);
   });
 });
 

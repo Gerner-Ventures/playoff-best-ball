@@ -14,7 +14,7 @@ model User {
   email         String       @unique
   emailVerified Boolean      @default(false)
   image         String?
-  phone         String?
+  phone         String? // staged for Phase 2: SMS draft notifications ("text me when I'm on the clock")
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
   sessions      Session[]

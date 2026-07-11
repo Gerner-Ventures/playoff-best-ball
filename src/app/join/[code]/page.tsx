@@ -25,7 +25,17 @@ export default async function JoinPage({ params }: { params: Promise<{ code: str
 
   if (league.memberships.length > 0) redirect(`/leagues/${league.id}`);
 
-  const settings = leagueSettingsSchema.parse(league.settings);
+  const parsedSettings = leagueSettingsSchema.safeParse(league.settings);
+  if (!parsedSettings.success) {
+    return (
+      <main className="mx-auto max-w-md p-8 text-center">
+        <h1 className="text-xl font-bold">Something&apos;s wrong with this league</h1>
+        <p className="mt-2 text-gray-600">Ask your commissioner to contact support.</p>
+      </main>
+    );
+  }
+
+  const settings = parsedSettings.data;
   const isFull = league._count.entries >= settings.maxEntries;
 
   return (

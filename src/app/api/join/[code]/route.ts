@@ -4,28 +4,8 @@ import { db } from "@/lib/db";
 import { getSessionUser } from "@/lib/session";
 import { joinLeague } from "@/domain/leagues/join-league";
 import { InvalidInviteError, LeagueFullError } from "@/domain/errors";
-import { leagueSettingsSchema } from "@/domain/league-settings";
 
 type Params = { params: Promise<{ code: string }> };
-
-export async function GET(_req: Request, { params }: Params) {
-  const { code } = await params;
-  const league = await db.league.findUnique({
-    where: { inviteCode: code.toUpperCase() },
-    include: { _count: { select: { entries: true } } },
-  });
-  if (!league) return NextResponse.json({ error: "Invalid invite" }, { status: 404 });
-  const settings = leagueSettingsSchema.safeParse(league.settings);
-  if (!settings.success) {
-    return NextResponse.json({ error: "League configuration error" }, { status: 500 });
-  }
-  return NextResponse.json({
-    name: league.name,
-    season: league.season,
-    entryCount: league._count.entries,
-    maxEntries: settings.data.maxEntries,
-  });
-}
 
 const bodySchema = z.object({ teamName: z.string().trim().min(1).max(40) });
 
@@ -46,7 +26,7 @@ export async function POST(req: Request, { params }: Params) {
     return NextResponse.json({ leagueId: entry.leagueId }, { status: 201 });
   } catch (err) {
     if (err instanceof InvalidInviteError) {
-      return NextResponse.json({ error: err.message }, { status: 404 });
+      return NextResponse.json({ error: err.message, code: "INVALID_INVITE" }, { status: 404 });
     }
     if (err instanceof LeagueFullError) {
       return NextResponse.json({ error: err.message, code: "LEAGUE_FULL" }, { status: 409 });

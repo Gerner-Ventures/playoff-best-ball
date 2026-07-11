@@ -11,7 +11,7 @@ export const auth = betterAuth({
   // E2E-only escape hatch: password auth lets Playwright create sessions
   // without an email round-trip. Never enabled in production.
   emailAndPassword: {
-    enabled: process.env.E2E_TEST_MODE === "1",
+    enabled: process.env.E2E_TEST_MODE === "1" && process.env.NODE_ENV !== "production",
   },
   socialProviders: {
     ...(process.env.GOOGLE_CLIENT_ID && {

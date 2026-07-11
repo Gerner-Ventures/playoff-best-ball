@@ -185,7 +185,8 @@ model DraftPick {
   pickIndex   Int // 0-based overall pick number
   entry       Entry    @relation(fields: [entryId], references: [id], onDelete: Cascade)
   entryId     String
-  player      Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  // Restrict: deleting a player must never erase draft history (Phase 3 manages the pool)
+  player      Player   @relation(fields: [playerId], references: [id], onDelete: Restrict)
   playerId    String
   slotIndex   Int // index into the league's settings.rosterSlots
   autodrafted Boolean  @default(false)

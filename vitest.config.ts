@@ -6,7 +6,7 @@ export default defineConfig({
     include: ["src/**/*.test.ts", "tests/**/*.test.ts"],
     fileParallelism: false, // tests share one Postgres; run files serially
     environment: "node",
-    exclude: ["node_modules/**", ".next/**", "legacy/**"],
+    exclude: ["node_modules/**", ".next/**"],
   },
   resolve: {
     alias: { "@": path.resolve(__dirname, "src") },

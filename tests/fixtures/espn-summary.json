@@ -1,0 +1,1847 @@
+{
+  "header": {
+    "competitions": [
+      {
+        "id": "401772977",
+        "competitors": [
+          {
+            "id": "30",
+            "homeAway": "home",
+            "score": "24",
+            "team": {
+              "id": "30",
+              "abbreviation": "JAX",
+              "displayName": "Jacksonville Jaguars"
+            }
+          },
+          {
+            "id": "2",
+            "homeAway": "away",
+            "score": "27",
+            "team": {
+              "id": "2",
+              "abbreviation": "BUF",
+              "displayName": "Buffalo Bills"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "boxscore": {
+    "teams": [
+      {
+        "team": {
+          "id": "2",
+          "abbreviation": "BUF",
+          "displayName": "Buffalo Bills"
+        },
+        "statistics": [
+          {
+            "name": "firstDowns",
+            "displayValue": "20"
+          },
+          {
+            "name": "firstDownsPassing",
+            "displayValue": "12"
+          },
+          {
+            "name": "firstDownsRushing",
+            "displayValue": "8"
+          },
+          {
+            "name": "firstDownsPenalty",
+            "displayValue": "0"
+          },
+          {
+            "name": "thirdDownEff",
+            "displayValue": "7-14"
+          },
+          {
+            "name": "fourthDownEff",
+            "displayValue": "2-2"
+          },
+          {
+            "name": "totalOffensivePlays",
+            "displayValue": "62"
+          },
+          {
+            "name": "totalYards",
+            "displayValue": "340"
+          },
+          {
+            "name": "yardsPerPlay",
+            "displayValue": "5.5"
+          },
+          {
+            "name": "totalDrives",
+            "displayValue": "10"
+          },
+          {
+            "name": "netPassingYards",
+            "displayValue": "261"
+          },
+          {
+            "name": "completionAttempts",
+            "displayValue": "28/35"
+          },
+          {
+            "name": "yardsPerPass",
+            "displayValue": "7.3"
+          },
+          {
+            "name": "interceptions",
+            "displayValue": "0"
+          },
+          {
+            "name": "sacksYardsLost",
+            "displayValue": "1-12"
+          },
+          {
+            "name": "rushingYards",
+            "displayValue": "79"
+          },
+          {
+            "name": "rushingAttempts",
+            "displayValue": "26"
+          },
+          {
+            "name": "yardsPerRushAttempt",
+            "displayValue": "3.0"
+          },
+          {
+            "name": "redZoneAttempts",
+            "displayValue": "3-3"
+          },
+          {
+            "name": "totalPenaltiesYards",
+            "displayValue": "7-39"
+          },
+          {
+            "name": "turnovers",
+            "displayValue": "1"
+          },
+          {
+            "name": "fumblesLost",
+            "displayValue": "1"
+          },
+          {
+            "name": "interceptions",
+            "displayValue": "0"
+          },
+          {
+            "name": "defensiveTouchdowns",
+            "displayValue": "0"
+          },
+          {
+            "name": "possessionTime",
+            "displayValue": "33:49"
+          }
+        ]
+      },
+      {
+        "team": {
+          "id": "30",
+          "abbreviation": "JAX",
+          "displayName": "Jacksonville Jaguars"
+        },
+        "statistics": [
+          {
+            "name": "firstDowns",
+            "displayValue": "20"
+          },
+          {
+            "name": "firstDownsPassing",
+            "displayValue": "11"
+          },
+          {
+            "name": "firstDownsRushing",
+            "displayValue": "8"
+          },
+          {
+            "name": "firstDownsPenalty",
+            "displayValue": "1"
+          },
+          {
+            "name": "thirdDownEff",
+            "displayValue": "5-9"
+          },
+          {
+            "name": "fourthDownEff",
+            "displayValue": "0-1"
+          },
+          {
+            "name": "totalOffensivePlays",
+            "displayValue": "54"
+          },
+          {
+            "name": "totalYards",
+            "displayValue": "359"
+          },
+          {
+            "name": "yardsPerPlay",
+            "displayValue": "6.6"
+          },
+          {
+            "name": "totalDrives",
+            "displayValue": "10"
+          },
+          {
+            "name": "netPassingYards",
+            "displayValue": "205"
+          },
+          {
+            "name": "completionAttempts",
+            "displayValue": "18/30"
+          },
+          {
+            "name": "yardsPerPass",
+            "displayValue": "6.6"
+          },
+          {
+            "name": "interceptions",
+            "displayValue": "2"
+          },
+          {
+            "name": "sacksYardsLost",
+            "displayValue": "1-2"
+          },
+          {
+            "name": "rushingYards",
+            "displayValue": "154"
+          },
+          {
+            "name": "rushingAttempts",
+            "displayValue": "23"
+          },
+          {
+            "name": "yardsPerRushAttempt",
+            "displayValue": "6.7"
+          },
+          {
+            "name": "redZoneAttempts",
+            "displayValue": "3-4"
+          },
+          {
+            "name": "totalPenaltiesYards",
+            "displayValue": "2-10"
+          },
+          {
+            "name": "turnovers",
+            "displayValue": "2"
+          },
+          {
+            "name": "fumblesLost",
+            "displayValue": "0"
+          },
+          {
+            "name": "interceptions",
+            "displayValue": "2"
+          },
+          {
+            "name": "defensiveTouchdowns",
+            "displayValue": "0"
+          },
+          {
+            "name": "possessionTime",
+            "displayValue": "26:11"
+          }
+        ]
+      }
+    ],
+    "players": [
+      {
+        "team": {
+          "id": "2",
+          "abbreviation": "BUF"
+        },
+        "statistics": [
+          {
+            "name": "passing",
+            "labels": [
+              "C/ATT",
+              "YDS",
+              "AVG",
+              "TD",
+              "INT",
+              "SACKS",
+              "QBR",
+              "RTG"
+            ],
+            "athletes": [
+              {
+                "athlete": {
+                  "id": "3918298",
+                  "displayName": "Josh Allen",
+                  "firstName": "Josh",
+                  "lastName": "Allen"
+                },
+                "stats": [
+                  "28/35",
+                  "273",
+                  "7.8",
+                  "1",
+                  "0",
+                  "1-12",
+                  "87.1",
+                  "108.7"
+                ]
+              }
+            ]
+          },
+          {
+            "name": "rushing",
+            "labels": [
+              "CAR",
+              "YDS",
+              "AVG",
+              "TD",
+              "LONG"
+            ],
+            "athletes": [
+              {
+                "athlete": {
+                  "id": "4379399",
+                  "displayName": "James Cook III",
+                  "firstName": "James",
+                  "lastName": "Cook III"
+                },
+                "stats": [
+                  "15",
+                  "46",
+                  "3.1",
+                  "0",
+                  "11"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "3918298",
+                  "displayName": "Josh Allen",
+                  "firstName": "Josh",
+                  "lastName": "Allen"
+                },
+                "stats": [
+                  "11",
+                  "33",
+                  "3.0",
+                  "2",
+                  "10"
+                ]
+              }
+            ]
+          },
+          {
+            "name": "receiving",
+            "labels": [
+              "REC",
+              "YDS",
+              "AVG",
+              "TD",
+              "LONG",
+              "TGTS"
+            ],
+            "athletes": [
+              {
+                "athlete": {
+                  "id": "4373678",
+                  "displayName": "Khalil Shakir",
+                  "firstName": "Khalil",
+                  "lastName": "Shakir"
+                },
+                "stats": [
+                  "12",
+                  "82",
+                  "6.8",
+                  "0",
+                  "18",
+                  "12"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "16731",
+                  "displayName": "Brandin Cooks",
+                  "firstName": "Brandin",
+                  "lastName": "Cooks"
+                },
+                "stats": [
+                  "3",
+                  "58",
+                  "19.3",
+                  "0",
+                  "36",
+                  "5"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "4635008",
+                  "displayName": "Keon Coleman",
+                  "firstName": "Keon",
+                  "lastName": "Coleman"
+                },
+                "stats": [
+                  "1",
+                  "36",
+                  "36.0",
+                  "0",
+                  "36",
+                  "1"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "3930086",
+                  "displayName": "Dawson Knox",
+                  "firstName": "Dawson",
+                  "lastName": "Knox"
+                },
+                "stats": [
+                  "3",
+                  "30",
+                  "10.0",
+                  "0",
+                  "24",
+                  "3"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "4385690",
+                  "displayName": "Dalton Kincaid",
+                  "firstName": "Dalton",
+                  "lastName": "Kincaid"
+                },
+                "stats": [
+                  "3",
+                  "28",
+                  "9.3",
+                  "1",
+                  "15",
+                  "5"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "4241476",
+                  "displayName": "Tyrell Shavers",
+                  "firstName": "Tyrell",
+                  "lastName": "Shavers"
+                },
+                "stats": [
+                  "1",
+                  "14",
+                  "14.0",
+                  "0",
+                  "14",
+                  "2"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "4243537",
+                  "displayName": "Gabe Davis",
+                  "firstName": "Gabe",
+                  "lastName": "Davis"
+                },
+                "stats": [
+                  "2",
+                  "14",
+                  "7.0",
+                  "0",
+                  "9",
+                  "3"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "4429805",
+                  "displayName": "Frank Gore Jr.",
+                  "firstName": "Frank",
+                  "lastName": "Gore Jr."
+                },
+                "stats": [
+                  "1",
+                  "6",
+                  "6.0",
+                  "0",
+                  "6",
+                  "1"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "4379399",
+                  "displayName": "James Cook III",
+                  "firstName": "James",
+                  "lastName": "Cook III"
+                },
+                "stats": [
+                  "2",
+                  "5",
+                  "2.5",
+                  "0",
+                  "4",
+                  "3"
+                ]
+              }
+            ]
+          },
+          {
+            "name": "fumbles",
+            "labels": [
+              "FUM",
+              "LOST",
+              "REC"
+            ],
+            "athletes": [
+              {
+                "athlete": {
+                  "id": "4429501",
+                  "displayName": "Ray Davis",
+                  "firstName": "Ray",
+                  "lastName": "Davis"
+                },
+                "stats": [
+                  "1",
+                  "1",
+                  "0"
+                ]
+              }
+            ]
+          },
+          {
+            "name": "defensive",
+            "labels": [
+              "TOT",
+              "SOLO",
+              "SACKS",
+              "TFL",
+              "PD",
+              "QB HTS",
+              "TD"
+            ],
+            "athletes": [
+              {
+                "athlete": {
+                  "id": "2978313",
+                  "displayName": "Shaq Thompson",
+                  "firstName": "Shaq",
+                  "lastName": "Thompson"
+                },
+                "stats": [
+                  "8",
+                  "6",
+                  "0",
+                  "0",
+                  "1",
+                  "0",
+                  "0"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "4362506",
+                  "displayName": "Greg Rousseau",
+                  "firstName": "Greg",
+                  "lastName": "Rousseau"
+                },
+                "stats": [
+                  "6",
+                  "4",
+                  "1",
+                  "2",
+                  "1",
+                  "2",
+                  "0"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "4596480",
+                  "displayName": "Jordan Hancock",
+                  "firstName": "Jordan",
+                  "lastName": "Hancock"
+                },
+                "stats": [
+                  "6",
+                  "3",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "3046287",
+                  "displayName": "Matt Milano",
+                  "firstName": "Matt",
+                  "lastName": "Milano"
+                },
+                "stats": [
+                  "5",
+                  "5",
+                  "0",
+                  "1",
+                  "1",
+                  "0",
+                  "0"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "4379778",
+                  "displayName": "Christian Benford",
+                  "firstName": "Christian",
+                  "lastName": "Benford"
+                },
+                "stats": [
+                  "3",
+                  "3",
+                  "0",
+                  "0",
+                  "1",
+                  "0",
+                  "0"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "4831989",
+                  "displayName": "Deone Walker",
+                  "firstName": "Deone",
+                  "lastName": "Walker"
+                },
+                "stats": [
+                  "3",
+                  "1",
+                  "0",
+                  "0",
+                  "1",
+                  "0",
+                  "0"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "15979",
+                  "displayName": "Jordan Poyer",
+                  "firstName": "Jordan",
+                  "lastName": "Poyer"
+                },
+                "stats": [
+                  "2",
+                  "2",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "3042717",
+                  "displayName": "Tre'Davious White",
+                  "firstName": "Tre'Davious",
+                  "lastName": "White"
+                },
+                "stats": [
+                  "2",
+                  "2",
+                  "0",
+                  "0",
+                  "3",
+                  "0",
+                  "0"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "3121003",
+                  "displayName": "Taron Johnson",
+                  "firstName": "Taron",
+                  "lastName": "Johnson"
+                },
+                "stats": [
+                  "2",
+                  "2",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "4568624",
+                  "displayName": "Dorian Williams",
+                  "firstName": "Dorian",
+                  "lastName": "Williams"
+                },
+                "stats": [
+                  "2",
+                  "2",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "4676004",
+                  "displayName": "Cole Bishop",
+                  "firstName": "Cole",
+                  "lastName": "Bishop"
+                },
+                "stats": [
+                  "2",
+                  "2",
+                  "0",
+                  "0",
+                  "1",
+                  "0",
+                  "0"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "16910",
+                  "displayName": "DaQuan Jones",
+                  "firstName": "DaQuan",
+                  "lastName": "Jones"
+                },
+                "stats": [
+                  "1",
+                  "1",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "3895791",
+                  "displayName": "Dane Jackson",
+                  "firstName": "Dane",
+                  "lastName": "Jackson"
+                },
+                "stats": [
+                  "1",
+                  "1",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "4240585",
+                  "displayName": "AJ Epenesa",
+                  "firstName": "AJ",
+                  "lastName": "Epenesa"
+                },
+                "stats": [
+                  "1",
+                  "1",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "4249214",
+                  "displayName": "Andre Jones Jr.",
+                  "firstName": "Andre",
+                  "lastName": "Jones Jr."
+                },
+                "stats": [
+                  "1",
+                  "1",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "4366349",
+                  "displayName": "Joe Andreessen",
+                  "firstName": "Joe",
+                  "lastName": "Andreessen"
+                },
+                "stats": [
+                  "1",
+                  "1",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "4428548",
+                  "displayName": "Javon Solomon",
+                  "firstName": "Javon",
+                  "lastName": "Solomon"
+                },
+                "stats": [
+                  "1",
+                  "1",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "4044133",
+                  "displayName": "Sam Franklin Jr.",
+                  "firstName": "Sam",
+                  "lastName": "Franklin Jr."
+                },
+                "stats": [
+                  "1",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "4239997",
+                  "displayName": "Baylon Spector",
+                  "firstName": "Baylon",
+                  "lastName": "Spector"
+                },
+                "stats": [
+                  "1",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "3051389",
+                  "displayName": "Joey Bosa",
+                  "firstName": "Joey",
+                  "lastName": "Bosa"
+                },
+                "stats": [
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "1",
+                  "0"
+                ]
+              }
+            ]
+          },
+          {
+            "name": "interceptions",
+            "labels": [
+              "INT",
+              "YDS",
+              "TD"
+            ],
+            "athletes": [
+              {
+                "athlete": {
+                  "id": "2978313",
+                  "displayName": "Shaq Thompson",
+                  "firstName": "Shaq",
+                  "lastName": "Thompson"
+                },
+                "stats": [
+                  "1",
+                  "19",
+                  "0"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "4676004",
+                  "displayName": "Cole Bishop",
+                  "firstName": "Cole",
+                  "lastName": "Bishop"
+                },
+                "stats": [
+                  "1",
+                  "2",
+                  "0"
+                ]
+              }
+            ]
+          },
+          {
+            "name": "kickReturns",
+            "labels": [
+              "NO",
+              "YDS",
+              "AVG",
+              "LONG",
+              "TD"
+            ],
+            "athletes": [
+              {
+                "athlete": {
+                  "id": "4429501",
+                  "displayName": "Ray Davis",
+                  "firstName": "Ray",
+                  "lastName": "Davis"
+                },
+                "stats": [
+                  "4",
+                  "119",
+                  "29.8",
+                  "34",
+                  "0"
+                ]
+              }
+            ]
+          },
+          {
+            "name": "puntReturns",
+            "labels": [
+              "NO",
+              "YDS",
+              "AVG",
+              "LONG",
+              "TD"
+            ],
+            "athletes": []
+          },
+          {
+            "name": "kicking",
+            "labels": [
+              "FG",
+              "PCT",
+              "LONG",
+              "XP",
+              "PTS"
+            ],
+            "athletes": [
+              {
+                "athlete": {
+                  "id": "11122",
+                  "displayName": "Matt Prater",
+                  "firstName": "Matt",
+                  "lastName": "Prater"
+                },
+                "stats": [
+                  "2/2",
+                  "100.0",
+                  "50",
+                  "3/3",
+                  "9"
+                ]
+              }
+            ]
+          },
+          {
+            "name": "punting",
+            "labels": [
+              "NO",
+              "YDS",
+              "AVG",
+              "TB",
+              "In 20",
+              "LONG"
+            ],
+            "athletes": [
+              {
+                "athlete": {
+                  "id": "4035685",
+                  "displayName": "Mitch Wishnowsky",
+                  "firstName": "Mitch",
+                  "lastName": "Wishnowsky"
+                },
+                "stats": [
+                  "3",
+                  "130",
+                  "43.3",
+                  "0",
+                  "1",
+                  "47"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "team": {
+          "id": "30",
+          "abbreviation": "JAX"
+        },
+        "statistics": [
+          {
+            "name": "passing",
+            "labels": [
+              "C/ATT",
+              "YDS",
+              "AVG",
+              "TD",
+              "INT",
+              "SACKS",
+              "QBR",
+              "RTG"
+            ],
+            "athletes": [
+              {
+                "athlete": {
+                  "id": "4360310",
+                  "displayName": "Trevor Lawrence",
+                  "firstName": "Trevor",
+                  "lastName": "Lawrence"
+                },
+                "stats": [
+                  "18/30",
+                  "207",
+                  "6.9",
+                  "3",
+                  "2",
+                  "1-2",
+                  "30.0",
+                  "86.4"
+                ]
+              }
+            ]
+          },
+          {
+            "name": "rushing",
+            "labels": [
+              "CAR",
+              "YDS",
+              "AVG",
+              "TD",
+              "LONG"
+            ],
+            "athletes": [
+              {
+                "athlete": {
+                  "id": "4239996",
+                  "displayName": "Travis Etienne Jr.",
+                  "firstName": "Travis",
+                  "lastName": "Etienne Jr."
+                },
+                "stats": [
+                  "10",
+                  "67",
+                  "6.7",
+                  "0",
+                  "26"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "4882093",
+                  "displayName": "Bhayshul Tuten",
+                  "firstName": "Bhayshul",
+                  "lastName": "Tuten"
+                },
+                "stats": [
+                  "4",
+                  "51",
+                  "12.8",
+                  "0",
+                  "20"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "4360310",
+                  "displayName": "Trevor Lawrence",
+                  "firstName": "Trevor",
+                  "lastName": "Lawrence"
+                },
+                "stats": [
+                  "6",
+                  "31",
+                  "5.2",
+                  "0",
+                  "18"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "4911851",
+                  "displayName": "LeQuint Allen Jr.",
+                  "firstName": "LeQuint",
+                  "lastName": "Allen Jr."
+                },
+                "stats": [
+                  "1",
+                  "3",
+                  "3.0",
+                  "0",
+                  "3"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "4432620",
+                  "displayName": "Parker Washington",
+                  "firstName": "Parker",
+                  "lastName": "Washington"
+                },
+                "stats": [
+                  "2",
+                  "2",
+                  "1.0",
+                  "0",
+                  "5"
+                ]
+              }
+            ]
+          },
+          {
+            "name": "receiving",
+            "labels": [
+              "REC",
+              "YDS",
+              "AVG",
+              "TD",
+              "LONG",
+              "TGTS"
+            ],
+            "athletes": [
+              {
+                "athlete": {
+                  "id": "4432620",
+                  "displayName": "Parker Washington",
+                  "firstName": "Parker",
+                  "lastName": "Washington"
+                },
+                "stats": [
+                  "7",
+                  "107",
+                  "15.3",
+                  "1",
+                  "34",
+                  "12"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "4239996",
+                  "displayName": "Travis Etienne Jr.",
+                  "firstName": "Travis",
+                  "lastName": "Etienne Jr."
+                },
+                "stats": [
+                  "5",
+                  "49",
+                  "9.8",
+                  "1",
+                  "14",
+                  "5"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "4432773",
+                  "displayName": "Brian Thomas Jr.",
+                  "firstName": "Brian",
+                  "lastName": "Thomas Jr."
+                },
+                "stats": [
+                  "2",
+                  "21",
+                  "10.5",
+                  "1",
+                  "18",
+                  "2"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "3916433",
+                  "displayName": "Jakobi Meyers",
+                  "firstName": "Jakobi",
+                  "lastName": "Meyers"
+                },
+                "stats": [
+                  "1",
+                  "12",
+                  "12.0",
+                  "0",
+                  "12",
+                  "4"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "4911851",
+                  "displayName": "LeQuint Allen Jr.",
+                  "firstName": "LeQuint",
+                  "lastName": "Allen Jr."
+                },
+                "stats": [
+                  "1",
+                  "9",
+                  "9.0",
+                  "0",
+                  "9",
+                  "1"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "4430539",
+                  "displayName": "Brenton Strange",
+                  "firstName": "Brenton",
+                  "lastName": "Strange"
+                },
+                "stats": [
+                  "2",
+                  "9",
+                  "4.5",
+                  "0",
+                  "9",
+                  "5"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "3134353",
+                  "displayName": "Tim Patrick",
+                  "firstName": "Tim",
+                  "lastName": "Patrick"
+                },
+                "stats": [
+                  "0",
+                  "0",
+                  "0.0",
+                  "0",
+                  "0",
+                  "1"
+                ]
+              }
+            ]
+          },
+          {
+            "name": "fumbles",
+            "labels": [
+              "FUM",
+              "LOST",
+              "REC"
+            ],
+            "athletes": [
+              {
+                "athlete": {
+                  "id": "4243256",
+                  "displayName": "Devin Lloyd",
+                  "firstName": "Devin",
+                  "lastName": "Lloyd"
+                },
+                "stats": [
+                  "0",
+                  "0",
+                  "1"
+                ]
+              }
+            ]
+          },
+          {
+            "name": "defensive",
+            "labels": [
+              "TOT",
+              "SOLO",
+              "SACKS",
+              "TFL",
+              "PD",
+              "QB HTS",
+              "TD"
+            ],
+            "athletes": [
+              {
+                "athlete": {
+                  "id": "2970716",
+                  "displayName": "Eric Murray",
+                  "firstName": "Eric",
+                  "lastName": "Murray"
+                },
+                "stats": [
+                  "7",
+                  "4",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "4243256",
+                  "displayName": "Devin Lloyd",
+                  "firstName": "Devin",
+                  "lastName": "Lloyd"
+                },
+                "stats": [
+                  "6",
+                  "5",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "4242149",
+                  "displayName": "Montaric Brown",
+                  "firstName": "Montaric",
+                  "lastName": "Brown"
+                },
+                "stats": [
+                  "6",
+                  "4",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "4429168",
+                  "displayName": "Antonio Johnson",
+                  "firstName": "Antonio",
+                  "lastName": "Johnson"
+                },
+                "stats": [
+                  "6",
+                  "3",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "3050073",
+                  "displayName": "Foyesade Oluokun",
+                  "firstName": "Foyesade",
+                  "lastName": "Oluokun"
+                },
+                "stats": [
+                  "5",
+                  "3",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "4426349",
+                  "displayName": "Travon Walker",
+                  "firstName": "Travon",
+                  "lastName": "Walker"
+                },
+                "stats": [
+                  "5",
+                  "3",
+                  "0",
+                  "0",
+                  "0",
+                  "1",
+                  "0"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "3915239",
+                  "displayName": "Josh Hines-Allen",
+                  "firstName": "Josh",
+                  "lastName": "Hines-Allen"
+                },
+                "stats": [
+                  "4",
+                  "3",
+                  "1",
+                  "1",
+                  "0",
+                  "2",
+                  "0"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "3918331",
+                  "displayName": "Andrew Wingard",
+                  "firstName": "Andrew",
+                  "lastName": "Wingard"
+                },
+                "stats": [
+                  "4",
+                  "3",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "2971275",
+                  "displayName": "Arik Armstead",
+                  "firstName": "Arik",
+                  "lastName": "Armstead"
+                },
+                "stats": [
+                  "4",
+                  "2",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "4334300",
+                  "displayName": "Dennis Gardeck",
+                  "firstName": "Dennis",
+                  "lastName": "Gardeck"
+                },
+                "stats": [
+                  "3",
+                  "3",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "4426448",
+                  "displayName": "Jarrian Jones",
+                  "firstName": "Jarrian",
+                  "lastName": "Jones"
+                },
+                "stats": [
+                  "3",
+                  "3",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "3915520",
+                  "displayName": "DaVon Hamilton",
+                  "firstName": "DaVon",
+                  "lastName": "Hamilton"
+                },
+                "stats": [
+                  "3",
+                  "2",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "4361266",
+                  "displayName": "Greg Newsome II",
+                  "firstName": "Greg",
+                  "lastName": "Newsome II"
+                },
+                "stats": [
+                  "3",
+                  "2",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "3134316",
+                  "displayName": "Matt Dickerson",
+                  "firstName": "Matt",
+                  "lastName": "Dickerson"
+                },
+                "stats": [
+                  "2",
+                  "2",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "2979591",
+                  "displayName": "Austin Johnson",
+                  "firstName": "Austin",
+                  "lastName": "Johnson"
+                },
+                "stats": [
+                  "1",
+                  "1",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "4360310",
+                  "displayName": "Trevor Lawrence",
+                  "firstName": "Trevor",
+                  "lastName": "Lawrence"
+                },
+                "stats": [
+                  "1",
+                  "1",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "4572704",
+                  "displayName": "Branson Combs",
+                  "firstName": "Branson",
+                  "lastName": "Combs"
+                },
+                "stats": [
+                  "1",
+                  "1",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "4911851",
+                  "displayName": "LeQuint Allen Jr.",
+                  "firstName": "LeQuint",
+                  "lastName": "Allen Jr."
+                },
+                "stats": [
+                  "1",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0",
+                  "0"
+                ]
+              }
+            ]
+          },
+          {
+            "name": "interceptions",
+            "labels": [
+              "INT",
+              "YDS",
+              "TD"
+            ],
+            "athletes": []
+          },
+          {
+            "name": "kickReturns",
+            "labels": [
+              "NO",
+              "YDS",
+              "AVG",
+              "LONG",
+              "TD"
+            ],
+            "athletes": [
+              {
+                "athlete": {
+                  "id": "4882093",
+                  "displayName": "Bhayshul Tuten",
+                  "firstName": "Bhayshul",
+                  "lastName": "Tuten"
+                },
+                "stats": [
+                  "3",
+                  "49",
+                  "16.3",
+                  "21",
+                  "0"
+                ]
+              },
+              {
+                "athlete": {
+                  "id": "4911851",
+                  "displayName": "LeQuint Allen Jr.",
+                  "firstName": "LeQuint",
+                  "lastName": "Allen Jr."
+                },
+                "stats": [
+                  "1",
+                  "26",
+                  "26.0",
+                  "26",
+                  "0"
+                ]
+              }
+            ]
+          },
+          {
+            "name": "puntReturns",
+            "labels": [
+              "NO",
+              "YDS",
+              "AVG",
+              "LONG",
+              "TD"
+            ],
+            "athletes": []
+          },
+          {
+            "name": "kicking",
+            "labels": [
+              "FG",
+              "PCT",
+              "LONG",
+              "XP",
+              "PTS"
+            ],
+            "athletes": [
+              {
+                "athlete": {
+                  "id": "4686361",
+                  "displayName": "Cam Little",
+                  "firstName": "Cam",
+                  "lastName": "Little"
+                },
+                "stats": [
+                  "1/2",
+                  "50.0",
+                  "43",
+                  "3/3",
+                  "6"
+                ]
+              }
+            ]
+          },
+          {
+            "name": "punting",
+            "labels": [
+              "NO",
+              "YDS",
+              "AVG",
+              "TB",
+              "In 20",
+              "LONG"
+            ],
+            "athletes": [
+              {
+                "athlete": {
+                  "id": "3115480",
+                  "displayName": "Logan Cooke",
+                  "firstName": "Logan",
+                  "lastName": "Cooke"
+                },
+                "stats": [
+                  "2",
+                  "100",
+                  "50.0",
+                  "0",
+                  "1",
+                  "58"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "scoringPlays": [
+    {
+      "text": "Matt Prater 50 Yd Field Goal",
+      "type": {
+        "text": "Field Goal Good"
+      },
+      "team": {
+        "id": "2"
+      }
+    },
+    {
+      "text": "Brian Thomas Jr. 3 Yd pass from Trevor Lawrence (Cam Little Kick)",
+      "type": {
+        "text": "Passing Touchdown"
+      },
+      "team": {
+        "id": "30"
+      }
+    },
+    {
+      "text": "Josh Allen 2 Yd Rush (Matt Prater Kick)",
+      "type": {
+        "text": "Rushing Touchdown"
+      },
+      "team": {
+        "id": "2"
+      }
+    },
+    {
+      "text": "Matt Prater 47 Yd Field Goal",
+      "type": {
+        "text": "Field Goal Good"
+      },
+      "team": {
+        "id": "2"
+      }
+    },
+    {
+      "text": "Cam Little 43 Yd Field Goal",
+      "type": {
+        "text": "Field Goal Good"
+      },
+      "team": {
+        "id": "30"
+      }
+    },
+    {
+      "text": "Parker Washington 6 Yd pass from Trevor Lawrence (Cam Little Kick)",
+      "type": {
+        "text": "Passing Touchdown"
+      },
+      "team": {
+        "id": "30"
+      }
+    },
+    {
+      "text": "Dalton Kincaid 15 Yd pass from Josh Allen (Matt Prater Kick)",
+      "type": {
+        "text": "Passing Touchdown"
+      },
+      "team": {
+        "id": "2"
+      }
+    },
+    {
+      "text": "Travis Etienne Jr. 14 Yd pass from Trevor Lawrence (Cam Little Kick)",
+      "type": {
+        "text": "Passing Touchdown"
+      },
+      "team": {
+        "id": "30"
+      }
+    },
+    {
+      "text": "Josh Allen 1 Yd Rush (Matt Prater Kick)",
+      "type": {
+        "text": "Rushing Touchdown"
+      },
+      "team": {
+        "id": "2"
+      }
+    }
+  ],
+  "drives": {
+    "previous": [
+      {
+        "plays": [
+          {
+            "type": {
+              "text": "Field Goal Good"
+            },
+            "text": "M.Prater 50 yard field goal is GOOD, Center-R.Ferguson, Holder-M.Wishnowsky.",
+            "statYardage": 50
+          }
+        ]
+      },
+      {
+        "plays": [
+          {
+            "type": {
+              "text": "Field Goal Missed"
+            },
+            "text": "C.Little 54 yard field goal is No Good, Hit Left Upright, Center-R.Matiscik, Holder-L.Cooke.",
+            "statYardage": 54
+          }
+        ]
+      },
+      {
+        "plays": [
+          {
+            "type": {
+              "text": "Field Goal Good"
+            },
+            "text": "M.Prater 47 yard field goal is GOOD, Center-R.Ferguson, Holder-M.Wishnowsky.",
+            "statYardage": 47
+          }
+        ]
+      },
+      {
+        "plays": [
+          {
+            "type": {
+              "text": "Field Goal Good"
+            },
+            "text": "C.Little 43 yard field goal is GOOD, Center-R.Matiscik, Holder-L.Cooke.",
+            "statYardage": 43
+          }
+        ]
+      }
+    ]
+  }
+}

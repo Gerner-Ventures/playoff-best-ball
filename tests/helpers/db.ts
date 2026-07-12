@@ -1,9 +1,10 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Prisma } from "@prisma/client";
 import type { PlayerPosition } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 import { randomUUID } from "node:crypto";
 import { CURRENT_SEASON } from "@/domain/season";
+import { emptyStatLine, type StatLine } from "@/domain/stats/stat-line";
 
 function makeTestPrismaClient() {
   const connectionString = process.env.DATABASE_URL;
@@ -24,6 +25,8 @@ export async function resetDb() {
   await testDb.entry.deleteMany();
   await testDb.membership.deleteMany();
   await testDb.league.deleteMany();
+  await testDb.playerStat.deleteMany();
+  await testDb.nflGame.deleteMany();
   await testDb.player.deleteMany();
   await testDb.pushSubscription.deleteMany();
   await testDb.session.deleteMany();
@@ -58,6 +61,21 @@ export async function createTestPlayer(
       nflTeam: "KC",
       defaultRank: overrides.defaultRank ?? playerCounter,
     },
+  });
+}
+
+/** Upserts a stat line for a player-week; partial overrides merge over an empty line. */
+export async function setTestStat(
+  playerId: string,
+  week: number,
+  overrides: Partial<StatLine>,
+  season = CURRENT_SEASON,
+) {
+  const stats = { ...emptyStatLine(), ...overrides };
+  return testDb.playerStat.upsert({
+    where: { playerId_season_week: { playerId, season, week } },
+    create: { playerId, season, week, stats: stats as Prisma.InputJsonValue },
+    update: { stats: stats as Prisma.InputJsonValue },
   });
 }
 

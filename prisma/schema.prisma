@@ -157,6 +157,7 @@ model Player {
   updatedAt   DateTime         @updatedAt
   picks       DraftPick[]
   queueItems  DraftQueueItem[]
+  stats       PlayerStat[]
 
   @@unique([season, name, position])
   @@index([season, position])
@@ -224,4 +225,45 @@ model PushSubscription {
   createdAt DateTime @default(now())
 
   @@index([userId])
+}
+
+enum GameState {
+  SCHEDULED
+  IN_PROGRESS
+  FINAL
+}
+
+model NflGame {
+  id        String    @id @default(cuid())
+  season    Int
+  week      Int // OUR playoff week (1=WC..4=SB) — never ESPN's
+  eventId   String    @unique // ESPN event id
+  homeTeam  String
+  awayTeam  String
+  startsAt  DateTime
+  state     GameState @default(SCHEDULED)
+  homeScore Int       @default(0)
+  awayScore Int       @default(0)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([season, week])
+  @@index([state])
+}
+
+model PlayerStat {
+  id             String   @id @default(cuid())
+  // Restrict: stats are scoring history; deleting a player must never erase it.
+  player         Player   @relation(fields: [playerId], references: [id], onDelete: Restrict)
+  playerId       String
+  season         Int
+  week           Int // OUR playoff week
+  stats          Json // StatLine (see src/domain/stats/stat-line.ts)
+  eventId        String? // game correlation, when known
+  manualOverride Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([playerId, season, week])
+  @@index([season, week])
 }

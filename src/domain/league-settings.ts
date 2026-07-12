@@ -87,6 +87,8 @@ export const leagueSettingsSchema = z.object({
   overnightPause: z.boolean(),
   substitutionsEnabled: z.boolean(),
   entryFeeCents: z.number().int().nonnegative().nullable(), // display only, for dues tracking
+  /** Where members send dues (display only). No version bump: optional w/ default. */
+  venmoHandle: z.string().max(40).nullable().default(null),
   maxEntries: z.number().int().positive(),
 });
 export type LeagueSettings = z.infer<typeof leagueSettingsSchema>;
@@ -119,6 +121,7 @@ export function buildDefaultSettings(
     overnightPause: true,
     substitutionsEnabled: false,
     entryFeeCents: null,
+    venmoHandle: null,
     maxEntries: FREE_TIER_MAX_ENTRIES,
   };
 }

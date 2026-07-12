@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { testDb, resetDb, createTestUser } from "../../../tests/helpers/db";
 import { createLeague } from "./create-league";
+import { upgradeLeaguePremium } from "./upgrade-league";
 import { FreeLeagueLimitError } from "../errors";
 import { CURRENT_SEASON } from "../season";
 import { buildDefaultSettings } from "../league-settings";
@@ -87,6 +88,21 @@ describe("createLeague", () => {
         pickClockHours: 8,
       }),
     ).resolves.toMatchObject({ season: CURRENT_SEASON });
+  });
+
+  it("premium commissioners may run additional leagues", async () => {
+    const user = await createTestUser();
+    const first = await createLeague(testDb, {
+      userId: user.id, name: "First", teamName: "T",
+      scoringPreset: "standard", pickClockHours: 8,
+    });
+    await upgradeLeaguePremium(testDb, { leagueId: first.id });
+    await expect(
+      createLeague(testDb, {
+        userId: user.id, name: "Second", teamName: "T2",
+        scoringPreset: "standard", pickClockHours: 8,
+      }),
+    ).resolves.toBeTruthy();
   });
 
   it("allows commissioning a league even when a member of others", async () => {

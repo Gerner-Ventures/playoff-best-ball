@@ -17,16 +17,27 @@ export interface CreateLeagueInput {
 }
 
 export async function createLeague(db: PrismaClient, input: CreateLeagueInput) {
-  // TOCTOU: two concurrent calls could both pass this check. Accepted — soft
-  // monetization gate, low traffic; revisit if it's ever abused.
-  const existingFree = await db.league.count({
+  // "Multiple leagues per commissioner" is a premium benefit: buying Premium for
+  // any league this season unlocks creating more.
+  const premiumCount = await db.league.count({
     where: {
       season: CURRENT_SEASON,
-      tier: "FREE",
+      tier: "PREMIUM",
       memberships: { some: { userId: input.userId, role: "COMMISSIONER" } },
     },
   });
-  if (existingFree >= 1) throw new FreeLeagueLimitError();
+  if (premiumCount === 0) {
+    // TOCTOU: two concurrent calls could both pass this check. Accepted — soft
+    // monetization gate, low traffic; revisit if it's ever abused.
+    const existingFree = await db.league.count({
+      where: {
+        season: CURRENT_SEASON,
+        tier: "FREE",
+        memberships: { some: { userId: input.userId, role: "COMMISSIONER" } },
+      },
+    });
+    if (existingFree >= 1) throw new FreeLeagueLimitError();
+  }
 
   const settings = buildDefaultSettings(input.scoringPreset, input.pickClockHours);
 

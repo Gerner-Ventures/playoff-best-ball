@@ -41,7 +41,11 @@ export function CreateLeagueForm() {
         return;
       }
       const body = await res.json().catch(() => ({}));
-      setError(body.error ?? "Something went wrong.");
+      if (body.code === "PREMIUM_REQUIRED") {
+        setError((body.error ?? "Something went wrong.") + " Upgrade one of your leagues to Premium to run more.");
+      } else {
+        setError(body.error ?? "Something went wrong.");
+      }
     } catch {
       setError("Couldn't reach the server. Check your connection and try again.");
     } finally {

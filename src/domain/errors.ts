@@ -109,3 +109,9 @@ export class ScheduleTooFarOutError extends DomainError {
     super("Pick a start time within the next year.", "SCHEDULE_TOO_FAR_OUT");
   }
 }
+
+export class PremiumFeatureError extends DomainError {
+  constructor(feature: string) {
+    super(`${feature} is a Premium feature. Upgrade this league to unlock it.`, "PREMIUM_REQUIRED");
+  }
+}

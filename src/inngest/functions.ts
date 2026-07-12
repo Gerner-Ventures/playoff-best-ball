@@ -12,6 +12,7 @@ import { espnProvider } from "@/lib/stats/espn-provider";
 import { syncWeekStats } from "@/domain/stats/sync-week";
 import { CURRENT_SEASON, PLAYOFF_WEEKS } from "@/domain/season";
 import { findDueRecaps, findDuePreviews } from "@/domain/engagement/due-work";
+import { getEliminatedTeams } from "@/domain/stats/eliminated-teams";
 import { buildWeeklyRecap } from "@/domain/engagement/recap";
 import { getLeagueScores } from "@/lib/league-scores";
 import { roundPoints } from "@/domain/scoring/compute-points";
@@ -218,7 +219,6 @@ export const statsSyncDaily = inngest.createFunction(
  * Hourly engagement dispatcher: finds leagues owed a recap (week fully FINAL) or a
  * preview (games within 48h) and fans out one event per league × week. Watermarks
  * (lastRecapWeek/lastPreviewWeek) live on the league, so re-running is cheap and safe.
- * NOTE: `league/preview.due` has no handler yet (Task 5); Inngest drops unmatched events.
  */
 export const engagementCron = inngest.createFunction(
   { id: "engagement-cron", triggers: { cron: "0 * * * *" } },
@@ -317,4 +317,79 @@ export const sendLeagueRecap = inngest.createFunction(
   },
 );
 
-export const functions = [draftPickClock, notifyOnTheClock, notifyDraftComplete, draftScheduledStart, statsSyncLive, statsSyncDaily, engagementCron, sendLeagueRecap];
+/** One league's pre-weekend preview: each member's alive players in the upcoming week. */
+export const sendLeaguePreview = inngest.createFunction(
+  { id: "league-send-preview", triggers: { event: "league/preview.due" } },
+  async ({ event, step }) => {
+    const { leagueId, week } = event.data;
+    const claimed = await step.run("claim-watermark", async () => {
+      // Bump-first is deliberate: a crashed run loses at most one preview; the
+      // alternative — bump-last — double-sends on every retry storm.
+      const updated = await db.league.updateMany({
+        where: { id: leagueId, lastPreviewWeek: { lt: week } },
+        data: { lastPreviewWeek: week },
+      });
+      return updated.count === 1;
+    });
+    if (!claimed) return { skipped: true };
+
+    const loaded = await step.run("build", async () => {
+      const league = await db.league.findUniqueOrThrow({
+        where: { id: leagueId },
+        include: {
+          memberships: true,
+          entries: {
+            include: {
+              membership: { select: { userId: true } },
+              picks: { include: { player: { select: { name: true, position: true, nflTeam: true } } } },
+            },
+          },
+        },
+      });
+      const eliminated = await getEliminatedTeams(db, league.season);
+      const perUser = new Map<string, string[]>(); // userId → alive player labels, across all their entries
+      for (const entry of league.entries) {
+        const labels = entry.picks
+          .filter((p) => !eliminated.has(p.player.nflTeam))
+          .map((p) => `${p.player.name} (${p.player.position}, ${p.player.nflTeam})`);
+        const existing = perUser.get(entry.membership.userId) ?? [];
+        perUser.set(entry.membership.userId, [...existing, ...labels]);
+      }
+      const recipients = [];
+      for (const m of league.memberships) {
+        // (leagueId, userId) is unique on Membership, so this is one recipient per
+        // member — including members with no alive players (they get the chaos line).
+        recipients.push({
+          userId: m.userId,
+          players: [...new Set(perUser.get(m.userId) ?? [])],
+          recipient: await loadRecipient(db, m.userId),
+        });
+      }
+      return { leagueName: league.name, recipients };
+    });
+
+    const weekName = WEEK_NAMES[week] ?? `Week ${week}`;
+    const url = `${APP_URL}/leagues/${leagueId}`;
+    for (const { userId, players, recipient } of loaded.recipients) {
+      const notification = {
+        subject: `${loaded.leagueName}: your players this ${weekName} weekend`,
+        text: [
+          players.length > 0
+            ? `You have ${players.length} player${players.length === 1 ? "" : "s"} alive this week:\n${players.join("\n")}`
+            : "None of your players are still alive — root for chaos.",
+          `Leaderboard: ${url}`,
+        ].join("\n\n"),
+        smsText: `${loaded.leagueName}: ${players.length} of your players play this ${weekName} weekend. ${url}`,
+        url,
+      };
+      for (const channel of channelsFor(recipient)) {
+        await step.run(`send-${userId}-${channel}`, () =>
+          notifyVia(db, channel, recipient, notification),
+        );
+      }
+    }
+    return { skipped: false, week, recipients: loaded.recipients.length };
+  },
+);
+
+export const functions = [draftPickClock, notifyOnTheClock, notifyDraftComplete, draftScheduledStart, statsSyncLive, statsSyncDaily, engagementCron, sendLeagueRecap, sendLeaguePreview];

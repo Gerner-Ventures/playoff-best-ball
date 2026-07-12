@@ -43,3 +43,16 @@ export async function safeAnnounceDraftState(db: PrismaClient, leagueId: string)
     console.error(`[draft-events] failed to announce draft state for league ${leagueId}:`, err);
   }
 }
+
+/** Arms (or re-arms) the scheduled-start timer. Request-path safe: failures are logged;
+ * the schedule is still stored, and re-saving it re-arms the timer. */
+export async function safeAnnounceScheduledStart(leagueId: string, scheduledAt: Date): Promise<void> {
+  try {
+    await inngest.send({
+      name: "draft/schedule.set",
+      data: { leagueId, scheduledAt: scheduledAt.toISOString() },
+    });
+  } catch (err) {
+    console.error(`[draft-events] failed to arm scheduled start for league ${leagueId}:`, err);
+  }
+}

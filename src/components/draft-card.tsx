@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -9,15 +9,58 @@ export function DraftCard({
   isCommissioner,
   draftStatus, // "NOT_STARTED" | "ACTIVE" | "COMPLETE"
   entryCount,
+  draftScheduledAt,
 }: {
   leagueId: string;
   isCommissioner: boolean;
   draftStatus: "NOT_STARTED" | "ACTIVE" | "COMPLETE";
   entryCount: number;
+  draftScheduledAt: string | null;
 }) {
   const router = useRouter();
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
   const [error, setError] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
+  const [scheduledAt, setScheduledAt] = useState<string | null>(draftScheduledAt);
+  const [scheduleInput, setScheduleInput] = useState("");
+  const [busySchedule, setBusySchedule] = useState(false);
+
+  async function patchSchedule(value: string | null) {
+    setBusySchedule(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/leagues/${leagueId}/draft/schedule`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ scheduledAt: value }),
+      });
+      if (res.ok) {
+        const body = await res.json();
+        setScheduledAt(body.draftScheduledAt);
+        if (!body.draftScheduledAt) setScheduleInput("");
+      } else {
+        const body = await res.json().catch(() => ({}));
+        setError(body.error ?? "Something went wrong.");
+      }
+    } catch {
+      setError("Couldn't reach the server. Check your connection and try again.");
+    } finally {
+      setBusySchedule(false);
+    }
+  }
+
+  const saveSchedule = () => {
+    if (Number.isNaN(new Date(scheduleInput).getTime())) {
+      setError("Invalid date and time. Please select a valid date.");
+      return;
+    }
+    void patchSchedule(new Date(scheduleInput).toISOString());
+  };
+  const clearSchedule = () => void patchSchedule(null);
 
   async function start() {
     if (!window.confirm(`Start the draft with ${entryCount} teams? The order will be randomized and no one else can join.`)) return;
@@ -59,6 +102,44 @@ export function DraftCard({
         )}
         {entryCount < 2 && isCommissioner && (
           <p className="mt-2 text-sm text-gray-500">You need at least 2 teams to start.</p>
+        )}
+        {isCommissioner && (
+          <div className="mt-4 border-t pt-3">
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="font-medium">Or schedule the start</span>
+              <input
+                type="datetime-local"
+                value={scheduleInput}
+                onChange={(e) => setScheduleInput(e.target.value)}
+                className="rounded-lg border px-3 py-2"
+              />
+            </label>
+            <div className="mt-2 flex gap-2">
+              <button
+                type="button"
+                onClick={saveSchedule}
+                disabled={busySchedule || scheduleInput === ""}
+                className="rounded-lg border px-3 py-2 text-sm font-medium disabled:opacity-50"
+              >
+                {busySchedule ? "Saving…" : "Schedule"}
+              </button>
+              {scheduledAt && (
+                <button
+                  type="button"
+                  onClick={clearSchedule}
+                  disabled={busySchedule}
+                  className="rounded-lg border px-3 py-2 text-sm text-gray-500 disabled:opacity-50"
+                >
+                  Cancel schedule
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+        {mounted && scheduledAt && (
+          <p className="mt-2 text-sm text-gray-600">
+            Draft starts automatically {new Date(scheduledAt).toLocaleString()}.
+          </p>
         )}
         {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
       </div>

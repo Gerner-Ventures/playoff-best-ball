@@ -15,11 +15,13 @@ model User {
   emailVerified Boolean      @default(false)
   image         String?
   phone         String? // staged for Phase 2: SMS draft notifications ("text me when I'm on the clock")
+  smsOptIn      Boolean      @default(false) // "text me when I'm on the clock" — requires phone
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
   sessions      Session[]
   accounts      Account[]
   memberships   Membership[]
+  pushSubscriptions PushSubscription[]
 
   @@map("user")
 }
@@ -90,6 +92,7 @@ model League {
   tier        LeagueTier   @default(FREE)
   inviteCode  String       @unique
   settings    Json // LeagueSettings (see src/domain/league-settings.ts), versioned via settingsVersion key
+  draftScheduledAt DateTime? // commissioner-scheduled auto-start; a Draft row existing makes this moot
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   memberships Membership[]
@@ -209,4 +212,16 @@ model DraftQueueItem {
 
   @@unique([entryId, playerId])
   @@index([entryId, rank])
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  endpoint  String   @unique // one row per browser subscription; re-subscribing upserts
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }

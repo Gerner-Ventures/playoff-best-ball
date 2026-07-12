@@ -25,6 +25,7 @@ export async function resetDb() {
   await testDb.membership.deleteMany();
   await testDb.league.deleteMany();
   await testDb.player.deleteMany();
+  await testDb.pushSubscription.deleteMany();
   await testDb.session.deleteMany();
   await testDb.account.deleteMany();
   await testDb.verification.deleteMany();

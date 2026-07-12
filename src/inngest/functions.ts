@@ -7,7 +7,7 @@ import { channelsFor, loadRecipient, notifyVia } from "@/lib/notify";
 import { autodraftCurrentPick } from "@/domain/draft/autodraft";
 import { announceDraftState } from "@/lib/draft-events";
 import { startDraftForLeague } from "@/domain/draft/start-draft";
-import { DomainError } from "@/domain/errors";
+import { DomainError, DraftAlreadyStartedError } from "@/domain/errors";
 
 /**
  * Pick clock: sleeps until the turn's deadline, then autodrafts if (and only if)
@@ -128,6 +128,8 @@ export const draftScheduledStart = inngest.createFunction(
         await startDraftForLeague(db, { leagueId: league.id });
         return "started";
       } catch (err) {
+        // A concurrent timer/human start winning the race is success, not a failure to report.
+        if (err instanceof DraftAlreadyStartedError) return "noop";
         if (err instanceof DomainError) return `blocked:${err.message}`;
         throw err;
       }
@@ -138,21 +140,26 @@ export const draftScheduledStart = inngest.createFunction(
     }
     if (typeof outcome === "string" && outcome.startsWith("blocked:")) {
       // Couldn't start (too few teams, thin pool) — tell the commissioner instead of retrying.
-      await step.run("notify-commissioner", async () => {
+      const loaded = await step.run("load-commissioner", async () => {
         const commish = await db.membership.findFirstOrThrow({
           where: { leagueId: event.data.leagueId, role: "COMMISSIONER" },
           include: { league: { select: { name: true } } },
         });
-        const recipient = await loadRecipient(db, commish.userId);
-        const notification = {
-          subject: `${commish.league.name}: the scheduled draft couldn't start`,
-          text: `${outcome.slice("blocked:".length)}\n\nFix it up and start the draft from your league page: ${APP_URL}/leagues/${event.data.leagueId}`,
-          url: `${APP_URL}/leagues/${event.data.leagueId}`,
+        return {
+          recipient: await loadRecipient(db, commish.userId),
+          leagueName: commish.league.name,
         };
-        for (const channel of channelsFor(recipient)) {
-          await notifyVia(db, channel, recipient, notification);
-        }
       });
+      const notification = {
+        subject: `${loaded.leagueName}: the scheduled draft couldn't start`,
+        text: `${outcome.slice("blocked:".length)}\n\nFix it up and start the draft from your league page: ${APP_URL}/leagues/${event.data.leagueId}`,
+        url: `${APP_URL}/leagues/${event.data.leagueId}`,
+      };
+      for (const channel of channelsFor(loaded.recipient)) {
+        await step.run(`notify-commissioner-${channel}`, () =>
+          notifyVia(db, channel, loaded.recipient, notification),
+        );
+      }
     }
   },
 );

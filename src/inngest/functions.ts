@@ -206,6 +206,7 @@ export const statsSyncDaily = inngest.createFunction(
         syncWeekStats(db, espnProvider, { season: CURRENT_SEASON, week }),
       );
     }
+    return { weeks: Object.values(PLAYOFF_WEEKS) };
   },
 );
 

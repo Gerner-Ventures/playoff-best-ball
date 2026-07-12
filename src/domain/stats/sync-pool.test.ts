@@ -46,6 +46,7 @@ describe("syncPlayerPool", () => {
     await syncPlayerPool(testDb, provider, { season: CURRENT_SEASON, teams: ["KC", "BUF"] });
     const again = await syncPlayerPool(testDb, provider, { season: CURRENT_SEASON, teams: ["KC", "BUF"] });
     expect(again.created).toBe(0);
+    expect(again.updated).toBe(3);
     expect(await testDb.player.count()).toBe(3);
   });
 });

@@ -41,10 +41,13 @@ export async function syncWeekStats(
   for (const g of games) {
     if (g.state === "SCHEDULED") continue;
     const lines = await provider.fetchGameStats(g.eventId);
+    // One query per game, not per line — Neon round-trips add up during the 2-minute live cron.
+    const players = await db.player.findMany({
+      where: { season: input.season, externalId: { in: lines.map((l) => l.externalId) } },
+    });
+    const playerByExternalId = new Map(players.map((p) => [p.externalId, p]));
     for (const line of lines) {
-      const player = await db.player.findFirst({
-        where: { season: input.season, externalId: line.externalId },
-      });
+      const player = playerByExternalId.get(line.externalId);
       if (!player) {
         unmatched.push(`${line.name} (${line.externalId})`);
         continue;

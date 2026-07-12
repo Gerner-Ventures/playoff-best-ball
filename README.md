@@ -24,7 +24,6 @@ Add your Stripe test keys to `.env` (see `.env.example`):
 ```
 STRIPE_SECRET_KEY=sk_test_<your-test-key>
 STRIPE_WEBHOOK_SECRET=whsec_<your-webhook-secret>
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_xxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
 In a separate terminal, forward webhook events to the local server:
@@ -37,13 +36,14 @@ When `STRIPE_SECRET_KEY` is empty the upgrade button returns an error — Premiu
 
 ### Google AdSense (ads on free tier)
 
-Set the AdSense publisher ID in `.env`:
+Set the AdSense client and slot in `.env` (see `.env.example`):
 
 ```
-NEXT_PUBLIC_ADSENSE_PUBLISHER_ID=ca-pub-xxxxxxxxxxxxxxxx
+NEXT_PUBLIC_ADSENSE_CLIENT=ca-pub-xxxxxxxxxxxxxxxx
+NEXT_PUBLIC_ADSENSE_SLOT=xxxxxxxxxxxxxxxx
 ```
 
-When this variable is empty the ad slot components render nothing — safe for local dev.
+When these variables are empty the ad slot components render nothing — safe for local dev.
 
 ### SMS notifications (Twilio)
 

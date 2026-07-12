@@ -58,6 +58,8 @@ export function computePoints(stats: StatLine, s: ScoringSettings): ScoreBreakdo
   return { passing, rushing, receiving, kicking, defense, misc, total };
 }
 
+// Number.EPSILON fixes IEEE-754 round-down artifacts at .xx5 boundaries (legacy
+// lacked this, so outputs can differ from prototype history by 0.01 at such edges).
 export function roundPoints(points: number): number {
   return Math.round((points + Number.EPSILON) * 100) / 100;
 }

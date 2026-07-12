@@ -1,14 +1,15 @@
 import { z } from "zod";
 
 const points = z.number().finite();
+const divisor = z.number().finite().positive();
 
 export const scoringSettingsSchema = z.object({
-  passYardsPerPoint: points,
+  passYardsPerPoint: divisor,
   passTd: points,
   passInt: points,
-  rushYardsPerPoint: points,
+  rushYardsPerPoint: divisor,
   rushTd: points,
-  recYardsPerPoint: points,
+  recYardsPerPoint: divisor,
   recTd: points,
   ppr: points,
   twoPtConv: points,

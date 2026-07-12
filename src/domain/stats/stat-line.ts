@@ -4,6 +4,9 @@ import { z } from "zod";
 // Fantasy points are computed per league from this + the league's ScoringSettings.
 // Field names deliberately match the prototype's PlayerStats (see the port in
 // src/domain/scoring/compute-points.ts) so the ESPN parser port maps 1:1.
+// Two deliberate divergences from legacy: `interceptions` → `defInterceptions`
+// (mirrors the scoring setting name), and fgMade/fgMissed hold plain distance
+// numbers, not {distance} objects — the ESPN parser port must map both.
 
 const n = z.number().finite().default(0);
 

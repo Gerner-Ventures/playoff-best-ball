@@ -1,0 +1,469 @@
+{
+  "team": {
+    "abbreviation": "KC",
+    "displayName": "Kansas City Chiefs"
+  },
+  "athletes": [
+    {
+      "position": "offense",
+      "items": [
+        {
+          "id": "4912218",
+          "displayName": "Cyrus Allen",
+          "position": {
+            "abbreviation": "WR",
+            "name": "Wide Receiver"
+          }
+        },
+        {
+          "id": "5093923",
+          "displayName": "Andrew Armstrong",
+          "position": {
+            "abbreviation": "WR",
+            "name": "Wide Receiver"
+          }
+        },
+        {
+          "id": "4566190",
+          "displayName": "Kahlil Benson",
+          "position": {
+            "abbreviation": "OT",
+            "name": "Offensive Tackle"
+          }
+        },
+        {
+          "id": "4431196",
+          "displayName": "Jake Briningstool",
+          "position": {
+            "abbreviation": "TE",
+            "name": "Tight End"
+          }
+        },
+        {
+          "id": "4689988",
+          "displayName": "Jason Brownlee",
+          "position": {
+            "abbreviation": "WR",
+            "name": "Wide Receiver"
+          }
+        },
+        {
+          "id": "4885466",
+          "displayName": "Jeff Caldwell",
+          "position": {
+            "abbreviation": "WR",
+            "name": "Wide Receiver"
+          }
+        },
+        {
+          "id": "4043039",
+          "displayName": "Mike Caliendo",
+          "position": {
+            "abbreviation": "G",
+            "name": "Guard"
+          }
+        },
+        {
+          "id": "5155179",
+          "displayName": "Jacob De Jesus",
+          "position": {
+            "abbreviation": "WR",
+            "name": "Wide Receiver"
+          }
+        },
+        {
+          "id": "4362478",
+          "displayName": "Emari Demercado",
+          "position": {
+            "abbreviation": "RB",
+            "name": "Running Back"
+          }
+        },
+        {
+          "id": "4571627",
+          "displayName": "Ethan Driskell",
+          "position": {
+            "abbreviation": "OT",
+            "name": "Offensive Tackle"
+          }
+        },
+        {
+          "id": "4702908",
+          "displayName": "Omari Evans",
+          "position": {
+            "abbreviation": "WR",
+            "name": "Wide Receiver"
+          }
+        },
+        {
+          "id": "4362887",
+          "displayName": "Justin Fields",
+          "position": {
+            "abbreviation": "QB",
+            "name": "Quarterback"
+          }
+        },
+        {
+          "id": "5144457",
+          "displayName": "Chukwuebuka Godrick",
+          "position": {
+            "abbreviation": "OT",
+            "name": "Offensive Tackle"
+          }
+        },
+        {
+          "id": "4240472",
+          "displayName": "Noah Gray",
+          "position": {
+            "abbreviation": "TE",
+            "name": "Tight End"
+          }
+        },
+        {
+          "id": "4708490",
+          "displayName": "John Michael Gyllenborg",
+          "position": {
+            "abbreviation": "TE",
+            "name": "Tight End"
+          }
+        },
+        {
+          "id": "4571810",
+          "displayName": "C.J. Hanson",
+          "position": {
+            "abbreviation": "G",
+            "name": "Guard"
+          }
+        },
+        {
+          "id": "4431142",
+          "displayName": "Jimmy Holiday",
+          "position": {
+            "abbreviation": "WR",
+            "name": "Wide Receiver"
+          }
+        },
+        {
+          "id": "4832955",
+          "displayName": "Emmett Johnson",
+          "position": {
+            "abbreviation": "RB",
+            "name": "Running Back"
+          }
+        },
+        {
+          "id": "15847",
+          "displayName": "Travis Kelce",
+          "position": {
+            "abbreviation": "TE",
+            "name": "Tight End"
+          }
+        },
+        {
+          "id": "4874510",
+          "displayName": "Xavier Loyd",
+          "position": {
+            "abbreviation": "WR",
+            "name": "Wide Receiver"
+          }
+        },
+        {
+          "id": "3139477",
+          "displayName": "Patrick Mahomes",
+          "position": {
+            "abbreviation": "QB",
+            "name": "Quarterback"
+          }
+        },
+        {
+          "id": "4043041",
+          "displayName": "Jaylon Moore",
+          "position": {
+            "abbreviation": "OT",
+            "name": "Offensive Tackle"
+          }
+        },
+        {
+          "id": "4567747",
+          "displayName": "Garrett Nussmeier",
+          "position": {
+            "abbreviation": "QB",
+            "name": "Quarterback"
+          }
+        },
+        {
+          "id": "4682626",
+          "displayName": "Pete Nygra",
+          "position": {
+            "abbreviation": "OT",
+            "name": "Offensive Tackle"
+          }
+        },
+        {
+          "id": "4044111",
+          "displayName": "Chris Oladokun",
+          "position": {
+            "abbreviation": "QB",
+            "name": "Quarterback"
+          }
+        },
+        {
+          "id": "4685489",
+          "displayName": "Jaydn Ott",
+          "position": {
+            "abbreviation": "RB",
+            "name": "Running Back"
+          }
+        },
+        {
+          "id": "4911517",
+          "displayName": "Mason Pline",
+          "position": {
+            "abbreviation": "TE",
+            "name": "Tight End"
+          }
+        },
+        {
+          "id": "5153070",
+          "displayName": "Esa Pole",
+          "position": {
+            "abbreviation": "OT",
+            "name": "Offensive Tackle"
+          }
+        },
+        {
+          "id": "4372716",
+          "displayName": "Nikko Remigio",
+          "position": {
+            "abbreviation": "WR",
+            "name": "Wide Receiver"
+          }
+        },
+        {
+          "id": "4428331",
+          "displayName": "Rashee Rice",
+          "position": {
+            "abbreviation": "WR",
+            "name": "Wide Receiver"
+          }
+        },
+        {
+          "id": "5082630",
+          "displayName": "Jalen Royals",
+          "position": {
+            "abbreviation": "WR",
+            "name": "Wide Receiver"
+          }
+        },
+        {
+          "id": "4569659",
+          "displayName": "Josh Simmons",
+          "position": {
+            "abbreviation": "OT",
+            "name": "Offensive Tackle"
+          }
+        },
+        {
+          "id": "4596602",
+          "displayName": "Brashard Smith",
+          "position": {
+            "abbreviation": "RB",
+            "name": "Running Back"
+          }
+        },
+        {
+          "id": "4430825",
+          "displayName": "EJ Smith",
+          "position": {
+            "abbreviation": "RB",
+            "name": "Running Back"
+          }
+        },
+        {
+          "id": "4242459",
+          "displayName": "Trey Smith",
+          "position": {
+            "abbreviation": "G",
+            "name": "Guard"
+          }
+        },
+        {
+          "id": "4431595",
+          "displayName": "Kingsley Suamataia",
+          "position": {
+            "abbreviation": "OT",
+            "name": "Offensive Tackle"
+          }
+        },
+        {
+          "id": "4682692",
+          "displayName": "Josh Thompson",
+          "position": {
+            "abbreviation": "G",
+            "name": "Guard"
+          }
+        },
+        {
+          "id": "4362921",
+          "displayName": "Tyquan Thornton",
+          "position": {
+            "abbreviation": "WR",
+            "name": "Wide Receiver"
+          }
+        },
+        {
+          "id": "4370876",
+          "displayName": "Matt Waletzko",
+          "position": {
+            "abbreviation": "OT",
+            "name": "Offensive Tackle"
+          }
+        },
+        {
+          "id": "4567048",
+          "displayName": "Kenneth Walker III",
+          "position": {
+            "abbreviation": "RB",
+            "name": "Running Back"
+          }
+        },
+        {
+          "id": "4685784",
+          "displayName": "Tre Watson",
+          "position": {
+            "abbreviation": "TE",
+            "name": "Tight End"
+          }
+        },
+        {
+          "id": "4430723",
+          "displayName": "Jared Wiley",
+          "position": {
+            "abbreviation": "TE",
+            "name": "Tight End"
+          }
+        },
+        {
+          "id": "4683062",
+          "displayName": "Xavier Worthy",
+          "position": {
+            "abbreviation": "WR",
+            "name": "Wide Receiver"
+          }
+        },
+        {
+          "id": "4710706",
+          "displayName": "Jadon Canady",
+          "position": {
+            "abbreviation": "CB",
+            "name": "Cornerback"
+          }
+        },
+        {
+          "id": "4880124",
+          "displayName": "Mansoor Delane",
+          "position": {
+            "abbreviation": "CB",
+            "name": "Cornerback"
+          }
+        },
+        {
+          "id": "4567399",
+          "displayName": "Kaiir Elam",
+          "position": {
+            "abbreviation": "CB",
+            "name": "Cornerback"
+          }
+        },
+        {
+          "id": "4035433",
+          "displayName": "Kristian Fulton",
+          "position": {
+            "abbreviation": "CB",
+            "name": "Cornerback"
+          }
+        },
+        {
+          "id": "4602648",
+          "displayName": "Kevin Knowles",
+          "position": {
+            "abbreviation": "CB",
+            "name": "Cornerback"
+          }
+        },
+        {
+          "id": "4291489",
+          "displayName": "Kader Kohou",
+          "position": {
+            "abbreviation": "CB",
+            "name": "Cornerback"
+          }
+        },
+        {
+          "id": "4880312",
+          "displayName": "D'Arco Perkins-McAllister",
+          "position": {
+            "abbreviation": "CB",
+            "name": "Cornerback"
+          }
+        },
+        {
+          "id": "5084574",
+          "displayName": "Bryce Phillips",
+          "position": {
+            "abbreviation": "CB",
+            "name": "Cornerback"
+          }
+        },
+        {
+          "id": "4428383",
+          "displayName": "Chris Roland-Wallace",
+          "position": {
+            "abbreviation": "CB",
+            "name": "Cornerback"
+          }
+        },
+        {
+          "id": "5278708",
+          "displayName": "Melvin Smith Jr.",
+          "position": {
+            "abbreviation": "CB",
+            "name": "Cornerback"
+          }
+        },
+        {
+          "id": "4040432",
+          "displayName": "L'Jarius Sneed",
+          "position": {
+            "abbreviation": "CB",
+            "name": "Cornerback"
+          }
+        },
+        {
+          "id": "5083530",
+          "displayName": "Zelmar Vedder",
+          "position": {
+            "abbreviation": "CB",
+            "name": "Cornerback"
+          }
+        },
+        {
+          "id": "4610705",
+          "displayName": "Nohl Williams",
+          "position": {
+            "abbreviation": "CB",
+            "name": "Cornerback"
+          }
+        },
+        {
+          "id": "3055899",
+          "displayName": "Harrison Butker",
+          "position": {
+            "abbreviation": "PK",
+            "name": "Place kicker"
+          }
+        }
+      ]
+    }
+  ]
+}

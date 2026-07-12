@@ -10,6 +10,8 @@ import { startDraftForLeague } from "@/domain/draft/start-draft";
 import { DomainError, DraftAlreadyStartedError } from "@/domain/errors";
 import { espnProvider } from "@/lib/stats/espn-provider";
 import { syncWeekStats } from "@/domain/stats/sync-week";
+import { oddsProvider } from "@/lib/odds/odds-api-provider";
+import { syncTeamOdds } from "@/domain/odds/sync-odds";
 import { CURRENT_SEASON, PLAYOFF_WEEKS } from "@/domain/season";
 import { findDueRecaps, findDuePreviews } from "@/domain/engagement/due-work";
 import { getEliminatedTeams } from "@/domain/stats/eliminated-teams";
@@ -211,6 +213,13 @@ export const statsSyncDaily = inngest.createFunction(
         syncWeekStats(db, espnProvider, { season: CURRENT_SEASON, week }),
       );
     }
+    await step.run("sync-odds", async () => {
+      if (!oddsProvider) {
+        console.warn("[odds] ODDS_API_KEY not set — skipping odds sync");
+        return { skipped: true };
+      }
+      return syncTeamOdds(db, oddsProvider, { season: CURRENT_SEASON });
+    });
     return { weeks: Object.values(PLAYOFF_WEEKS) };
   },
 );

@@ -27,8 +27,15 @@ describe("buildDefaultSettings", () => {
     expect(settings.substitutionsEnabled).toBe(false);
     expect(settings.overnightPause).toBe(true);
     expect(settings.settingsVersion).toBe(1);
+    expect(settings.venmoHandle).toBeNull();
     // round-trips through its own schema (what we store in League.settings JSON)
     expect(leagueSettingsSchema.parse(settings)).toEqual(settings);
+  });
+
+  it("parses pre-4A settings JSON (no venmoHandle) via the default", () => {
+    const legacy = { ...buildDefaultSettings("standard", 8) } as Record<string, unknown>;
+    delete legacy.venmoHandle;
+    expect(leagueSettingsSchema.parse(legacy).venmoHandle).toBeNull();
   });
 });
 

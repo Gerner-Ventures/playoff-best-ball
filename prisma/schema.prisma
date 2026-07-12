@@ -95,9 +95,11 @@ model League {
   draftScheduledAt DateTime? // commissioner-scheduled auto-start; a Draft row existing makes this moot
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
-  memberships Membership[]
-  entries     Entry[]
-  draft       Draft?
+  memberships  Membership[]
+  entries      Entry[]
+  draft        Draft?
+  purchases    LeaguePurchase[]
+  duesInterest DuesCollectionInterest[]
 
   @@index([season])
 }
@@ -126,6 +128,7 @@ model Entry {
   membership   Membership       @relation(fields: [membershipId, leagueId], references: [id, leagueId], onDelete: Cascade)
   membershipId String
   name         String // team name
+  duesPaid     Boolean          @default(false) // commissioner-toggled; money never touches us
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
   picks        DraftPick[]
@@ -266,4 +269,32 @@ model PlayerStat {
 
   @@unique([playerId, season, week])
   @@index([season, week])
+}
+
+enum PurchaseStatus {
+  COMPLETED
+  REFUNDED // set manually via Stripe dashboard ops for now
+}
+
+model LeaguePurchase {
+  id              String         @id @default(cuid())
+  league          League         @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  leagueId        String
+  purchasedById   String // userId; not a relation — purchases outlive membership changes
+  stripeSessionId String         @unique // idempotency key for webhook retries
+  amountCents     Int
+  status          PurchaseStatus @default(COMPLETED)
+  createdAt       DateTime       @default(now())
+
+  @@index([leagueId])
+}
+
+model DuesCollectionInterest {
+  id        String   @id @default(cuid())
+  league    League   @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  leagueId  String
+  userId    String
+  createdAt DateTime @default(now())
+
+  @@unique([leagueId, userId]) // one waitlist signup per commissioner per league
 }

@@ -28,7 +28,7 @@ export async function POST(req: Request) {
   } catch (err) {
     if (err instanceof FreeLeagueLimitError) {
       // 402: premium required — Stripe checkout replaces this message in Phase 4
-      return NextResponse.json({ error: err.message, code: "PREMIUM_REQUIRED" }, { status: 402 });
+      return NextResponse.json({ error: err.message, code: err.code }, { status: 402 });
     }
     throw err;
   }

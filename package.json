@@ -12,13 +12,16 @@
     "db:push": "dotenv -e .env -- prisma db push",
     "db:push:test": "dotenv -e .env.test -- prisma db push",
     "test:e2e": "playwright test",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:seed:players": "dotenv -e .env -- tsx prisma/seed-players-cli.ts",
+    "db:seed:players:test": "dotenv -e .env.test -- tsx prisma/seed-players-cli.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "@types/pg": "^8.20.0",
     "better-auth": "^1.6.23",
+    "inngest": "^4.12.1",
     "nanoid": "^5.1.16",
     "next": "16.2.10",
     "pg": "^8.22.0",
@@ -41,6 +44,7 @@
     "prettier": "^3.9.5",
     "prisma": "^7.8.0",
     "tailwindcss": "^4",
+    "tsx": "^4.23.0",
     "typescript": "^5",
     "vitest": "^4.1.10"
   }

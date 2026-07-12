@@ -94,6 +94,7 @@ model League {
   updatedAt   DateTime     @updatedAt
   memberships Membership[]
   entries     Entry[]
+  draft       Draft?
 
   @@index([season])
 }
@@ -110,22 +111,102 @@ model Membership {
   entries   Entry[]
 
   @@unique([leagueId, userId])
+  @@unique([id, leagueId])
   @@index([userId])
 }
 
-// Entry.leagueId is denormalized from membership.leagueId for league-scoped
-// queries (cap counts, league pages). Write paths MUST set it from the
-// membership's league; there is no DB-level enforcement.
+// Entry.leagueId is denormalized from membership.leagueId for league-scoped queries. The composite FK (membershipId, leagueId) → Membership(id, leagueId) makes the DB reject any mismatch.
 model Entry {
-  id           String     @id @default(cuid())
-  league       League     @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  id           String           @id @default(cuid())
+  league       League           @relation(fields: [leagueId], references: [id], onDelete: Cascade)
   leagueId     String
-  membership   Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  membership   Membership       @relation(fields: [membershipId, leagueId], references: [id, leagueId], onDelete: Cascade)
   membershipId String
   name         String // team name
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  picks        DraftPick[]
+  queueItems   DraftQueueItem[]
 
   @@index([leagueId])
   @@index([membershipId])
+}
+
+// Player position — no FLEX here; FLEX is a roster slot type (see league-settings).
+enum PlayerPosition {
+  QB
+  RB
+  WR
+  TE
+  K
+  DST
+}
+
+model Player {
+  id          String           @id @default(cuid())
+  season      Int // NFL season year, matches League.season
+  name        String
+  position    PlayerPosition
+  nflTeam     String // e.g. "KC"
+  defaultRank Int // autodraft fallback order (1 = best); projections replace this in Phase 3
+  externalId  String? // ESPN id, staged for Phase 3 StatsProvider
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  picks       DraftPick[]
+  queueItems  DraftQueueItem[]
+
+  @@unique([season, name, position])
+  @@index([season, position])
+  @@index([season, defaultRank])
+}
+
+enum DraftStatus {
+  ACTIVE
+  COMPLETE
+}
+
+model Draft {
+  id               String      @id @default(cuid())
+  league           League      @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  leagueId         String      @unique // one draft per league
+  status           DraftStatus @default(ACTIVE)
+  currentPickIndex Int         @default(0)
+  currentDeadline  DateTime? // null once COMPLETE
+  order            Json // ordered entryId[] (round-1 order); validated by draftOrderSchema
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  picks            DraftPick[]
+}
+
+model DraftPick {
+  id          String   @id @default(cuid())
+  draft       Draft    @relation(fields: [draftId], references: [id], onDelete: Cascade)
+  draftId     String
+  pickIndex   Int // 0-based overall pick number
+  entry       Entry    @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  entryId     String
+  // Restrict: deleting a player must never erase draft history (Phase 3 manages the pool)
+  player      Player   @relation(fields: [playerId], references: [id], onDelete: Restrict)
+  playerId    String
+  slotIndex   Int // index into the league's settings.rosterSlots
+  autodrafted Boolean  @default(false)
+  madeAt      DateTime @default(now())
+
+  @@unique([draftId, pickIndex]) // two racing picks for the same turn: loser gets P2002
+  @@unique([draftId, playerId]) // player exclusivity, DB-enforced
+  @@unique([draftId, entryId, slotIndex]) // a roster slot is filled at most once
+  @@index([entryId])
+}
+
+model DraftQueueItem {
+  id        String   @id @default(cuid())
+  entry     Entry    @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  entryId   String
+  player    Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  playerId  String
+  rank      Int // 1 = draft first
+  createdAt DateTime @default(now())
+
+  @@unique([entryId, playerId])
+  @@index([entryId, rank])
 }

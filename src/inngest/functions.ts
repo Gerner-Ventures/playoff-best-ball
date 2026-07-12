@@ -6,6 +6,8 @@ import { inngest } from "@/lib/inngest";
 import { channelsFor, loadRecipient, notifyVia } from "@/lib/notify";
 import { autodraftCurrentPick } from "@/domain/draft/autodraft";
 import { announceDraftState } from "@/lib/draft-events";
+import { startDraftForLeague } from "@/domain/draft/start-draft";
+import { DomainError } from "@/domain/errors";
 
 /**
  * Pick clock: sleeps until the turn's deadline, then autodrafts if (and only if)
@@ -107,4 +109,52 @@ export const notifyDraftComplete = inngest.createFunction(
   },
 );
 
-export const functions = [draftPickClock, notifyOnTheClock, notifyDraftComplete];
+/**
+ * Scheduled auto-start. Stale-timer safe: reschedules/cancellations change
+ * league.draftScheduledAt, so an old timer's ISO no longer matches and it no-ops.
+ */
+export const draftScheduledStart = inngest.createFunction(
+  { id: "draft-scheduled-start", triggers: { event: "draft/schedule.set" } },
+  async ({ event, step }) => {
+    await step.sleepUntil("until-start", event.data.scheduledAt);
+    const outcome = await step.run("start-if-still-scheduled", async () => {
+      const league = await db.league.findUnique({
+        where: { id: event.data.leagueId },
+        include: { draft: { select: { id: true } } },
+      });
+      if (!league || league.draft) return "noop";
+      if (league.draftScheduledAt?.toISOString() !== event.data.scheduledAt) return "noop";
+      try {
+        await startDraftForLeague(db, { leagueId: league.id });
+        return "started";
+      } catch (err) {
+        if (err instanceof DomainError) return `blocked:${err.message}`;
+        throw err;
+      }
+    });
+    if (outcome === "started") {
+      await step.run("announce", () => announceDraftState(db, event.data.leagueId));
+      return;
+    }
+    if (typeof outcome === "string" && outcome.startsWith("blocked:")) {
+      // Couldn't start (too few teams, thin pool) — tell the commissioner instead of retrying.
+      await step.run("notify-commissioner", async () => {
+        const commish = await db.membership.findFirstOrThrow({
+          where: { leagueId: event.data.leagueId, role: "COMMISSIONER" },
+          include: { league: { select: { name: true } } },
+        });
+        const recipient = await loadRecipient(db, commish.userId);
+        const notification = {
+          subject: `${commish.league.name}: the scheduled draft couldn't start`,
+          text: `${outcome.slice("blocked:".length)}\n\nFix it up and start the draft from your league page: ${APP_URL}/leagues/${event.data.leagueId}`,
+          url: `${APP_URL}/leagues/${event.data.leagueId}`,
+        };
+        for (const channel of channelsFor(recipient)) {
+          await notifyVia(db, channel, recipient, notification);
+        }
+      });
+    }
+  },
+);
+
+export const functions = [draftPickClock, notifyOnTheClock, notifyDraftComplete, draftScheduledStart];

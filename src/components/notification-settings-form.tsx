@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { pushSupport, subscribeToPush, unsubscribeFromPush } from "@/lib/push-client";
+import { hasPushSubscription, pushSupport, subscribeToPush, unsubscribeFromPush } from "@/lib/push-client";
 
 interface Props {
   initial: { phone: string | null; smsOptIn: boolean; pushDeviceCount: number };
@@ -46,8 +46,9 @@ export function NotificationSettingsForm({ initial }: Props) {
     setBusy(true);
     setError(null);
     try {
+      const alreadySubscribed = await hasPushSubscription();
       await subscribeToPush();
-      setPushDevices((n) => n + 1);
+      if (!alreadySubscribed) setPushDevices((n) => n + 1);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't enable push.");
     } finally {

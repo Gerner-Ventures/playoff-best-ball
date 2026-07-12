@@ -22,8 +22,9 @@ export async function subscribeToPush(): Promise<void> {
   if (permission !== "granted") {
     throw new Error("Notifications are blocked for this site — allow them in your browser settings.");
   }
-  const registration = await navigator.serviceWorker.ready;
-  const subscription = await registration.pushManager.subscribe({
+  const reg = await navigator.serviceWorker.getRegistration("/sw.js");
+  if (!reg) throw new Error("Service worker not registered — try reloading the page.");
+  const subscription = await reg.pushManager.subscribe({
     userVisibleOnly: true,
     applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!) as BufferSource,
   });
@@ -35,10 +36,18 @@ export async function subscribeToPush(): Promise<void> {
   if (!res.ok) throw new Error("Couldn't save the subscription — try again.");
 }
 
+/** Whether THIS browser already has a live push subscription. */
+export async function hasPushSubscription(): Promise<boolean> {
+  const reg = await navigator.serviceWorker.getRegistration("/sw.js");
+  const sub = await reg?.pushManager.getSubscription();
+  return Boolean(sub);
+}
+
 /** Unsubscribes THIS browser (other devices keep their subscriptions). */
 export async function unsubscribeFromPush(): Promise<void> {
-  const registration = await navigator.serviceWorker.ready;
-  const subscription = await registration.pushManager.getSubscription();
+  const reg = await navigator.serviceWorker.getRegistration("/sw.js");
+  if (!reg) return;
+  const subscription = await reg.pushManager.getSubscription();
   if (!subscription) return;
   const endpoint = subscription.endpoint;
   await subscription.unsubscribe();

@@ -21,9 +21,14 @@ export async function POST(req: Request) {
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
+    if (!session.metadata?.leagueId) {
+      // Not ours (shared Stripe account) — acknowledge and move on.
+      console.warn(`[stripe] ignoring checkout.session.completed without leagueId metadata: ${session.id}`);
+      return NextResponse.json({ received: true });
+    }
     await handleCheckoutCompleted(db, {
       sessionId: session.id,
-      leagueId: session.metadata?.leagueId ?? "",
+      leagueId: session.metadata.leagueId,
       userId: session.metadata?.userId ?? "",
       amountCents: session.amount_total ?? 0,
     });

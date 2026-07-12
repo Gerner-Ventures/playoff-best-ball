@@ -48,4 +48,38 @@ describe("handleCheckoutCompleted", () => {
       }),
     ).rejects.toThrow(/missing leagueId/i);
   });
+
+  it("P2002 race arbitration — pre-existing row returned without error (idempotent path)", async () => {
+    const { user, league } = await setup();
+    // Pre-create the purchase to simulate the concurrent winner.
+    const preCreated = await testDb.leaguePurchase.create({
+      data: {
+        leagueId: league.id,
+        purchasedById: user.id,
+        stripeSessionId: "cs_race_1",
+        amountCents: 2500,
+      },
+    });
+    // Calling with the same sessionId should return the existing row without error.
+    const result = await handleCheckoutCompleted(testDb, {
+      sessionId: "cs_race_1", leagueId: league.id, userId: user.id, amountCents: 2500,
+    });
+    expect(result.id).toBe(preCreated.id);
+    expect(await testDb.leaguePurchase.count()).toBe(1);
+  });
+
+  it("refund-candidate path — duplicate premium purchase is recorded and league stays premium", async () => {
+    const { user, league } = await setup();
+    // First purchase: upgrades the league to PREMIUM.
+    await handleCheckoutCompleted(testDb, {
+      sessionId: "cs_first", leagueId: league.id, userId: user.id, amountCents: 2500,
+    });
+    // Second purchase with a DIFFERENT session id: league already premium — refund candidate.
+    await handleCheckoutCompleted(testDb, {
+      sessionId: "cs_duplicate", leagueId: league.id, userId: user.id, amountCents: 2500,
+    });
+    const updated = await testDb.league.findUniqueOrThrow({ where: { id: league.id } });
+    expect(updated.tier).toBe("PREMIUM");
+    expect(await testDb.leaguePurchase.count()).toBe(2);
+  });
 });

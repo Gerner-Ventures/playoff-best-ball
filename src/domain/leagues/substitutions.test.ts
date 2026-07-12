@@ -151,5 +151,13 @@ describe("substitutions", () => {
         originalPlayerId: pick.playerId, substitutePlayerId: validSub.id, effectiveWeek: 2,
       }),
     ).rejects.toThrow(SubstitutionsDisabledError);
+
+    // guard order: a non-commissioner is rejected as such even while subs are disabled
+    await expect(
+      setSubstitution(testDb, {
+        leagueId: league.id, userId: friend.id, entryId: entries[0].id,
+        originalPlayerId: pick.playerId, substitutePlayerId: validSub.id, effectiveWeek: 2,
+      }),
+    ).rejects.toThrow(NotCommissionerError);
   });
 });

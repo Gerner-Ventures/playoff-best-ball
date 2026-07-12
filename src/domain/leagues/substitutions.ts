@@ -12,7 +12,8 @@ export interface SetSubstitutionInput {
   entryId: string;
   originalPlayerId: string;
   substitutePlayerId: string;
-  effectiveWeek: number; // 1..4; validated at the route
+  effectiveWeek: number; // 1..4; validated by the substitution route's zod schema
+  // (src/app/api/leagues/[leagueId]/entries/[entryId]/substitution/route.ts)
   reason?: string;
 }
 

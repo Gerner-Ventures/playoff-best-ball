@@ -53,6 +53,7 @@ export default async function LeagueSettingsPage({
             scoring: settings.scoring,
             entryFeeCents: settings.entryFeeCents,
             venmoHandle: settings.venmoHandle,
+            substitutionsEnabled: settings.substitutionsEnabled,
           }}
           duesInterestJoined={league.duesInterest.length > 0}
         />

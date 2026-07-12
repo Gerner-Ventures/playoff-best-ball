@@ -32,6 +32,7 @@ export async function syncWeekStats(
         state: g.state, homeScore: g.homeScore, awayScore: g.awayScore,
       },
       update: {
+        homeTeam: g.homeTeam, awayTeam: g.awayTeam,
         startsAt: g.startsAt, state: g.state,
         homeScore: g.homeScore, awayScore: g.awayScore,
       },
@@ -46,12 +47,31 @@ export async function syncWeekStats(
       where: { season: input.season, externalId: { in: lines.map((l) => l.externalId) } },
     });
     const playerByExternalId = new Map(players.map((p) => [p.externalId, p]));
+
+    // Batch-load existing PlayerStat rows to check for manual overrides.
+    const matchedPlayerIds = players.map((p) => p.id);
+    const existingStats = matchedPlayerIds.length
+      ? await db.playerStat.findMany({
+          where: {
+            playerId: { in: matchedPlayerIds },
+            season: input.season,
+            week: input.week,
+          },
+          select: { playerId: true, manualOverride: true },
+        })
+      : [];
+    const manualOverridePlayerIds = new Set(
+      existingStats.filter((s) => s.manualOverride).map((s) => s.playerId),
+    );
+
     for (const line of lines) {
       const player = playerByExternalId.get(line.externalId);
       if (!player) {
         unmatched.push(`${line.name} (${line.externalId})`);
         continue;
       }
+      // Skip rows protected by a manual override — they survive until an admin clears the flag.
+      if (manualOverridePlayerIds.has(player.id)) continue;
       await db.playerStat.upsert({
         where: {
           playerId_season_week: { playerId: player.id, season: input.season, week: input.week },

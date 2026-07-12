@@ -27,7 +27,20 @@ export default async function EntryPage({
   });
   if (!league.draft) notFound();
 
-  const scores = await getLeagueScores(db, leagueId);
+  let scores;
+  try {
+    scores = await getLeagueScores(db, leagueId);
+  } catch {
+    return (
+      <>
+        <AppNav userName={user.name} />
+        <main className="mx-auto max-w-2xl p-6">
+          <h1 className="text-2xl font-bold">Something&apos;s wrong with this league</h1>
+          <p className="mt-2 text-gray-600">Ask your commissioner to contact support.</p>
+        </main>
+      </>
+    );
+  }
   const entry = scores.entries.find((e) => e.entryId === entryId);
   if (!entry) notFound();
   const rank = scores.entries.findIndex((e) => e.entryId === entryId) + 1;

@@ -18,11 +18,11 @@ async function getJson(url: string): Promise<unknown> {
 }
 
 export class EspnStatsProvider implements StatsProvider {
-  async fetchWeekGames(_season: number, week: number): Promise<ProviderGame[]> {
+  async fetchWeekGames(season: number, week: number): Promise<ProviderGame[]> {
     const espnWeek = ESPN_WEEK[week];
     if (!espnWeek) throw new Error(`invalid playoff week ${week}`);
-    const data = await getJson(`${BASE}/scoreboard?seasontype=3&week=${espnWeek}`);
-    return parseScoreboard(data, week);
+    const data = await getJson(`${BASE}/scoreboard?seasontype=3&week=${espnWeek}&dates=${season}`);
+    return parseScoreboard(data, week, season);
   }
 
   async fetchGameStats(eventId: string): Promise<ProviderPlayerStats[]> {

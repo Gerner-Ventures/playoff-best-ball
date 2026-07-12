@@ -8,10 +8,9 @@ import type {
 import { emptyStatLine, type StatLine } from "@/domain/stats/stat-line";
 
 // ---------------------------------------------------------------------------
-// Minimal ESPN response shapes — trimmed from legacy/src/lib/espn/types.ts,
-// keeping only the fields this parser touches. Everything is optional because
-// ESPN's public API is untyped and occasionally omits subtrees; the parser is
-// defensive and skips malformed pieces rather than throwing.
+// Minimal ESPN response shapes — trimmed from the prototype's ESPN types (deleted with legacy/).
+// Everything is optional because ESPN's public API is untyped and occasionally omits subtrees;
+// the parser is defensive and skips malformed pieces rather than throwing.
 // Known gap: blockedKicks is never populated (no reliable boxscore source identified) — tracked for Phase 5.
 // ---------------------------------------------------------------------------
 
@@ -37,6 +36,7 @@ interface EspnEvent {
   competitions?: EspnCompetition[];
 }
 interface EspnScoreboard {
+  season?: { year?: number };
   events?: EspnEvent[];
 }
 
@@ -127,6 +127,17 @@ function mapPosition(abbr: string | undefined): PlayerPosition | null {
   }
 }
 
+// Known ESPN abbreviation mismatches vs. our canonical set — extend as mismatches surface via the unmatched report.
+const TEAM_ALIASES: Record<string, string> = {
+  JAC: "JAX",
+  WSH: "WAS",
+};
+
+function normalizeTeam(abbr: string): string {
+  const upper = abbr.toUpperCase();
+  return TEAM_ALIASES[upper] ?? upper;
+}
+
 const STATE_MAP: Record<string, ProviderGameState> = {
   pre: "SCHEDULED",
   in: "IN_PROGRESS",
@@ -145,8 +156,23 @@ function lastNameToken(name: string): string {
 // parseScoreboard
 // ---------------------------------------------------------------------------
 
-export function parseScoreboard(scoreboard: unknown, ourWeek: number): ProviderGame[] {
+export function parseScoreboard(
+  scoreboard: unknown,
+  ourWeek: number,
+  expectedSeason?: number,
+): ProviderGame[] {
   const data = scoreboard as EspnScoreboard;
+
+  if (expectedSeason !== undefined) {
+    const payloadYear = data?.season?.year;
+    if (payloadYear !== expectedSeason) {
+      console.warn(
+        `[espn] scoreboard season mismatch: wanted ${expectedSeason} got ${payloadYear} — returning no games`,
+      );
+      return [];
+    }
+  }
+
   const events = data?.events;
   if (!Array.isArray(events)) {
     console.warn("[espn-parse] scoreboard has no events array");
@@ -167,8 +193,8 @@ export function parseScoreboard(scoreboard: unknown, ourWeek: number): ProviderG
 
       const home = competitors.find((c) => c.homeAway === "home");
       const away = competitors.find((c) => c.homeAway === "away");
-      const homeTeam = home?.team?.abbreviation;
-      const awayTeam = away?.team?.abbreviation;
+      const homeTeam = home?.team?.abbreviation ? normalizeTeam(home.team.abbreviation) : undefined;
+      const awayTeam = away?.team?.abbreviation ? normalizeTeam(away.team.abbreviation) : undefined;
       if (!homeTeam || !awayTeam) {
         console.warn(`[espn-parse] skipping event ${event.id}: missing team abbreviations`);
         continue;
@@ -205,7 +231,7 @@ export function parseGameStats(summary: unknown): ProviderPlayerStats[] {
   const teamIdToAbbrev = new Map<string, string>();
   const headerComp = data?.header?.competitions?.[0];
   for (const c of headerComp?.competitors ?? []) {
-    if (c.id && c.team?.abbreviation) teamIdToAbbrev.set(c.id, c.team.abbreviation);
+    if (c.id && c.team?.abbreviation) teamIdToAbbrev.set(c.id, normalizeTeam(c.team.abbreviation));
   }
 
   // Accumulate ONE stat line per athlete (athletes recur across categories).
@@ -223,7 +249,7 @@ export function parseGameStats(summary: unknown): ProviderPlayerStats[] {
   };
 
   for (const section of box?.players ?? []) {
-    const teamAbbrev = teamIdToAbbrev.get(section.team?.id ?? "") ?? section.team?.abbreviation ?? "";
+    const teamAbbrev = normalizeTeam(teamIdToAbbrev.get(section.team?.id ?? "") ?? section.team?.abbreviation ?? "");
     for (const category of section.statistics ?? []) {
       const labels = category.labels ?? [];
       for (const entry of category.athletes ?? []) {
@@ -429,7 +455,8 @@ function deriveDstLines(
   for (const teamData of teams) {
     try {
       const teamId = teamData.team?.id;
-      const abbrev = teamData.team?.abbreviation ?? (teamId ? teamIdToAbbrev.get(teamId) : "");
+      const rawAbbrev = teamData.team?.abbreviation ?? (teamId ? teamIdToAbbrev.get(teamId) : "");
+      const abbrev = rawAbbrev ? normalizeTeam(rawAbbrev) : rawAbbrev;
       if (!teamId || !abbrev) {
         console.warn("[espn-parse] skipping DST: missing team id/abbrev");
         continue;
@@ -484,6 +511,7 @@ function deriveDstLines(
 
 export function parseRoster(roster: unknown, team: string): ProviderPoolPlayer[] {
   const data = roster as EspnRoster;
+  const normalizedTeam = normalizeTeam(team);
   const players: ProviderPoolPlayer[] = [];
 
   for (const group of data?.athletes ?? []) {
@@ -499,7 +527,7 @@ export function parseRoster(roster: unknown, team: string): ProviderPoolPlayer[]
           externalId: item.id,
           name: item.displayName,
           position,
-          nflTeam: team,
+          nflTeam: normalizedTeam,
         });
       } catch (err) {
         console.warn("[espn-parse] skipping malformed roster item:", err);
@@ -509,10 +537,10 @@ export function parseRoster(roster: unknown, team: string): ProviderPoolPlayer[]
 
   // Append the team DST pseudo-player.
   players.push({
-    externalId: `dst-${team}`,
-    name: `${data?.team?.displayName ?? team} D/ST`,
+    externalId: `dst-${normalizedTeam}`,
+    name: `${data?.team?.displayName ?? normalizedTeam} D/ST`,
     position: "DST",
-    nflTeam: team,
+    nflTeam: normalizedTeam,
   });
 
   return players;

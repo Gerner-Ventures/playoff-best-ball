@@ -26,9 +26,9 @@ export async function PUT(req: Request) {
   }
   const row = await db.playerStat.upsert({
     where: { playerId_season_week: { playerId, season: CURRENT_SEASON, week } },
-    create: { playerId, season: CURRENT_SEASON, week, stats: stats as Prisma.InputJsonValue },
-    update: { stats: stats as Prisma.InputJsonValue },
+    create: { playerId, season: CURRENT_SEASON, week, stats: stats as Prisma.InputJsonValue, manualOverride: true },
+    update: { stats: stats as Prisma.InputJsonValue, manualOverride: true },
   });
-  console.warn(`[admin] manual stat override by ${user!.email}: player ${playerId} week ${week}`);
-  return NextResponse.json({ ok: true, id: row.id });
+  console.warn(`[admin] manual stat override by ${user!.email}: player ${playerId} week ${week} (sync-protected)`);
+  return NextResponse.json({ ok: true, id: row.id, manualOverride: true });
 }

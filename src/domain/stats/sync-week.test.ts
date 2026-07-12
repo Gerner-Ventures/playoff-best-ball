@@ -70,4 +70,17 @@ describe("syncWeekStats", () => {
     expect(result.statLines).toBe(0);
     expect(await testDb.playerStat.count()).toBe(0);
   });
+
+  it("never clobbers a manual override", async () => {
+    const mahomes = await createTestPlayer("QB", { name: "Patrick Mahomes" });
+    await testDb.player.update({ where: { id: mahomes.id }, data: { externalId: "e1" } });
+    await syncWeekStats(testDb, makeProvider(150), { season: CURRENT_SEASON, week: 1 });
+    await testDb.playerStat.updateMany({
+      where: { playerId: mahomes.id },
+      data: { manualOverride: true, stats: { ...emptyStatLine(), passYards: 999 } },
+    });
+    await syncWeekStats(testDb, makeProvider(300), { season: CURRENT_SEASON, week: 1 });
+    const stat = await testDb.playerStat.findFirstOrThrow();
+    expect(parseStatLine(stat.stats).passYards).toBe(999); // survived the sync
+  });
 });

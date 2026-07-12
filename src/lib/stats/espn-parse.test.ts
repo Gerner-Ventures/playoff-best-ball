@@ -19,6 +19,16 @@ describe("parseScoreboard", () => {
     }
   });
 
+  it("returns games when expectedSeason matches fixture season.year (2025)", () => {
+    const games = parseScoreboard(fixture("espn-scoreboard.json"), 1, 2025);
+    expect(games.length).toBeGreaterThan(0);
+  });
+
+  it("returns [] and warns when expectedSeason does not match fixture season.year", () => {
+    const games = parseScoreboard(fixture("espn-scoreboard.json"), 1, 2026);
+    expect(games).toEqual([]);
+  });
+
   // Concrete values — 2025 season Wild Card round (dates=2025 fixture).
   // BUF at JAX, event 401772977, FINAL: home JAX 24, away BUF 27.
   it("maps the BUF-JAX wild card game with correct teams, scores, and FINAL state", () => {

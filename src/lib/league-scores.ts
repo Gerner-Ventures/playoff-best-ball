@@ -39,6 +39,16 @@ export interface LeagueScores {
   }[];
 }
 
+/** The player who actually scores for this pick in this week, after substitutions. */
+export function effectivePlayerForWeek(
+  pick: { playerId: string },
+  week: number,
+  subsByOriginal: Map<string, { substitutePlayerId: string; effectiveWeek: number }>,
+): string {
+  const sub = subsByOriginal.get(pick.playerId);
+  return sub && week >= sub.effectiveWeek ? sub.substitutePlayerId : pick.playerId;
+}
+
 /** Leaderboard + weekly optimal lineups, computed at read from raw stats × league scoring. */
 export async function getLeagueScores(db: PrismaClient, leagueId: string): Promise<LeagueScores> {
   const league = await db.league.findUniqueOrThrow({
@@ -49,6 +59,11 @@ export async function getLeagueScores(db: PrismaClient, leagueId: string): Promi
         include: {
           membership: { include: { user: { select: { name: true } } } },
           picks: { include: { player: { select: { id: true, name: true, position: true, nflTeam: true } } } },
+          substitutions: {
+            include: {
+              substitutePlayer: { select: { id: true, name: true, position: true, nflTeam: true } },
+            },
+          },
         },
       },
     },
@@ -56,10 +71,17 @@ export async function getLeagueScores(db: PrismaClient, leagueId: string): Promi
   const settings = parseLeagueSettings(league.settings);
   const eliminated = await getEliminatedTeams(db, league.season);
 
-  // One stats read for the whole league: every drafted player's lines, all weeks.
-  const draftedPlayerIds = [...new Set(league.entries.flatMap((e) => e.picks.map((p) => p.playerId)))];
+  // One stats read for the whole league: every drafted OR substituted-in player's lines, all weeks.
+  const scoringPlayerIds = [
+    ...new Set(
+      league.entries.flatMap((e) => [
+        ...e.picks.map((p) => p.playerId),
+        ...e.substitutions.map((s) => s.substitutePlayerId),
+      ]),
+    ),
+  ];
   const statRows = await db.playerStat.findMany({
-    where: { season: league.season, playerId: { in: draftedPlayerIds } },
+    where: { season: league.season, playerId: { in: scoringPlayerIds } },
   });
   const pointsByPlayerWeek = new Map<string, number>();
   for (const row of statRows) {
@@ -73,12 +95,25 @@ export async function getLeagueScores(db: PrismaClient, leagueId: string): Promi
 
   const entries = league.entries.map((entry) => {
     const playerById = new Map(entry.picks.map((p) => [p.playerId, p.player]));
+    for (const sub of entry.substitutions) {
+      playerById.set(sub.substitutePlayerId, sub.substitutePlayer);
+    }
+    const subsByOriginal = new Map(
+      entry.substitutions.map((s) => [
+        s.originalPlayerId,
+        { substitutePlayerId: s.substitutePlayerId, effectiveWeek: s.effectiveWeek },
+      ]),
+    );
     const weeks: EntryWeekScore[] = ALL_WEEKS.map((week) => {
-      const scored: ScoredPlayer[] = entry.picks.map((pick) => ({
-        playerId: pick.playerId,
-        position: pick.player.position,
-        points: pointsByPlayerWeek.get(`${pick.playerId}:${week}`) ?? 0,
-      }));
+      const scored: ScoredPlayer[] = entry.picks.map((pick) => {
+        const playerId = effectivePlayerForWeek(pick, week, subsByOriginal);
+        return {
+          playerId,
+          // Substitutes share the original's position by domain rule.
+          position: playerById.get(playerId)?.position ?? pick.player.position,
+          points: pointsByPlayerWeek.get(`${playerId}:${week}`) ?? 0,
+        };
+      });
       const { slots, total } = optimalLineup(settings.rosterSlots, scored);
       const usedIds = new Set(slots.map((s) => s.playerId).filter(Boolean));
       return {
@@ -105,13 +140,18 @@ export async function getLeagueScores(db: PrismaClient, leagueId: string): Promi
           })),
       };
     });
+    // The CURRENT roster: substitutions resolved as of the latest playoff week.
+    const latestWeek = Math.max(...ALL_WEEKS);
+    const currentRoster = entry.picks.map(
+      (pick) => playerById.get(effectivePlayerForWeek(pick, latestWeek, subsByOriginal))!,
+    );
     return {
       entryId: entry.id,
       name: entry.name,
       ownerName: entry.membership.user.name,
       weeks,
       grandTotal: roundPoints(weeks.reduce((sum, w) => sum + w.total, 0)),
-      alivePlayers: [...playerById.values()].filter((p) => !eliminated.has(p.nflTeam)).length,
+      alivePlayers: currentRoster.filter((p) => !eliminated.has(p.nflTeam)).length,
     };
   });
 

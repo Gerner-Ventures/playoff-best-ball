@@ -1,33 +1,41 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import {
-  testDb, resetDb, createTestUser, createStandardPool, setTestStat,
+  testDb, resetDb, createTestUser, createTestPlayer, createStandardPool, setTestStat,
 } from "./helpers/db";
 import { createLeague } from "@/domain/leagues/create-league";
 import { joinLeague } from "@/domain/leagues/join-league";
+import { updateLeagueSettings } from "@/domain/leagues/update-settings";
+import { setSubstitution } from "@/domain/leagues/substitutions";
 import { startDraft } from "@/domain/draft/start-draft";
 import { autodraftCurrentPick } from "@/domain/draft/autodraft";
 import { getLeagueScores } from "@/lib/league-scores";
 import { CURRENT_SEASON, PLAYOFF_WEEKS } from "@/domain/season";
 
+/** Two-entry league, fully drafted from a standard pool. */
+async function setupDraftedLeague() {
+  const commish = await createTestUser("Commish");
+  const friend = await createTestUser("Friend");
+  const league = await createLeague(testDb, {
+    userId: commish.id, name: "L", teamName: "CT",
+    scoringPreset: "half_ppr", pickClockHours: 8,
+  });
+  await joinLeague(testDb, { userId: friend.id, inviteCode: league.inviteCode, teamName: "FT" });
+  await createStandardPool(2);
+  const entries = await testDb.entry.findMany({ where: { leagueId: league.id }, orderBy: { createdAt: "asc" } });
+  await startDraft(testDb, {
+    leagueId: league.id, userId: commish.id, order: entries.map((e) => e.id),
+  });
+  for (let i = 0; i < 18; i++) {
+    await autodraftCurrentPick(testDb, { leagueId: league.id, expectedPickIndex: i });
+  }
+  return { commish, friend, league, entries };
+}
+
 describe("getLeagueScores", () => {
   beforeEach(resetDb);
 
   it("computes weekly optimal lineups and a sorted leaderboard", async () => {
-    const commish = await createTestUser("Commish");
-    const friend = await createTestUser("Friend");
-    const league = await createLeague(testDb, {
-      userId: commish.id, name: "L", teamName: "CT",
-      scoringPreset: "half_ppr", pickClockHours: 8,
-    });
-    await joinLeague(testDb, { userId: friend.id, inviteCode: league.inviteCode, teamName: "FT" });
-    await createStandardPool(2);
-    const entries = await testDb.entry.findMany({ where: { leagueId: league.id }, orderBy: { createdAt: "asc" } });
-    await startDraft(testDb, {
-      leagueId: league.id, userId: commish.id, order: entries.map((e) => e.id),
-    });
-    for (let i = 0; i < 18; i++) {
-      await autodraftCurrentPick(testDb, { leagueId: league.id, expectedPickIndex: i });
-    }
+    const { league, entries } = await setupDraftedLeague();
 
     // Give every drafted player 10 points of stats in week 1; give one of
     // entry-2's players a monster game so entry 2 leads.
@@ -73,5 +81,35 @@ describe("getLeagueScores", () => {
       .find((w) => w.week === PLAYOFF_WEEKS.WILD_CARD)!
       .lineup.find((s) => s.playerId === entry2Pick.playerId)!;
     expect(monsterSlot.teamEliminated).toBe(true);
+  });
+
+  it("substitutions split scoring at the effective week", async () => {
+    const { commish, league, entries } = await setupDraftedLeague();
+    const pick = await testDb.draftPick.findFirstOrThrow({
+      where: { entryId: entries[0].id }, include: { player: true },
+    });
+    const sub = await createTestPlayer(pick.player.position, { name: "The Sub" });
+    await updateLeagueSettings(testDb, {
+      leagueId: league.id, userId: commish.id, substitutionsEnabled: true,
+    });
+    await setSubstitution(testDb, {
+      leagueId: league.id, userId: commish.id, entryId: entries[0].id,
+      originalPlayerId: pick.playerId, substitutePlayerId: sub.id, effectiveWeek: 2,
+    });
+    // original scores 10 in week 1 AND (irrelevantly) 50 in week 2; sub scores 20 in week 2
+    await setTestStat(pick.playerId, PLAYOFF_WEEKS.WILD_CARD, { rushYards: 100 });
+    await setTestStat(pick.playerId, PLAYOFF_WEEKS.DIVISIONAL, { rushYards: 500 });
+    await setTestStat(sub.id, PLAYOFF_WEEKS.DIVISIONAL, { rushYards: 200 });
+
+    const scores = await getLeagueScores(testDb, league.id);
+    const mine = scores.entries.find((e) => e.entryId === entries[0].id)!;
+    const w1 = mine.weeks.find((w) => w.week === PLAYOFF_WEEKS.WILD_CARD)!;
+    const w2 = mine.weeks.find((w) => w.week === PLAYOFF_WEEKS.DIVISIONAL)!;
+    const w1Slot = w1.lineup.find((s) => s.playerId === pick.playerId);
+    expect(w1Slot).toBeDefined(); // original's 10 pts count in week 1
+    const w2Slot = w2.lineup.find((s) => s.playerId === sub.id);
+    expect(w2Slot).toBeDefined(); // substitute's 20 pts count in week 2
+    expect(w2Slot!.playerName).toBe("The Sub");
+    expect(w2.lineup.some((s) => s.playerId === pick.playerId)).toBe(false); // original's 50 does NOT
   });
 });

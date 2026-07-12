@@ -11,6 +11,10 @@ import { DomainError, DraftAlreadyStartedError } from "@/domain/errors";
 import { espnProvider } from "@/lib/stats/espn-provider";
 import { syncWeekStats } from "@/domain/stats/sync-week";
 import { CURRENT_SEASON, PLAYOFF_WEEKS } from "@/domain/season";
+import { findDueRecaps, findDuePreviews } from "@/domain/engagement/due-work";
+import { buildWeeklyRecap } from "@/domain/engagement/recap";
+import { getLeagueScores } from "@/lib/league-scores";
+import { roundPoints } from "@/domain/scoring/compute-points";
 
 /**
  * Pick clock: sleeps until the turn's deadline, then autodrafts if (and only if)
@@ -210,4 +214,107 @@ export const statsSyncDaily = inngest.createFunction(
   },
 );
 
-export const functions = [draftPickClock, notifyOnTheClock, notifyDraftComplete, draftScheduledStart, statsSyncLive, statsSyncDaily];
+/**
+ * Hourly engagement dispatcher: finds leagues owed a recap (week fully FINAL) or a
+ * preview (games within 48h) and fans out one event per league × week. Watermarks
+ * (lastRecapWeek/lastPreviewWeek) live on the league, so re-running is cheap and safe.
+ * NOTE: `league/preview.due` has no handler yet (Task 5); Inngest drops unmatched events.
+ */
+export const engagementCron = inngest.createFunction(
+  { id: "engagement-cron", triggers: { cron: "0 * * * *" } },
+  async ({ step }) => {
+    const dueRecaps = await step.run("find-recaps", () => findDueRecaps(db));
+    const duePreviews = await step.run("find-previews", () => findDuePreviews(db));
+    for (const { leagueId, week } of dueRecaps) {
+      await step.sendEvent(`recap-${leagueId}-w${week}`, {
+        name: "league/recap.due",
+        data: { leagueId, week },
+      });
+    }
+    for (const { leagueId, week } of duePreviews) {
+      await step.sendEvent(`preview-${leagueId}-w${week}`, {
+        name: "league/preview.due",
+        data: { leagueId, week },
+      });
+    }
+    return { recaps: dueRecaps.length, previews: duePreviews.length };
+  },
+);
+
+const WEEK_NAMES: Record<number, string> = {
+  1: "Wild Card",
+  2: "Divisional",
+  3: "Conference",
+  4: "Super Bowl",
+};
+
+function movementFor(rank: number, prevRank: number): string {
+  const delta = prevRank - rank;
+  if (delta > 0) return `↑${delta}`;
+  if (delta < 0) return `↓${-delta}`;
+  return "→";
+}
+
+/** Weekly recap to every member — claim the watermark first, then one step per member × channel. */
+export const sendLeagueRecap = inngest.createFunction(
+  { id: "league-send-recap", triggers: { event: "league/recap.due" } },
+  async ({ event, step }) => {
+    const { leagueId, week } = event.data;
+    const claimed = await step.run("claim-watermark", async () => {
+      // Bump-first is deliberate: a crashed run loses at most one recap; the
+      // alternative — bump-last — double-sends on every retry storm.
+      const updated = await db.league.updateMany({
+        where: { id: leagueId, lastRecapWeek: { lt: week } },
+        data: { lastRecapWeek: week },
+      });
+      return updated.count === 1;
+    });
+    if (!claimed) return { skipped: true };
+
+    const loaded = await step.run("build", async () => {
+      const scores = await getLeagueScores(db, leagueId);
+      const recap = buildWeeklyRecap(scores, week);
+      const memberships = await db.membership.findMany({
+        where: { leagueId },
+        include: { league: { select: { name: true } } },
+      });
+      const recipients = [];
+      for (const m of memberships) {
+        // (leagueId, userId) is unique on Membership, so this is one recipient per member.
+        recipients.push(await loadRecipient(db, m.userId));
+      }
+      return { recap, leagueName: memberships[0]?.league.name ?? "your league", recipients };
+    });
+
+    const { recap, leagueName, recipients } = loaded;
+    const weekName = WEEK_NAMES[week] ?? `Week ${week}`;
+    const standingsUrl = `${APP_URL}/leagues/${leagueId}`;
+    const standings = recap.entries
+      .slice(0, 5)
+      .map(
+        (e) =>
+          `${e.rank}. ${e.name} — ${roundPoints(e.totalThroughWeek)} (${movementFor(e.rank, e.prevRank)}, ${roundPoints(e.weekPoints)} this week)`,
+      )
+      .join("\n");
+    const notification = {
+      subject: `${leagueName}: ${weekName} recap`,
+      text: [
+        `Top score: ${recap.topPerformer.name} — ${roundPoints(recap.topPerformer.weekPoints)}`,
+        standings,
+        `Full standings: ${standingsUrl}`,
+      ].join("\n\n"),
+      smsText: `${leagueName} ${weekName} recap: top score ${recap.topPerformer.name} (${roundPoints(recap.topPerformer.weekPoints)}). ${standingsUrl}`,
+      url: standingsUrl,
+    };
+    for (const recipient of recipients) {
+      for (const channel of channelsFor(recipient)) {
+        await step.run(`send-${recipient.userId}-${channel}`, () =>
+          notifyVia(db, channel, recipient, notification),
+        );
+      }
+    }
+    return { skipped: false, week, recipients: recipients.length };
+  },
+);
+
+export const functions = [draftPickClock, notifyOnTheClock, notifyDraftComplete, draftScheduledStart, statsSyncLive, statsSyncDaily, engagementCron, sendLeagueRecap];

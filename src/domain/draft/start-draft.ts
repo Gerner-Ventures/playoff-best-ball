@@ -61,8 +61,9 @@ export async function startDraftForLeague(
 
   const deadline = computePickDeadline(new Date(), settings.pickClockHours, settings.overnightPause);
 
+  let draft;
   try {
-    return await db.draft.create({
+    draft = await db.draft.create({
       data: {
         leagueId: league.id,
         status: "ACTIVE",
@@ -78,6 +79,9 @@ export async function startDraftForLeague(
     }
     throw err;
   }
+
+  await db.league.update({ where: { id: league.id }, data: { draftScheduledAt: null } });
+  return draft;
 }
 
 export async function startDraft(db: PrismaClient, input: StartDraftInput) {

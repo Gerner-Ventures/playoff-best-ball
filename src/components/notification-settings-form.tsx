@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { hasPushSubscription, pushSupport, subscribeToPush, unsubscribeFromPush } from "@/lib/push-client";
+import { useState, useSyncExternalStore } from "react";
+import { hasPushSubscription, pushSupport, subscribeToPush, unsubscribeFromPush, type PushSupport } from "@/lib/push-client";
 
 interface Props {
   initial: { phone: string | null; smsOptIn: boolean; pushDeviceCount: number };
@@ -60,8 +60,9 @@ export function NotificationSettingsForm({ initial }: Props) {
     setBusy(true);
     setError(null);
     try {
+      const hadSubscription = await hasPushSubscription();
       await unsubscribeFromPush();
-      setPushDevices((n) => Math.max(0, n - 1));
+      if (hadSubscription) setPushDevices((n) => Math.max(0, n - 1));
     } catch {
       setError("Couldn't disable push on this device.");
     } finally {
@@ -69,7 +70,11 @@ export function NotificationSettingsForm({ initial }: Props) {
     }
   }
 
-  const support = pushSupport();
+  const support = useSyncExternalStore<PushSupport | null>(
+    () => () => {},
+    () => pushSupport(),
+    () => null,
+  );
 
   return (
     <form onSubmit={save} className="flex max-w-md flex-col gap-6">
@@ -103,33 +108,35 @@ export function NotificationSettingsForm({ initial }: Props) {
             ? `Enabled on ${pushDevices} device${pushDevices === 1 ? "" : "s"}.`
             : "Get pinged on this device, even when the site is closed."}
         </p>
-        {support === "supported" ? (
-          <div className="mt-2 flex gap-2">
-            <button
-              type="button"
-              onClick={enablePush}
-              disabled={busy}
-              className="rounded-lg border px-4 py-2 text-sm font-medium disabled:opacity-50"
-            >
-              Enable on this device
-            </button>
-            {pushDevices > 0 && (
+        {support !== null && (
+          support === "supported" ? (
+            <div className="mt-2 flex gap-2">
               <button
                 type="button"
-                onClick={disablePush}
+                onClick={enablePush}
                 disabled={busy}
-                className="rounded-lg border px-4 py-2 text-sm text-gray-500 disabled:opacity-50"
+                className="rounded-lg border px-4 py-2 text-sm font-medium disabled:opacity-50"
               >
-                Disable on this device
+                Enable on this device
               </button>
-            )}
-          </div>
-        ) : (
-          <p className="mt-2 text-sm text-gray-500">
-            {support === "unsupported"
-              ? "This browser doesn't support push notifications. On iPhone, add the app to your Home Screen first."
-              : "Push isn't configured on this server yet."}
-          </p>
+              {pushDevices > 0 && (
+                <button
+                  type="button"
+                  onClick={disablePush}
+                  disabled={busy}
+                  className="rounded-lg border px-4 py-2 text-sm text-gray-500 disabled:opacity-50"
+                >
+                  Disable on this device
+                </button>
+              )}
+            </div>
+          ) : (
+            <p className="mt-2 text-sm text-gray-500">
+              {support === "unsupported"
+                ? "This browser doesn't support push notifications. On iPhone, add the app to your Home Screen first."
+                : "Push isn't configured on this server yet."}
+            </p>
+          )
         )}
       </section>
 

@@ -7,7 +7,7 @@ import { joinLeague } from "../leagues/join-league";
 import { scheduleDraft } from "./schedule-draft";
 import { startDraft } from "./start-draft";
 import {
-  NotCommissionerError, ScheduleInPastError, DraftAlreadyStartedError,
+  NotCommissionerError, ScheduleInPastError, DraftAlreadyStartedError, ScheduleTooFarOutError,
 } from "../errors";
 
 const future = () => new Date(Date.now() + 60 * 60 * 1000);
@@ -31,6 +31,18 @@ describe("scheduleDraft", () => {
       leagueId: league.id, userId: commish.id, scheduledAt: null,
     });
     expect(cleared.draftScheduledAt).toBeNull();
+  });
+
+  it("rejects a scheduled time more than one year in the future", async () => {
+    const commish = await createTestUser();
+    const league = await createLeague(testDb, {
+      userId: commish.id, name: "L", teamName: "T",
+      scoringPreset: "standard", pickClockHours: 8,
+    });
+    const twoYearsOut = new Date(Date.now() + 2 * 365 * 24 * 60 * 60 * 1000);
+    await expect(
+      scheduleDraft(testDb, { leagueId: league.id, userId: commish.id, scheduledAt: twoYearsOut }),
+    ).rejects.toThrow(ScheduleTooFarOutError);
   });
 
   it("rejects non-commissioners, past times, and already-started drafts", async () => {

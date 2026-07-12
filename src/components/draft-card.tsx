@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -18,6 +18,11 @@ export function DraftCard({
   draftScheduledAt: string | null;
 }) {
   const router = useRouter();
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
   const [error, setError] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
   const [scheduledAt, setScheduledAt] = useState<string | null>(draftScheduledAt);
@@ -131,7 +136,7 @@ export function DraftCard({
             </div>
           </div>
         )}
-        {scheduledAt && (
+        {mounted && scheduledAt && (
           <p className="mt-2 text-sm text-gray-600">
             Draft starts automatically {new Date(scheduledAt).toLocaleString()}.
           </p>

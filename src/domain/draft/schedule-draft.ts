@@ -3,6 +3,7 @@ import {
   DraftAlreadyStartedError,
   NotCommissionerError,
   ScheduleInPastError,
+  ScheduleTooFarOutError,
 } from "../errors";
 
 export interface ScheduleDraftInput {
@@ -25,6 +26,10 @@ export async function scheduleDraft(db: PrismaClient, input: ScheduleDraftInput)
   if (league.draft) throw new DraftAlreadyStartedError();
   if (input.scheduledAt && input.scheduledAt.getTime() <= Date.now()) {
     throw new ScheduleInPastError();
+  }
+  const ONE_YEAR_MS = 365 * 24 * 3_600_000;
+  if (input.scheduledAt && input.scheduledAt.getTime() > Date.now() + ONE_YEAR_MS) {
+    throw new ScheduleTooFarOutError();
   }
 
   return db.league.update({

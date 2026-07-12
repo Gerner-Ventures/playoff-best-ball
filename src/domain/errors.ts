@@ -103,3 +103,9 @@ export class ScheduleInPastError extends DomainError {
     super("Pick a start time in the future.", "SCHEDULE_IN_PAST");
   }
 }
+
+export class ScheduleTooFarOutError extends DomainError {
+  constructor() {
+    super("Pick a start time within the next year.", "SCHEDULE_TOO_FAR_OUT");
+  }
+}

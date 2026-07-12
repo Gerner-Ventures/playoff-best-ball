@@ -9,6 +9,7 @@ import { InviteLinkButton } from "@/components/invite-link-button";
 import { DraftCard } from "@/components/draft-card";
 import { Leaderboard } from "@/components/leaderboard";
 import { UpgradeButton } from "@/components/upgrade-button";
+import { AdSlot } from "@/components/ad-slot";
 
 export default async function LeaguePage({
   params,
@@ -120,6 +121,12 @@ export default async function LeaguePage({
             draftScheduledAt={league.draftScheduledAt?.toISOString() ?? null}
           />
         </div>
+
+        {league.tier === "FREE" && (
+          <div className="mt-8">
+            <AdSlot />
+          </div>
+        )}
       </main>
     </>
   );

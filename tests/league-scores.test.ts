@@ -7,7 +7,7 @@ import { joinLeague } from "@/domain/leagues/join-league";
 import { startDraft } from "@/domain/draft/start-draft";
 import { autodraftCurrentPick } from "@/domain/draft/autodraft";
 import { getLeagueScores } from "@/lib/league-scores";
-import { PLAYOFF_WEEKS } from "@/domain/season";
+import { CURRENT_SEASON, PLAYOFF_WEEKS } from "@/domain/season";
 
 describe("getLeagueScores", () => {
   beforeEach(resetDb);
@@ -50,5 +50,28 @@ describe("getLeagueScores", () => {
     // a week with no stats contributes zero
     const week3 = scores.entries[0].weeks.find((w) => w.week === PLAYOFF_WEEKS.CONFERENCE)!;
     expect(week3.total).toBe(0);
+
+    // elimination flows through: no FINAL games yet → everyone alive, no slot flagged
+    expect(scores.rosterSize).toBe(9);
+    expect(scores.entries.every((e) => e.alivePlayers === 9)).toBe(true);
+    expect(week1.lineup.every((s) => s.teamEliminated === false)).toBe(true);
+
+    // the test helper gives every player nflTeam "KC" — a FINAL game where KC
+    // loses eliminates every rostered player for every entry
+    await testDb.nflGame.create({
+      data: {
+        season: CURRENT_SEASON, week: 1, eventId: "elim-1",
+        homeTeam: "KC", awayTeam: "ZZZ",
+        startsAt: new Date("2027-01-10T18:00:00Z"), state: "FINAL",
+        homeScore: 10, awayScore: 20,
+      },
+    });
+    const withElim = await getLeagueScores(testDb, league.id);
+    const leader = withElim.entries.find((e) => e.entryId === entries[1].id)!;
+    expect(leader.alivePlayers).toBe(0);
+    const monsterSlot = leader.weeks
+      .find((w) => w.week === PLAYOFF_WEEKS.WILD_CARD)!
+      .lineup.find((s) => s.playerId === entry2Pick.playerId)!;
+    expect(monsterSlot.teamEliminated).toBe(true);
   });
 });

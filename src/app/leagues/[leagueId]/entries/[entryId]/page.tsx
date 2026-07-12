@@ -62,7 +62,10 @@ export default async function EntryPage({
             </h2>
             <ul className="mt-2 rounded-lg border">
               {week.lineup.map((slot) => (
-                <li key={slot.slotIndex} className="flex items-center justify-between border-b p-2 text-sm last:border-b-0">
+                <li
+                  key={slot.slotIndex}
+                  className={`flex items-center justify-between border-b p-2 text-sm last:border-b-0${slot.teamEliminated ? " text-gray-400" : ""}`}
+                >
                   <span>
                     <span className="inline-block w-12 font-medium text-gray-500">{slot.slotLabel}</span>
                     {slot.playerId ? (
@@ -71,6 +74,11 @@ export default async function EntryPage({
                       </Link>
                     ) : (
                       <span className="text-gray-400">—</span>
+                    )}
+                    {slot.teamEliminated && (
+                      <span className="ml-2 rounded bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-500">
+                        OUT
+                      </span>
                     )}
                   </span>
                   <span className="tabular-nums">{slot.points.toFixed(2)}</span>

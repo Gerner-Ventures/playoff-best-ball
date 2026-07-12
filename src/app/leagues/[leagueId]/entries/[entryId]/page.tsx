@@ -20,6 +20,13 @@ export default async function EntryPage({
   });
   if (!membership) notFound();
 
+  // notFound when there's no draft at all — no lineups exist and the league page doesn't link here yet
+  const league = await db.league.findUniqueOrThrow({
+    where: { id: leagueId },
+    select: { draft: { select: { status: true } } },
+  });
+  if (!league.draft) notFound();
+
   const scores = await getLeagueScores(db, leagueId);
   const entry = scores.entries.find((e) => e.entryId === entryId);
   if (!entry) notFound();

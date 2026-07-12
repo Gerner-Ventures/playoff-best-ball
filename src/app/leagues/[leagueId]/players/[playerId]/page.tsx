@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { getSessionUser } from "@/lib/session";
-import { parseLeagueSettings } from "@/domain/league-settings";
+import { tryParseLeagueSettings } from "@/domain/league-settings";
 import { computePoints, roundPoints } from "@/domain/scoring/compute-points";
 import { tryParseStatLine } from "@/domain/stats/stat-line";
 import { AppNav } from "@/components/app-nav";
@@ -29,7 +29,18 @@ export default async function PlayerPage({
     include: { stats: { where: { season: league.season }, orderBy: { week: "asc" } } },
   });
   if (!player || player.season !== league.season) notFound();
-  const settings = parseLeagueSettings(league.settings);
+  const settings = tryParseLeagueSettings(league.settings);
+  if (!settings) {
+    return (
+      <>
+        <AppNav userName={user.name} />
+        <main className="mx-auto max-w-2xl p-6">
+          <h1 className="text-2xl font-bold">Something&apos;s wrong with this league</h1>
+          <p className="mt-2 text-gray-600">Ask your commissioner to contact support.</p>
+        </main>
+      </>
+    );
+  }
 
   const games = player.stats.flatMap((row) => {
     const line = tryParseStatLine(row.stats);

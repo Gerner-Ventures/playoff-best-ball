@@ -21,6 +21,9 @@ export async function PUT(req: Request) {
   const { playerId, week, stats } = parsed.data;
   const player = await db.player.findUnique({ where: { id: playerId } });
   if (!player) return NextResponse.json({ error: "Unknown player" }, { status: 404 });
+  if (player.season !== CURRENT_SEASON) {
+    return NextResponse.json({ error: "Unknown player" }, { status: 404 });
+  }
   const row = await db.playerStat.upsert({
     where: { playerId_season_week: { playerId, season: CURRENT_SEASON, week } },
     create: { playerId, season: CURRENT_SEASON, week, stats: stats as Prisma.InputJsonValue },

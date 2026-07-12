@@ -98,9 +98,12 @@ export function AdminPanel() {
         <div className="text-sm text-red-600">
           <p className="font-medium">Unmatched stat lines ({unmatched.length}) — run a pool sync:</p>
           <ul className="mt-1 list-inside list-disc">
-            {unmatched.map((u) => (
+            {unmatched.slice(0, 50).map((u) => (
               <li key={u}>{u}</li>
             ))}
+            {unmatched.length > 50 && (
+              <li className="list-none text-gray-500">…and {unmatched.length - 50} more</li>
+            )}
           </ul>
         </div>
       )}

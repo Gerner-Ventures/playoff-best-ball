@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import {
-  testDb, resetDb, createTestUser, createTestPlayer, createStandardPool, setTestStat,
+  testDb, resetDb, createTestUser, createStandardPool, setTestStat,
 } from "./helpers/db";
 import { createLeague } from "@/domain/leagues/create-league";
 import { joinLeague } from "@/domain/leagues/join-league";

@@ -75,6 +75,7 @@ export default async function LeaguePage({
             isCommissioner={isCommissioner}
             draftStatus={league.draft?.status ?? "NOT_STARTED"}
             entryCount={league.entries.length}
+            draftScheduledAt={league.draftScheduledAt?.toISOString() ?? null}
           />
         </div>
       </main>

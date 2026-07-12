@@ -67,6 +67,36 @@ describe("substitutions", () => {
     expect(await testDb.substitution.count()).toBe(0);
   });
 
+  it("rejects reusing a substitute for a different original on the same entry", async () => {
+    const { commish, league, entries } = await setup();
+    // Find two same-position picks on the entry (9 picks over 6 positions guarantees a pair).
+    const picks = await testDb.draftPick.findMany({
+      where: { entryId: entries[0].id }, include: { player: true },
+    });
+    const byPosition = new Map<string, typeof picks>();
+    for (const p of picks) {
+      byPosition.set(p.player.position, [...(byPosition.get(p.player.position) ?? []), p]);
+    }
+    const pair = [...byPosition.values()].find((group) => group.length >= 2);
+    if (!pair) throw new Error("expected two same-position picks on the roster");
+    const [original1, original2] = pair;
+
+    const sub = await createTestPlayer(original1.player.position, { name: "Double Duty" });
+    await setSubstitution(testDb, {
+      leagueId: league.id, userId: commish.id, entryId: entries[0].id,
+      originalPlayerId: original1.playerId, substitutePlayerId: sub.id, effectiveWeek: 2,
+    });
+
+    // Same substitute for a DIFFERENT original on the same entry would double-count.
+    await expect(
+      setSubstitution(testDb, {
+        leagueId: league.id, userId: commish.id, entryId: entries[0].id,
+        originalPlayerId: original2.playerId, substitutePlayerId: sub.id, effectiveWeek: 2,
+      }),
+    ).rejects.toThrow(InvalidSubstitutionError);
+    expect(await testDb.substitution.count()).toBe(1);
+  });
+
   it("rejects: disabled setting, non-commissioner, drafted substitute, cross-position, unrostered original", async () => {
     const { commish, friend, league, entries } = await setup();
     const pick = await testDb.draftPick.findFirstOrThrow({

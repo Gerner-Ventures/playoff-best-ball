@@ -68,6 +68,19 @@ export async function setSubstitution(db: PrismaClient, input: SetSubstitutionIn
     : null;
   if (alreadyDrafted) throw new InvalidSubstitutionError("that player is on another roster");
 
+  // Within a single entry, though, a substitute may only stand in for ONE original —
+  // otherwise the same player would score in two lineup slots at once.
+  const alreadySubstituting = await db.substitution.findFirst({
+    where: {
+      entryId: input.entryId,
+      substitutePlayerId: input.substitutePlayerId,
+      NOT: { originalPlayerId: input.originalPlayerId },
+    },
+  });
+  if (alreadySubstituting) {
+    throw new InvalidSubstitutionError("that player is already substituting for someone on this team");
+  }
+
   // Replacing a substitution for the same original updates in place.
   return db.substitution.upsert({
     where: {

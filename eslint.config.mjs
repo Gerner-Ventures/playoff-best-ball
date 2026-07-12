@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Legacy prototype - excluded from new toolchain
     "legacy/**",
+    // Service worker — plain browser JS, not part of the TS build
+    "public/sw.js",
   ]),
 ]);
 

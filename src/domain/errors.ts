@@ -97,3 +97,9 @@ export class NotLeagueMemberError extends DomainError {
     super("You're not a member of this league.", "NOT_LEAGUE_MEMBER");
   }
 }
+
+export class ScheduleInPastError extends DomainError {
+  constructor() {
+    super("Pick a start time in the future.", "SCHEDULE_IN_PAST");
+  }
+}

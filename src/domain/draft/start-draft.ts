@@ -16,12 +16,11 @@ export interface StartDraftInput {
   order?: string[];
 }
 
-export async function startDraft(db: PrismaClient, input: StartDraftInput) {
-  const membership = await db.membership.findUnique({
-    where: { leagueId_userId: { leagueId: input.leagueId, userId: input.userId } },
-  });
-  if (!membership || membership.role !== "COMMISSIONER") throw new NotCommissionerError();
-
+/** Core start without the commissioner gate — used by the scheduled-start timer. All league-state validation still applies. */
+export async function startDraftForLeague(
+  db: PrismaClient,
+  input: { leagueId: string; order?: string[] },
+) {
   const league = await db.league.findUniqueOrThrow({
     where: { id: input.leagueId },
     include: { entries: true, draft: true },
@@ -79,4 +78,13 @@ export async function startDraft(db: PrismaClient, input: StartDraftInput) {
     }
     throw err;
   }
+}
+
+export async function startDraft(db: PrismaClient, input: StartDraftInput) {
+  const membership = await db.membership.findUnique({
+    where: { leagueId_userId: { leagueId: input.leagueId, userId: input.userId } },
+  });
+  if (!membership || membership.role !== "COMMISSIONER") throw new NotCommissionerError();
+
+  return startDraftForLeague(db, { leagueId: input.leagueId, order: input.order });
 }

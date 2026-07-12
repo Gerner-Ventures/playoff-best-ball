@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useDraftState } from "./use-draft-state";
 import { Countdown } from "./countdown";
 import { DraftBoard } from "./draft-board";
@@ -34,6 +35,13 @@ export function DraftRoom({ leagueId, leagueName }: { leagueId: string; leagueNa
             </span>
           )}
         </div>
+      )}
+      {state.status === "ACTIVE" && (
+        <p className="mt-2 text-sm">
+          <Link href="/settings/notifications" className="text-gray-500 underline">
+            Get texted or pinged when you&apos;re on the clock →
+          </Link>
+        </p>
       )}
       {state.status === "COMPLETE" && (
         <p className="mt-3 rounded-lg bg-gray-100 p-3 text-gray-700">The draft is complete.</p>

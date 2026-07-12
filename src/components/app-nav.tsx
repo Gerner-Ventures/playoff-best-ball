@@ -12,6 +12,7 @@ export function AppNav({ userName }: { userName: string }) {
         Playoff Best Ball
       </Link>
       <div className="flex items-center gap-4 text-sm">
+        <Link href="/settings/notifications" className="text-gray-500 hover:underline">Settings</Link>
         <span className="text-gray-600">{userName}</span>
         <button
           onClick={async () => {

@@ -1,40 +1,80 @@
-import { Resend } from "resend";
+import type { PrismaClient } from "@prisma/client";
+import { sendEmailNotification } from "./notify-email";
+import { sendSmsNotification } from "./notify-sms";
+import { sendPushNotification } from "./notify-push";
 
-// Channel abstraction: Phase 2 ships email only. Phase 2.5 adds SMS (Twilio) and
-// Web Push behind this same function, dispatching on user notification preferences.
-
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+export type NotificationChannel = "email" | "sms" | "push";
 
 export interface Notification {
   subject: string;
   text: string;
+  /** Short form for SMS/push bodies; falls back to subject (+ url). */
+  smsText?: string;
+  /** Deep link opened from push notifications and appended to SMS fallback. */
+  url?: string;
+}
+
+export interface NotifyRecipient {
+  userId: string;
+  email: string;
+  name: string;
+  phone: string | null;
+  smsOptIn: boolean;
+  pushSubscriptions: { id: string; endpoint: string; p256dh: string; auth: string }[];
+}
+
+/** Which channels apply to a recipient. Email is the baseline; the rest are opt-in. */
+export function channelsFor(
+  r: Pick<NotifyRecipient, "phone" | "smsOptIn" | "pushSubscriptions">,
+): NotificationChannel[] {
+  const channels: NotificationChannel[] = ["email"];
+  if (r.phone && r.smsOptIn) channels.push("sms");
+  if (r.pushSubscriptions.length > 0) channels.push("push");
+  return channels;
+}
+
+export function smsBodyFor(n: Pick<Notification, "subject" | "text" | "smsText" | "url">): string {
+  return n.smsText ?? (n.url ? `${n.subject} ${n.url}` : n.subject);
+}
+
+/** Everything the channel senders need about a user, in one query. */
+export async function loadRecipient(db: PrismaClient, userId: string): Promise<NotifyRecipient> {
+  const user = await db.user.findUniqueOrThrow({
+    where: { id: userId },
+    select: {
+      id: true, email: true, name: true, phone: true, smsOptIn: true,
+      pushSubscriptions: { select: { id: true, endpoint: true, p256dh: true, auth: true } },
+    },
+  });
+  const { id, ...rest } = user;
+  return { userId: id, ...rest };
 }
 
 /**
- * Best-effort user notification. Throws on send failure so callers running inside
- * Inngest steps get retries; callers on request paths must catch — notifications
- * never block a pick.
+ * Sends on ONE channel. Email/SMS throw on failure (call each channel from its own
+ * Inngest step so retries are per-channel and idempotent). Push is best-effort inside
+ * (per-subscription failures are pruned/logged, never thrown).
  */
+export async function notifyVia(
+  db: PrismaClient,
+  channel: NotificationChannel,
+  recipient: NotifyRecipient,
+  notification: Notification,
+): Promise<void> {
+  switch (channel) {
+    case "email":
+      return sendEmailNotification(recipient, notification);
+    case "sms":
+      return sendSmsNotification(recipient, notification);
+    case "push":
+      return sendPushNotification(db, recipient, notification);
+  }
+}
+
+/** @deprecated Task-3 migration target: use loadRecipient + channelsFor + notifyVia. */
 export async function notifyUser(
   user: { email: string; name: string },
   notification: Notification,
 ): Promise<void> {
-  if (!resend) {
-    if (process.env.NODE_ENV === "production") {
-      throw new Error("RESEND_API_KEY is not set; cannot send notifications");
-    }
-    console.log(`[dev] notify ${user.email}: ${notification.subject} — ${notification.text}`);
-    return;
-  }
-  const { error } = await resend.emails.send({
-    from:
-      process.env.NOTIFY_FROM_EMAIL ??
-      "Playoff Best Ball <notify@transactional.playoffbestball.com>",
-    to: user.email,
-    subject: notification.subject,
-    text: notification.text,
-  });
-  if (error) {
-    throw new Error(`notification email to ${user.email} failed: ${error.name}: ${error.message}`);
-  }
+  return sendEmailNotification(user, notification);
 }

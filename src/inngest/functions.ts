@@ -8,6 +8,9 @@ import { autodraftCurrentPick } from "@/domain/draft/autodraft";
 import { announceDraftState } from "@/lib/draft-events";
 import { startDraftForLeague } from "@/domain/draft/start-draft";
 import { DomainError, DraftAlreadyStartedError } from "@/domain/errors";
+import { espnProvider } from "@/lib/stats/espn-provider";
+import { syncWeekStats } from "@/domain/stats/sync-week";
+import { CURRENT_SEASON, PLAYOFF_WEEKS } from "@/domain/season";
 
 /**
  * Pick clock: sleeps until the turn's deadline, then autodrafts if (and only if)
@@ -164,4 +167,46 @@ export const draftScheduledStart = inngest.createFunction(
   },
 );
 
-export const functions = [draftPickClock, notifyOnTheClock, notifyDraftComplete, draftScheduledStart];
+/**
+ * Live sync: every 2 minutes, but only does work while a game is (or should be)
+ * underway — cost stays flat when nothing is happening.
+ */
+export const statsSyncLive = inngest.createFunction(
+  { id: "stats-sync-live", triggers: { cron: "*/2 * * * *" } },
+  async ({ step }) => {
+    const activeWeeks = await step.run("find-active-weeks", async () => {
+      const games = await db.nflGame.findMany({
+        where: {
+          season: CURRENT_SEASON,
+          OR: [
+            { state: "IN_PROGRESS" },
+            { state: "SCHEDULED", startsAt: { lte: new Date() } },
+          ],
+        },
+        select: { week: true },
+      });
+      return [...new Set(games.map((g) => g.week))];
+    });
+    if (activeWeeks.length === 0) return { skipped: true };
+    for (const week of activeWeeks) {
+      await step.run(`sync-week-${week}`, () =>
+        syncWeekStats(db, espnProvider, { season: CURRENT_SEASON, week }),
+      );
+    }
+    return { skipped: false, weeks: activeWeeks };
+  },
+);
+
+/** Daily full sync: refreshes schedules/state for every playoff week (6am ET). */
+export const statsSyncDaily = inngest.createFunction(
+  { id: "stats-sync-daily", triggers: { cron: "TZ=America/New_York 0 6 * * *" } },
+  async ({ step }) => {
+    for (const week of Object.values(PLAYOFF_WEEKS)) {
+      await step.run(`sync-week-${week}`, () =>
+        syncWeekStats(db, espnProvider, { season: CURRENT_SEASON, week }),
+      );
+    }
+  },
+);
+
+export const functions = [draftPickClock, notifyOnTheClock, notifyDraftComplete, draftScheduledStart, statsSyncLive, statsSyncDaily];

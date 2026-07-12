@@ -10,6 +10,7 @@ import { DraftCard } from "@/components/draft-card";
 import { Leaderboard } from "@/components/leaderboard";
 import { UpgradeButton } from "@/components/upgrade-button";
 import { AdSlot } from "@/components/ad-slot";
+import { DuesPanel } from "@/components/dues-panel";
 
 export default async function LeaguePage({
   params,
@@ -31,7 +32,7 @@ export default async function LeaguePage({
   const league = await db.league.findUniqueOrThrow({
     where: { id: leagueId },
     include: {
-      entries: { include: { membership: { include: { user: { select: { name: true } } } } }, orderBy: { createdAt: "asc" } },
+      entries: { include: { membership: { include: { user: { select: { name: true, id: true } } } } }, orderBy: { createdAt: "asc" } },
       draft: { select: { status: true } },
     },
   });
@@ -111,6 +112,22 @@ export default async function LeaguePage({
             </li>
           ))}
         </ul>
+
+        {settings.entryFeeCents !== null && (
+          <DuesPanel
+            leagueId={league.id}
+            isCommissioner={isCommissioner}
+            entryFeeCents={settings.entryFeeCents}
+            venmoHandle={settings.venmoHandle}
+            entries={league.entries.map((e) => ({
+              entryId: e.id,
+              name: e.name,
+              ownerName: e.membership.user.name ?? "",
+              duesPaid: e.duesPaid,
+              isMine: e.membership.user.id === user.id,
+            }))}
+          />
+        )}
 
         <div className="mt-8">
           <DraftCard

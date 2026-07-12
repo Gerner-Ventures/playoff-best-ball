@@ -15,7 +15,37 @@ npm run db:seed:players
 npm run dev
 ```
 
-> **Optional:** run `npx inngest-cli@latest dev` in a separate terminal to enable draft pick clocks and notification timers locally. Drafting works without it; timers and emails just won't fire, and Inngest event sends log a console warning.
+> **Optional:** run `npx inngest-cli@latest dev` in a separate terminal to enable draft pick clocks, notification timers, and scheduled draft starts locally. Drafting works without it; timers and emails just won't fire, and Inngest event sends log a console warning.
+
+### SMS notifications (Twilio)
+
+Set the three Twilio vars in `.env` (see `.env.example`):
+
+```
+TWILIO_ACCOUNT_SID=ACxxxxxxxx
+TWILIO_AUTH_TOKEN=xxxxxxxx
+TWILIO_FROM_NUMBER=+15555550000
+```
+
+When these are empty the app logs SMS messages to the dev console instead of sending them — safe for local dev. Commissioners and users opt in on `/settings/notifications`.
+
+### Push notifications (VAPID)
+
+Generate a key pair once and add both to `.env`:
+
+```bash
+npx web-push generate-vapid-keys
+```
+
+```
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=Bxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+VAPID_PRIVATE_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+VAPID_SUBJECT=mailto:hello@example.com
+```
+
+The app is an installable **PWA** (manifest + service worker). Web Push requires HTTPS in production — it also works on `localhost` during development. On iOS, users must first **Add to Home Screen** before the browser exposes the Push API.
+
+When `NEXT_PUBLIC_VAPID_PUBLIC_KEY` is empty the push UI falls back to an "unsupported" message.
 
 - Dev DB runs on port **5434** (to avoid conflicts with other local Postgres instances)
 - Test DB runs on port **5433**

@@ -1,6 +1,6 @@
 # Playoff Best Ball
 
-A hosted multi-tenant NFL playoff best ball league platform. Commissioners create leagues, friends join via invite links, and teams are assembled through an async slow-snake draft with notifications. Scoring runs automatically through the playoffs using optimal best-ball lineup selection. Phase 1 currently implements auth, league creation, and the invite/join flow.
+A hosted multi-tenant NFL playoff best ball league platform. Commissioners create leagues, friends join via invite links, and teams are assembled through an async slow-snake draft with notifications. Scoring runs automatically through the playoffs using optimal best-ball lineup selection. **Free tier:** standard scoring presets, ads shown. **Premium ($25/season):** custom per-value scoring, up to 25 teams, multiple leagues, no ads.
 
 ## Local Setup
 
@@ -16,6 +16,34 @@ npm run dev
 ```
 
 > **Optional:** run `npx inngest-cli@latest dev` in a separate terminal to enable draft pick clocks, notification timers, and scheduled draft starts locally. Drafting works without it; timers and emails just won't fire, and Inngest event sends log a console warning.
+
+### Stripe (Premium upgrades)
+
+Add your Stripe test keys to `.env` (see `.env.example`):
+
+```
+STRIPE_SECRET_KEY=sk_test_<your-test-key>
+STRIPE_WEBHOOK_SECRET=whsec_<your-webhook-secret>
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_xxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+In a separate terminal, forward webhook events to the local server:
+
+```bash
+stripe listen --forward-to localhost:3000/api/webhooks/stripe
+```
+
+When `STRIPE_SECRET_KEY` is empty the upgrade button returns an error — Premium features are still accessible in the DB by setting `tier = 'PREMIUM'` directly.
+
+### Google AdSense (ads on free tier)
+
+Set the AdSense publisher ID in `.env`:
+
+```
+NEXT_PUBLIC_ADSENSE_PUBLISHER_ID=ca-pub-xxxxxxxxxxxxxxxx
+```
+
+When this variable is empty the ad slot components render nothing — safe for local dev.
 
 ### SMS notifications (Twilio)
 

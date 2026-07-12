@@ -2,9 +2,11 @@ import { notFound, redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { getSessionUser } from "@/lib/session";
 import { tryParseLeagueSettings } from "@/domain/league-settings";
+import { getLeagueScores } from "@/lib/league-scores";
 import { AppNav } from "@/components/app-nav";
 import { InviteLinkButton } from "@/components/invite-link-button";
 import { DraftCard } from "@/components/draft-card";
+import { Leaderboard } from "@/components/leaderboard";
 
 export default async function LeaguePage({
   params,
@@ -40,6 +42,8 @@ export default async function LeaguePage({
     );
   }
   const isCommissioner = membership.role === "COMMISSIONER";
+  const isDraftComplete = league.draft?.status === "COMPLETE";
+  const scores = isDraftComplete ? await getLeagueScores(db, leagueId) : null;
 
   return (
     <>
@@ -55,6 +59,13 @@ export default async function LeaguePage({
           </div>
           {isCommissioner && <InviteLinkButton code={league.inviteCode} />}
         </div>
+
+        {scores && (
+          <div className="mb-8">
+            <h2 className="mb-3 font-semibold">Standings</h2>
+            <Leaderboard leagueId={leagueId} scores={scores} />
+          </div>
+        )}
 
         <h2 className="mb-3 font-semibold">Teams</h2>
         <ul className="flex flex-col gap-2">

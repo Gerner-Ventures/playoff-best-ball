@@ -70,11 +70,3 @@ export async function notifyVia(
       return sendPushNotification(db, recipient, notification);
   }
 }
-
-/** @deprecated Task-3 migration target: use loadRecipient + channelsFor + notifyVia. */
-export async function notifyUser(
-  user: { email: string; name: string },
-  notification: Notification,
-): Promise<void> {
-  return sendEmailNotification(user, notification);
-}

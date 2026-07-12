@@ -11,6 +11,7 @@ import { Leaderboard } from "@/components/leaderboard";
 import { UpgradeButton } from "@/components/upgrade-button";
 import { AdSlot } from "@/components/ad-slot";
 import { DuesPanel } from "@/components/dues-panel";
+import { AddEntryButton } from "@/components/add-entry-button";
 
 export default async function LeaguePage({
   params,
@@ -112,6 +113,8 @@ export default async function LeaguePage({
             </li>
           ))}
         </ul>
+        {/* Viewer is always a member here — non-members 404 above. */}
+        {league.tier === "PREMIUM" && !league.draft && <AddEntryButton leagueId={league.id} />}
 
         {settings.entryFeeCents !== null && (
           <DuesPanel

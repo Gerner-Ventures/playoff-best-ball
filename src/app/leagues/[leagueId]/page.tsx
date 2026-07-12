@@ -105,7 +105,7 @@ export default async function LeaguePage({
           </div>
         )}
 
-        {projections && (
+        {projections && projections.nextWeek !== null && (
           <div className="mb-8">
             <ProjectionsTable projections={projections} />
           </div>

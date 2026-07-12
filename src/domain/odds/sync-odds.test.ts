@@ -150,6 +150,103 @@ describe("syncTeamOdds", () => {
     expect(buf.opponent).toBe("KC");
   });
 
+  it("empty provider feed never wipes existing odds", async () => {
+    await testDb.nflGame.create({
+      data: {
+        season: CURRENT_SEASON,
+        week: 2,
+        eventId: "g1",
+        homeTeam: "KC",
+        awayTeam: "BUF",
+        startsAt: new Date(Date.now() + 24 * 3600 * 1000),
+        state: "SCHEDULED",
+      },
+    });
+    const firstProvider = new FakeOddsProvider([
+      {
+        homeTeam: "KC",
+        awayTeam: "BUF",
+        homeWinProb: 0.6,
+        awayWinProb: 0.4,
+        homeMoneyline: -150,
+        awayMoneyline: 130,
+        commenceTime: new Date(),
+      },
+    ]);
+    await syncTeamOdds(testDb, firstProvider, { season: CURRENT_SEASON });
+    expect(await testDb.teamOdds.count()).toBe(2);
+
+    // The Odds API routinely returns an empty upcoming feed once games commence.
+    // That must never destroy the current odds board.
+    const emptyProvider = new FakeOddsProvider([]);
+    const result = await syncTeamOdds(testDb, emptyProvider, { season: CURRENT_SEASON });
+    expect(result.upserted).toBe(0);
+    const teams = (await testDb.teamOdds.findMany()).map((r) => r.team).sort();
+    expect(teams).toEqual(["BUF", "KC"]);
+  });
+
+  it("preserves FINAL-week history while writing fresh odds for later weeks", async () => {
+    await testDb.nflGame.create({
+      data: {
+        season: CURRENT_SEASON,
+        week: 1,
+        eventId: "g0",
+        homeTeam: "SF",
+        awayTeam: "GB",
+        startsAt: new Date(Date.now() - 7 * 24 * 3600 * 1000),
+        state: "FINAL",
+      },
+    });
+    // Historical odds row for the finished week-1 game.
+    await testDb.teamOdds.create({
+      data: {
+        season: CURRENT_SEASON,
+        week: 1,
+        team: "SF",
+        opponent: "GB",
+        winProb: 0.7,
+        moneyline: -250,
+        eventTime: new Date(Date.now() - 7 * 24 * 3600 * 1000),
+      },
+    });
+    await testDb.nflGame.create({
+      data: {
+        season: CURRENT_SEASON,
+        week: 2,
+        eventId: "g1",
+        homeTeam: "KC",
+        awayTeam: "BUF",
+        startsAt: new Date(Date.now() + 24 * 3600 * 1000),
+        state: "SCHEDULED",
+      },
+    });
+    const provider = new FakeOddsProvider([
+      {
+        homeTeam: "KC",
+        awayTeam: "BUF",
+        homeWinProb: 0.6,
+        awayWinProb: 0.4,
+        homeMoneyline: -150,
+        awayMoneyline: 130,
+        commenceTime: new Date(),
+      },
+    ]);
+    const result = await syncTeamOdds(testDb, provider, { season: CURRENT_SEASON });
+    expect(result.upserted).toBe(2);
+
+    const sf = await testDb.teamOdds.findUniqueOrThrow({
+      where: { season_week_team: { season: CURRENT_SEASON, week: 1, team: "SF" } },
+    });
+    expect(sf.winProb).toBeCloseTo(0.7);
+    expect(sf.moneyline).toBe(-250);
+    const week2Teams = (
+      await testDb.teamOdds.findMany({ where: { season: CURRENT_SEASON, week: 2 } })
+    )
+      .map((r) => r.team)
+      .sort();
+    expect(week2Teams).toEqual(["BUF", "KC"]);
+  });
+
   it("no scheduled games → no-op", async () => {
     const provider = new FakeOddsProvider([]);
     const result = await syncTeamOdds(testDb, provider, { season: CURRENT_SEASON });

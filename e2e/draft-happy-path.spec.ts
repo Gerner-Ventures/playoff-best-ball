@@ -51,18 +51,15 @@ test("commissioner starts draft, both users pick, board updates", async ({ brows
     await commish.reload();
     // Wait for the draft room to finish rendering before deciding whose turn it is
     await expect(commish.getByRole("heading", { name: /— Draft$/ })).toBeVisible();
-    // Wait for the clock banner (either "You're on the clock" or "{name} is on the clock")
-    // Use .first() to avoid strict-mode error when the board also has "on the clock" placeholder text
-    await expect(commish.getByText(/on the clock/).first()).toBeVisible();
+    // Wait for the turn banner (scoped to testid to avoid collision with the nudge link text)
+    await expect(commish.getByTestId("turn-banner")).toBeVisible();
 
-    const myTurnCommish = await commish
-      .getByText("You're on the clock")
-      .isVisible()
-      .catch(() => false);
+    const bannerText = await commish.getByTestId("turn-banner").innerText();
+    const myTurnCommish = bannerText.includes("You're on the clock");
     const picker = myTurnCommish ? pages.commish : pages.friend;
     if (!myTurnCommish) {
       await friend.goto(commish.url());
-      await expect(friend.getByText("You're on the clock")).toBeVisible();
+      await expect(friend.getByTestId("turn-banner")).toContainText("You're on the clock");
     }
     const firstDraftButton = picker
       .getByRole("button", { name: "Draft", exact: true })

@@ -110,6 +110,140 @@ describe("parseGameStats", () => {
   });
 });
 
+// The committed BUF-JAX fixture (401772977) contains no 2-point conversions and
+// no return TDs, so those paths are pinned with minimal synthetic summaries.
+describe("parseGameStats — synthetic edge cases", () => {
+  // Minimal summary: a header competition (so team abbrev resolves) plus one
+  // boxscore player section with the categories under test.
+  const syntheticSummary = (opts: {
+    categories: { name: string; labels: string[]; athletes: { id: string; name: string; stats: string[] }[] }[];
+    scoringPlays?: { type?: string; text: string }[];
+  }) => ({
+    header: {
+      competitions: [
+        {
+          competitors: [
+            { id: "1", score: "20", team: { id: "1", abbreviation: "AAA", displayName: "Team A" } },
+            { id: "2", score: "17", team: { id: "2", abbreviation: "BBB", displayName: "Team B" } },
+          ],
+        },
+      ],
+    },
+    boxscore: {
+      teams: [],
+      players: [
+        {
+          team: { id: "1", abbreviation: "AAA" },
+          statistics: opts.categories.map((c) => ({
+            name: c.name,
+            labels: c.labels,
+            athletes: c.athletes.map((a) => ({
+              athlete: { id: a.id, displayName: a.name },
+              stats: a.stats,
+            })),
+          })),
+        },
+      ],
+    },
+    scoringPlays: (opts.scoringPlays ?? []).map((p) => ({ type: { text: p.type ?? "" }, text: p.text })),
+  });
+
+  it("credits twoPtConv to both players named in a passing 2-pt conversion play", () => {
+    const summary = syntheticSummary({
+      categories: [
+        {
+          name: "passing",
+          labels: ["YDS", "TD", "INT"],
+          athletes: [{ id: "p1", name: "Caleb Williams", stats: ["150", "1", "0"] }],
+        },
+        {
+          name: "receiving",
+          labels: ["REC", "YDS", "TD"],
+          athletes: [{ id: "p2", name: "Colston Loveland", stats: ["3", "40", "1"] }],
+        },
+      ],
+      scoringPlays: [
+        {
+          type: "Passing Touchdown",
+          text: "Colston Loveland 2 Yd pass from Caleb Williams (Two-Point Pass Williams to Loveland)",
+        },
+      ],
+    });
+    const lines = parseGameStats(summary);
+    const williams = lines.find((l) => l.externalId === "p1");
+    const loveland = lines.find((l) => l.externalId === "p2");
+    expect(williams!.stats.twoPtConv).toBe(1);
+    expect(loveland!.stats.twoPtConv).toBe(1);
+  });
+
+  it("does NOT credit twoPtConv on a failed conversion", () => {
+    const summary = syntheticSummary({
+      categories: [
+        {
+          name: "rushing",
+          labels: ["YDS", "TD"],
+          athletes: [{ id: "r1", name: "Derrick Henry", stats: ["80", "1"] }],
+        },
+      ],
+      scoringPlays: [{ type: "Rushing Touchdown", text: "Two-Point Rush Henry failed" }],
+    });
+    const lines = parseGameStats(summary);
+    expect(lines.find((l) => l.externalId === "r1")!.stats.twoPtConv).toBe(0);
+  });
+
+  it("sums returnTd across kickReturns and puntReturns TD columns", () => {
+    const summary = syntheticSummary({
+      categories: [
+        {
+          name: "kickReturns",
+          labels: ["NO", "YDS", "AVG", "LONG", "TD"],
+          athletes: [{ id: "ret1", name: "Devin Hester", stats: ["2", "120", "60.0", "98", "1"] }],
+        },
+        {
+          name: "puntReturns",
+          labels: ["NO", "YDS", "AVG", "LONG", "TD"],
+          athletes: [{ id: "ret1", name: "Devin Hester", stats: ["1", "75", "75.0", "75", "1"] }],
+        },
+      ],
+    });
+    const lines = parseGameStats(summary);
+    expect(lines.find((l) => l.externalId === "ret1")!.stats.returnTd).toBe(2);
+  });
+
+  it("does not credit FG distance to a same-surname skill player (kicker map restricted)", () => {
+    // A WR and the kicker share the surname "Butker"; only the kicker (in the
+    // kicking category) should receive the FG distance.
+    const summary = {
+      ...syntheticSummary({
+        categories: [
+          {
+            name: "receiving",
+            labels: ["REC", "YDS", "TD"],
+            athletes: [{ id: "wr1", name: "Fake Butker", stats: ["2", "30", "0"] }],
+          },
+          {
+            name: "kicking",
+            labels: ["FG", "XP", "PTS"],
+            athletes: [{ id: "k1", name: "Harrison Butker", stats: ["1/1", "2/2", "5"] }],
+          },
+        ],
+      }),
+      drives: {
+        previous: [
+          {
+            plays: [
+              { type: { text: "Field Goal Good" }, text: "H.Butker 45 yard field goal", statYardage: 45 },
+            ],
+          },
+        ],
+      },
+    };
+    const lines = parseGameStats(summary);
+    expect(lines.find((l) => l.externalId === "wr1")!.stats.fgMade).toEqual([]);
+    expect(lines.find((l) => l.externalId === "k1")!.stats.fgMade).toEqual([45]);
+  });
+});
+
 describe("parseRoster", () => {
   const players = parseRoster(fixture("espn-roster.json"), "KC");
 

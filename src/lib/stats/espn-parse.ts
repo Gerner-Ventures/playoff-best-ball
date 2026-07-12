@@ -12,6 +12,7 @@ import { emptyStatLine, type StatLine } from "@/domain/stats/stat-line";
 // keeping only the fields this parser touches. Everything is optional because
 // ESPN's public API is untyped and occasionally omits subtrees; the parser is
 // defensive and skips malformed pieces rather than throwing.
+// Known gap: blockedKicks is never populated (no reliable boxscore source identified) — tracked for Phase 5.
 // ---------------------------------------------------------------------------
 
 interface EspnTeamRef {
@@ -65,10 +66,15 @@ interface EspnDrivePlay {
   text?: string;
   statYardage?: number;
 }
+interface EspnScoringPlay {
+  type?: { text?: string };
+  text?: string;
+}
 interface EspnSummary {
   header?: { competitions?: EspnCompetition[] };
   boxscore?: { teams?: EspnTeamBoxscore[]; players?: EspnPlayerSection[] };
   drives?: { previous?: { plays?: EspnDrivePlay[] }[]; current?: { plays?: EspnDrivePlay[] } };
+  scoringPlays?: EspnScoringPlay[];
 }
 
 interface EspnRosterItem {
@@ -204,6 +210,9 @@ export function parseGameStats(summary: unknown): ProviderPlayerStats[] {
 
   // Accumulate ONE stat line per athlete (athletes recur across categories).
   const byId = new Map<string, ProviderPlayerStats>();
+  // Athlete ids that appeared in the KICKING category — used to build a kicker
+  // lookup that excludes same-surname skill players (see applyFieldGoals).
+  const kickerIds = new Set<string>();
   const ensure = (id: string, name: string, nflTeam: string): ProviderPlayerStats => {
     let line = byId.get(id);
     if (!line) {
@@ -225,6 +234,7 @@ export function parseGameStats(summary: unknown): ProviderPlayerStats[] {
             a.firstName && a.lastName ? `${a.firstName} ${a.lastName}` : a.displayName ?? "Unknown";
           const stats = entry.stats ?? [];
           const line = ensure(a.id, name, teamAbbrev);
+          if (category.name === "kicking") kickerIds.add(a.id);
           applyCategory(line.stats, category.name ?? "", stats, labels);
         } catch (err) {
           console.warn(`[espn-parse] skipping malformed athlete in ${category.name}:`, err);
@@ -235,7 +245,10 @@ export function parseGameStats(summary: unknown): ProviderPlayerStats[] {
 
   // Field goal distances (made + missed) come from the drive-by-drive plays,
   // which — unlike scoringPlays — also contain missed attempts with statYardage.
-  applyFieldGoals(data, byId);
+  applyFieldGoals(data, byId, kickerIds);
+
+  // Two-point conversions come from scoringPlays text (ported from legacy).
+  applyTwoPointConversions(data, byId);
 
   const results: ProviderPlayerStats[] = [...byId.values()];
 
@@ -266,6 +279,11 @@ function applyCategory(stats: StatLine, category: string, cols: string[], labels
       // "LOST" column: fumbles lost by the offensive player.
       stats.fumblesLost += statByLabel(cols, labels, "LOST");
       break;
+    case "kickReturns":
+    case "puntReturns":
+      // "TD" column: return touchdowns, summed across kick + punt returns.
+      stats.returnTd += statByLabel(cols, labels, "TD");
+      break;
     case "kicking": {
       // FG distances are filled from drives; here we only take XP made/missed.
       const xpIdx = labels.indexOf("XP");
@@ -289,13 +307,19 @@ function applyCategory(stats: StatLine, category: string, cols: string[], labels
  * attempt, so they are a strictly better source of truth. Kickers are matched
  * by last-name token (legacy's nameAppearsInText decision, kept).
  */
-function applyFieldGoals(data: EspnSummary, byId: Map<string, ProviderPlayerStats>): void {
+function applyFieldGoals(
+  data: EspnSummary,
+  byId: Map<string, ProviderPlayerStats>,
+  kickerIds: Set<string>
+): void {
   const driveGroups = [...(data.drives?.previous ?? [])];
   if (data.drives?.current) driveGroups.push(data.drives.current);
 
-  // last-name token -> kicker line (built from the players we already parsed)
+  // last-name token -> kicker line
+  // Map only kicking-category athletes: prevents FG distances landing on a same-surname skill player.
   const kickerByLastName = new Map<string, ProviderPlayerStats>();
   for (const line of byId.values()) {
+    if (!kickerIds.has(line.externalId)) continue;
     kickerByLastName.set(lastNameToken(line.name), line);
   }
 
@@ -322,6 +346,64 @@ function applyFieldGoals(data: EspnSummary, byId: Map<string, ProviderPlayerStat
       } catch (err) {
         console.warn("[espn-parse] skipping malformed FG play:", err);
       }
+    }
+  }
+}
+
+/**
+ * Two-point conversions from `scoringPlays[].text` (ported from legacy
+ * processScoringPlays/processTwoPointConversion).
+ *
+ * scoringPlays only lists *successful* scores, so a 2-pt entry that appears is a
+ * made conversion — but ESPN also embeds failed tries inside touchdown play text,
+ * so we still guard against explicit failure words. Every parsed player named in
+ * the 2-pt clause is credited (a passer + receiver, or a lone rusher), mirroring
+ * legacy's nameAppearsInText fan-out with the same last-name-token matching the
+ * FG logic uses.
+ *
+ * Two refinements over the naive legacy port, both verified against live ESPN
+ * playoff data (event 401772981): (1) ESPN nests the conversion inside the TD
+ * play text like "Zaccheaus 8 Yd pass from Williams (Williams Pass to Loveland
+ * for Two-Point Conversion)"; we scope matching to the parenthetical clause so
+ * the TD scorer (Zaccheaus) is NOT credited. (2) We match last-name tokens on
+ * word boundaries so "Love" does not falsely match "Loveland".
+ *
+ * Residual limitation (inherent to last-name matching, same class Fix 3 solves
+ * for kickers): a same-surname player on the other team can still collide — e.g.
+ * GB's "Evan Williams" also matches CHI's "Caleb Williams" in the clause above.
+ * Names alone cannot disambiguate that; a play→team association would be needed.
+ */
+function applyTwoPointConversions(
+  data: EspnSummary,
+  byId: Map<string, ProviderPlayerStats>
+): void {
+  for (const play of data.scoringPlays ?? []) {
+    try {
+      const text = play.text ?? "";
+      const simple = text.toLowerCase().replace(/[^a-z0-9]/g, "");
+      if (!simple.includes("twopoint") && !simple.includes("2pt")) continue;
+
+      // Skip failed attempts (defensive: a failed 2-pt shouldn't score, and can
+      // surface embedded in TD play text).
+      if (/fail|incomplete|no good|intercepted/i.test(text)) continue;
+
+      // Scope to the 2-pt clause: prefer a parenthetical that mentions the
+      // conversion; otherwise fall back to the whole text (lone rush/pass plays
+      // may not be parenthesized).
+      const paren = [...text.matchAll(/\(([^)]*)\)/g)]
+        .map((m) => m[1])
+        .find((c) => /two[\s-]?point|2\s*pt/i.test(c));
+      const clause = (paren ?? text).toLowerCase();
+
+      for (const line of byId.values()) {
+        const token = lastNameToken(line.name);
+        // Word-boundary match so "love" doesn't hit "loveland".
+        if (token.length > 2 && new RegExp(`\\b${token}\\b`).test(clause)) {
+          line.stats.twoPtConv += 1;
+        }
+      }
+    } catch (err) {
+      console.warn("[espn-parse] skipping malformed 2-pt play:", err);
     }
   }
 }

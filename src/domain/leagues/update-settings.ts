@@ -18,6 +18,7 @@ export interface UpdateLeagueSettingsInput {
   /** undefined = leave unchanged; null = clear. */
   entryFeeCents?: number | null;
   venmoHandle?: string | null;
+  substitutionsEnabled?: boolean;
 }
 
 /**
@@ -43,6 +44,9 @@ export async function updateLeagueSettings(db: PrismaClient, input: UpdateLeague
   }
   if (input.entryFeeCents !== undefined) settings.entryFeeCents = input.entryFeeCents;
   if (input.venmoHandle !== undefined) settings.venmoHandle = input.venmoHandle;
+  if (input.substitutionsEnabled !== undefined) {
+    settings.substitutionsEnabled = input.substitutionsEnabled;
+  }
 
   // Defense-in-depth: no route drift may ever persist a blob the scoring engine can't parse.
   const validated = leagueSettingsSchema.parse(settings);

@@ -42,6 +42,19 @@ describe("findDueRecaps", () => {
     expect(await findDueRecaps(testDb)).toEqual([]);
   });
 
+  it("emits only the lowest pending week per league, catching up one week per tick", async () => {
+    const league = await completedLeague();
+    await testDb.nflGame.create({ data: gameData("g1", 1, "FINAL", new Date("2027-01-10T18:00:00Z")) });
+    await testDb.nflGame.create({ data: gameData("g2", 2, "FINAL", new Date("2027-01-17T18:00:00Z")) });
+
+    // Two finished weeks pending, but only week 1 is emitted this tick.
+    expect(await findDueRecaps(testDb)).toEqual([{ leagueId: league.id, week: 1 }]);
+
+    // After week 1's recap advances the watermark, the next tick emits week 2.
+    await testDb.league.update({ where: { id: league.id }, data: { lastRecapWeek: 1 } });
+    expect(await findDueRecaps(testDb)).toEqual([{ leagueId: league.id, week: 2 }]);
+  });
+
   it("not due while any game in the week is unfinished, for incomplete drafts, or with no games", async () => {
     await completedLeague();
     await testDb.nflGame.create({ data: gameData("g1", 1, "FINAL", new Date("2027-01-10T18:00:00Z")) });
@@ -64,6 +77,19 @@ describe("findDuePreviews", () => {
 
     await testDb.league.update({ where: { id: league.id }, data: { lastPreviewWeek: 2 } });
     expect(await findDuePreviews(testDb)).toEqual([]);
+  });
+
+  it("emits only the lowest pending week per league when two weeks fall in the horizon", async () => {
+    const league = await completedLeague();
+    const soon = new Date(Date.now() + 12 * 3600 * 1000);
+    const later = new Date(Date.now() + 40 * 3600 * 1000);
+    await testDb.nflGame.create({ data: gameData("g1", 1, "SCHEDULED", soon) });
+    await testDb.nflGame.create({ data: gameData("g2", 2, "SCHEDULED", later) });
+
+    expect(await findDuePreviews(testDb)).toEqual([{ leagueId: league.id, week: 1 }]);
+
+    await testDb.league.update({ where: { id: league.id }, data: { lastPreviewWeek: 1 } });
+    expect(await findDuePreviews(testDb)).toEqual([{ leagueId: league.id, week: 2 }]);
   });
 
   it("not due when games are too far out", async () => {

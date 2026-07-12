@@ -15,7 +15,15 @@ async function leaguesWithCompleteDrafts(db: PrismaClient) {
   });
 }
 
-/** Weeks whose games are ALL final (and exist), per league above its watermark. */
+/**
+ * Weeks whose games are ALL final (and exist), per league above its watermark.
+ *
+ * Emits at most ONE week per league — the lowest pending week — so two recap
+ * events for the same league are never in flight at once. Concurrent runs would
+ * race on the watermark claim (`lastRecapWeek < week`) and the lower week's
+ * recap would be silently dropped. If a league is multiple weeks behind, the
+ * hourly cron catches it up one week per tick.
+ */
 export async function findDueRecaps(db: PrismaClient): Promise<DueWork[]> {
   const games = await db.nflGame.findMany({
     where: { season: CURRENT_SEASON },
@@ -29,17 +37,23 @@ export async function findDueRecaps(db: PrismaClient): Promise<DueWork[]> {
   }
   if (finishedWeeks.size === 0) return [];
 
+  const sortedWeeks = [...finishedWeeks].sort((a, b) => a - b);
   const leagues = await leaguesWithCompleteDrafts(db);
   const due: DueWork[] = [];
   for (const league of leagues) {
-    for (const week of [...finishedWeeks].sort((a, b) => a - b)) {
-      if (week > league.lastRecapWeek) due.push({ leagueId: league.id, week });
-    }
+    const week = sortedWeeks.find((w) => w > league.lastRecapWeek);
+    if (week !== undefined) due.push({ leagueId: league.id, week });
   }
   return due;
 }
 
-/** Weeks with games starting within the horizon, per league above its watermark. */
+/**
+ * Weeks with games starting within the horizon, per league above its watermark.
+ *
+ * Like findDueRecaps, emits at most ONE week per league (the lowest pending
+ * week) so concurrent preview runs never race on the watermark claim; the
+ * cron catches up one week per tick.
+ */
 export async function findDuePreviews(db: PrismaClient): Promise<DueWork[]> {
   const now = Date.now();
   const upcoming = await db.nflGame.findMany({
@@ -56,9 +70,8 @@ export async function findDuePreviews(db: PrismaClient): Promise<DueWork[]> {
   const leagues = await leaguesWithCompleteDrafts(db);
   const due: DueWork[] = [];
   for (const league of leagues) {
-    for (const week of dueWeeks) {
-      if (week > league.lastPreviewWeek) due.push({ leagueId: league.id, week });
-    }
+    const week = dueWeeks.find((w) => w > league.lastPreviewWeek);
+    if (week !== undefined) due.push({ leagueId: league.id, week });
   }
   return due;
 }

@@ -79,6 +79,15 @@ npm run test:e2e
 | `npm run test:e2e` | Playwright end-to-end tests |
 | `npm run db:push` | Push schema to dev DB (5434) |
 | `npm run db:push:test` | Push schema to test DB (5433) |
+| `npm run mock:week -- <1-4>` | Simulate a playoff week against the dev DB (generates fake stat lines for all players and runs the scoring engine) |
+
+## Admin panel
+
+`/admin` is unlocked for emails listed in the `ADMIN_EMAILS` environment variable (comma-separated). It provides:
+
+- **Pool sync** — pull the current player pool from ESPN into the dev/production DB
+- **Week sync** — fetch and store stat lines for a given playoff week
+- **Manual stat override** — edit individual player stat lines directly (useful for correcting ESPN data)
 
 ## Project Structure
 
@@ -86,14 +95,16 @@ npm run test:e2e
 src/
   domain/         # Pure business logic (no framework deps)
     draft/        # Draft engine: snake order, slot assignment, pick clock, start/pick/autodraft/queue services
+    stats/        # Stat lines, StatsProvider interface, player-pool sync, week-stats sync
+    scoring/      # Points engine (compute-points), best-ball optimizer
   lib/            # DB client, auth config, session helpers
+    stats/        # ESPN HTTP adapter (espn-provider, espn-parse)
   app/            # Next.js routes and API handlers
   components/     # Shared UI components
-  inngest/        # Durable functions (pick clock, notification timers)
+  inngest/        # Durable functions (pick clock, notification timers, stat sync crons)
 tests/            # Vitest unit/integration tests
 e2e/              # Playwright end-to-end tests
-data/             # Player pool fixtures
-legacy/           # Archived v0 prototype — reference only, removed after Phase 3
+data/             # Player pool fixtures (players-2026.json)
 ```
 
 ## Docs

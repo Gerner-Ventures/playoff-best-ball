@@ -218,7 +218,14 @@ export const statsSyncDaily = inngest.createFunction(
         console.warn("[odds] ODDS_API_KEY not set — skipping odds sync");
         return { skipped: true };
       }
-      return syncTeamOdds(db, oddsProvider, { season: CURRENT_SEASON });
+      // Odds are non-critical by design (projections fall back to 0.5 without
+      // them), so a provider failure must not fail the whole daily sync run.
+      try {
+        return await syncTeamOdds(db, oddsProvider, { season: CURRENT_SEASON });
+      } catch (err) {
+        console.error("[odds] sync failed", err);
+        return { skipped: true, error: String(err) };
+      }
     });
     return { weeks: Object.values(PLAYOFF_WEEKS) };
   },

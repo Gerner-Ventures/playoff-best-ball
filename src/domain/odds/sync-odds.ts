@@ -18,6 +18,15 @@ export async function syncTeamOdds(
   const gameByPair = new Map(scheduled.map((g) => [`${g.homeTeam}:${g.awayTeam}`, g]));
 
   const odds = await provider.fetchUpcomingOdds();
+
+  // Week/team pairings can shift between syncs (reschedules; next-round matchups
+  // firming up). Rows written under an old mapping would otherwise linger and be
+  // read as authoritative, so wipe odds for every active (non-FINAL) week and
+  // rewrite them fresh. Past all-FINAL weeks are untouched history.
+  const activeWeeks = [...new Set(scheduled.map((g) => g.week))];
+  await db.teamOdds.deleteMany({
+    where: { season: input.season, week: { in: activeWeeks } },
+  });
   let upserted = 0;
   for (const o of odds) {
     const game =

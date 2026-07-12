@@ -22,7 +22,7 @@ describe("handleCheckoutCompleted", () => {
     const purchase = await handleCheckoutCompleted(testDb, {
       sessionId: "cs_test_1", leagueId: league.id, userId: user.id, amountCents: 2500,
     });
-    expect(purchase.amountCents).toBe(2500);
+    expect(purchase!.amountCents).toBe(2500);
     const updated = await testDb.league.findUniqueOrThrow({ where: { id: league.id } });
     expect(updated.tier).toBe("PREMIUM");
     expect(parseLeagueSettings(updated.settings).maxEntries).toBe(PREMIUM_MAX_ENTRIES);
@@ -36,7 +36,7 @@ describe("handleCheckoutCompleted", () => {
     const retry = await handleCheckoutCompleted(testDb, {
       sessionId: "cs_test_1", leagueId: league.id, userId: user.id, amountCents: 2500,
     });
-    expect(retry.id).toBe(first.id);
+    expect(retry!.id).toBe(first!.id);
     expect(await testDb.leaguePurchase.count()).toBe(1);
   });
 
@@ -64,7 +64,7 @@ describe("handleCheckoutCompleted", () => {
     const result = await handleCheckoutCompleted(testDb, {
       sessionId: "cs_race_1", leagueId: league.id, userId: user.id, amountCents: 2500,
     });
-    expect(result.id).toBe(preCreated.id);
+    expect(result!.id).toBe(preCreated.id);
     expect(await testDb.leaguePurchase.count()).toBe(1);
   });
 
@@ -81,5 +81,14 @@ describe("handleCheckoutCompleted", () => {
     const updated = await testDb.league.findUniqueOrThrow({ where: { id: league.id } });
     expect(updated.tier).toBe("PREMIUM");
     expect(await testDb.leaguePurchase.count()).toBe(2);
+  });
+
+  it("nonexistent leagueId resolves null without creating a purchase row", async () => {
+    const { user } = await setup();
+    const result = await handleCheckoutCompleted(testDb, {
+      sessionId: "cs_ghost", leagueId: "nonexistent-league-id", userId: user.id, amountCents: 2500,
+    });
+    expect(result).toBeNull();
+    expect(await testDb.leaguePurchase.count()).toBe(0);
   });
 });

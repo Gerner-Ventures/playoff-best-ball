@@ -71,4 +71,16 @@ describe("updateLeagueSettings", () => {
       }),
     ).rejects.toThrow(NotCommissionerError);
   });
+
+  it("refuses to persist settings the schema rejects (defense-in-depth)", async () => {
+    const { user, league } = await setup();
+    await expect(
+      updateLeagueSettings(testDb, {
+        leagueId: league.id, userId: user.id,
+        venmoHandle: "x".repeat(45),
+      }),
+    ).rejects.toThrow();
+    const row = await testDb.league.findUniqueOrThrow({ where: { id: league.id } });
+    expect(() => parseLeagueSettings(row.settings)).not.toThrow(); // blob still valid
+  });
 });

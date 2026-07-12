@@ -1,4 +1,4 @@
-import { Prisma, type PrismaClient } from "@prisma/client";
+import { Prisma, type PrismaClient, type LeaguePurchase } from "@prisma/client";
 import { upgradeLeaguePremium } from "./upgrade-league";
 
 export interface CheckoutCompletedInput {
@@ -11,18 +11,29 @@ export interface CheckoutCompletedInput {
 /**
  * Source of truth for premium: called by the Stripe webhook. Idempotent by
  * stripeSessionId (Stripe retries webhooks); purchase + upgrade are atomic.
+ * Returns null (no throw) for unknown leagueIds so Stripe does not retry-loop.
  */
-export async function handleCheckoutCompleted(db: PrismaClient, input: CheckoutCompletedInput) {
+export async function handleCheckoutCompleted(
+  db: PrismaClient,
+  input: CheckoutCompletedInput,
+): Promise<LeaguePurchase | null> {
   if (!input.leagueId) throw new Error("checkout session missing leagueId metadata");
   const existing = await db.leaguePurchase.findUnique({
     where: { stripeSessionId: input.sessionId },
   });
   if (existing) return existing;
 
-  // Warn before entering the transaction if the league is already premium — this
-  // session is a new (different) charge and is a refund candidate.
-  const league = await db.league.findUniqueOrThrow({ where: { id: input.leagueId } });
+  // Single league fetch: covers both the nonexistent-league early-return and the
+  // duplicate-premium warning; avoids a second DB round-trip inside the transaction.
+  const league = await db.league.findUnique({ where: { id: input.leagueId } });
+  if (!league) {
+    console.error(
+      `[stripe] purchase for unknown league ${input.leagueId} (session ${input.sessionId}) — refund candidate; not retrying`,
+    );
+    return null;
+  }
   if (league.tier === "PREMIUM") {
+    // This session is a new (different) charge and is a refund candidate.
     console.error(
       `[stripe] duplicate premium purchase for league ${input.leagueId} (session ${input.sessionId}) — refund candidate`,
     );

@@ -1,6 +1,7 @@
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { NotCommissionerError, PremiumFeatureError } from "../errors";
 import {
+  leagueSettingsSchema,
   parseLeagueSettings,
   SCORING_PRESETS,
   type ScoringPresetName,
@@ -43,8 +44,10 @@ export async function updateLeagueSettings(db: PrismaClient, input: UpdateLeague
   if (input.entryFeeCents !== undefined) settings.entryFeeCents = input.entryFeeCents;
   if (input.venmoHandle !== undefined) settings.venmoHandle = input.venmoHandle;
 
+  // Defense-in-depth: no route drift may ever persist a blob the scoring engine can't parse.
+  const validated = leagueSettingsSchema.parse(settings);
   return db.league.update({
     where: { id: input.leagueId },
-    data: { settings: settings as Prisma.InputJsonValue },
+    data: { settings: validated as Prisma.InputJsonValue },
   });
 }

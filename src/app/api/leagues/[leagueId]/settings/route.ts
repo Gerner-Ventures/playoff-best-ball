@@ -12,7 +12,13 @@ const bodySchema = z.object({
   scoringPreset: scoringPresetNameSchema.optional(),
   scoring: scoringSettingsSchema.optional(),
   entryFeeCents: z.number().int().nonnegative().max(100_000_00).nullable().optional(),
-  venmoHandle: z.string().trim().min(1).max(41).transform((v) => v.replace(/^@/, "")).nullable().optional(),
+  venmoHandle: z
+    .string()
+    .trim()
+    .transform((v) => v.replace(/^@/, ""))
+    .pipe(z.string().min(1).max(40).regex(/^[\w-]+$/, "Letters, numbers, dashes and underscores only"))
+    .nullable()
+    .optional(),
 });
 
 export async function PATCH(req: Request, { params }: Params) {

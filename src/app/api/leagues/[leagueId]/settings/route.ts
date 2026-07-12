@@ -12,7 +12,7 @@ const bodySchema = z.object({
   scoringPreset: scoringPresetNameSchema.optional(),
   scoring: scoringSettingsSchema.optional(),
   entryFeeCents: z.number().int().nonnegative().max(100_000_00).nullable().optional(),
-  venmoHandle: z.string().trim().min(1).max(40).nullable().optional(),
+  venmoHandle: z.string().trim().min(1).max(41).transform((v) => v.replace(/^@/, "")).nullable().optional(),
 });
 
 export async function PATCH(req: Request, { params }: Params) {

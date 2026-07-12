@@ -160,7 +160,8 @@ export function LeagueSettingsForm({ leagueId, isPremium, initial, duesInterestJ
                       step="any"
                       value={scoring[key]}
                       onChange={(e) => setScoringField(key, Number(e.target.value))}
-                      className="rounded border px-2 py-1 text-sm text-gray-900"
+                      disabled={!isPremium}
+                      className="rounded border px-2 py-1 text-sm text-gray-900 disabled:bg-gray-50 disabled:text-gray-400"
                     />
                   </label>
                 ))}

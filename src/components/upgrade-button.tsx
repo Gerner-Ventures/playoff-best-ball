@@ -9,18 +9,20 @@ export function UpgradeButton({ leagueId }: { leagueId: string }) {
   async function upgrade() {
     setBusy(true);
     setError(null);
+    let navigating = false;
     try {
       const res = await fetch(`/api/leagues/${leagueId}/upgrade`, { method: "POST" });
       const body = await res.json().catch(() => ({}));
       if (res.ok && body.url) {
-        window.location.assign(body.url); // off to Stripe Checkout
+        navigating = true;
+        window.location.assign(body.url); // busy stays true; the page is leaving
         return;
       }
       setError(body.error ?? "Something went wrong.");
     } catch {
       setError("Couldn't reach the server. Check your connection and try again.");
     } finally {
-      setBusy(false);
+      if (!navigating) setBusy(false);
     }
   }
 

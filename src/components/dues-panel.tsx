@@ -51,7 +51,7 @@ export function DuesPanel({ leagueId, isCommissioner, entryFeeCents, venmoHandle
           <>
             {" "}·{" "}
             <a
-              href={`https://venmo.com/u/${venmoHandle}`}
+              href={`https://venmo.com/u/${venmoHandle.replace(/^@/, "")}`}
               target="_blank"
               rel="noreferrer"
               className="underline"

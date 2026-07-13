@@ -16,7 +16,7 @@ import { CURRENT_SEASON, PLAYOFF_WEEKS } from "@/domain/season";
 import { findDueRecaps, findDuePreviews } from "@/domain/engagement/due-work";
 import { getEliminatedTeams } from "@/domain/stats/eliminated-teams";
 import { buildWeeklyRecap } from "@/domain/engagement/recap";
-import { getLeagueScores } from "@/lib/league-scores";
+import { effectivePlayerForWeek, getLeagueScores } from "@/lib/league-scores";
 import { roundPoints } from "@/domain/scoring/compute-points";
 
 /**
@@ -358,6 +358,14 @@ export const sendLeaguePreview = inngest.createFunction(
             include: {
               membership: { select: { userId: true } },
               picks: { include: { player: { select: { name: true, position: true, nflTeam: true } } } },
+              substitutions: {
+                select: {
+                  originalPlayerId: true,
+                  substitutePlayerId: true,
+                  effectiveWeek: true,
+                  substitutePlayer: { select: { name: true, position: true, nflTeam: true } },
+                },
+              },
             },
           },
         },
@@ -365,9 +373,21 @@ export const sendLeaguePreview = inngest.createFunction(
       const eliminated = await getEliminatedTeams(db, league.season);
       const perUser = new Map<string, string[]>(); // userId → alive player labels, across all their entries
       for (const entry of league.entries) {
+        // Resolve substitutions so the preview matches the leaderboard's roster for this week.
+        const playerById = new Map(entry.picks.map((p) => [p.playerId, p.player]));
+        for (const sub of entry.substitutions) {
+          playerById.set(sub.substitutePlayerId, sub.substitutePlayer);
+        }
+        const subsByOriginal = new Map(
+          entry.substitutions.map((s) => [
+            s.originalPlayerId,
+            { substitutePlayerId: s.substitutePlayerId, effectiveWeek: s.effectiveWeek },
+          ]),
+        );
         const labels = entry.picks
-          .filter((p) => !eliminated.has(p.player.nflTeam))
-          .map((p) => `${p.player.name} (${p.player.position}, ${p.player.nflTeam})`);
+          .map((pick) => playerById.get(effectivePlayerForWeek(pick, week, subsByOriginal))!)
+          .filter((player) => !eliminated.has(player.nflTeam))
+          .map((player) => `${player.name} (${player.position}, ${player.nflTeam})`);
         const existing = perUser.get(entry.membership.userId) ?? [];
         perUser.set(entry.membership.userId, [...existing, ...labels]);
       }

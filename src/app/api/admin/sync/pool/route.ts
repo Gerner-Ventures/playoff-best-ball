@@ -3,7 +3,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { getSessionUser } from "@/lib/session";
 import { isAdmin } from "@/lib/admin";
-import { espnProvider } from "@/lib/stats/espn-provider";
+import { statsProvider } from "@/lib/stats-provider";
 import { syncPlayerPool } from "@/domain/stats/sync-pool";
 import { CURRENT_SEASON } from "@/domain/season";
 
@@ -14,7 +14,7 @@ export async function POST(req: Request) {
   if (!isAdmin(user)) return NextResponse.json({ error: "Not found" }, { status: 404 });
   const parsed = bodySchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
-  const result = await syncPlayerPool(db, espnProvider, {
+  const result = await syncPlayerPool(db, statsProvider, {
     season: CURRENT_SEASON,
     teams: parsed.data.teams.map((t) => t.toUpperCase()),
   });

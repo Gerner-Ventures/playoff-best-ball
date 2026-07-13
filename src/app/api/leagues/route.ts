@@ -4,6 +4,8 @@ import { db } from "@/lib/db";
 import { getSessionUser } from "@/lib/session";
 import { createLeague } from "@/domain/leagues/create-league";
 import { FreeLeagueLimitError } from "@/domain/errors";
+import { captureServerEvent } from "@/lib/analytics-server";
+import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
 import { pickClockHoursSchema, scoringPresetNameSchema } from "@/domain/league-settings";
 
 const bodySchema = z.object({
@@ -24,6 +26,8 @@ export async function POST(req: Request) {
 
   try {
     const league = await createLeague(db, { userId: user.id, ...parsed.data });
+    // Analytics: awaited but can never throw (captureServerEvent swallows errors), so it can't break the request.
+    await captureServerEvent(user.id, ANALYTICS_EVENTS.LEAGUE_CREATED, { leagueId: league.id });
     return NextResponse.json({ leagueId: league.id, inviteCode: league.inviteCode }, { status: 201 });
   } catch (err) {
     if (err instanceof FreeLeagueLimitError) {

@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSessionUser } from "@/lib/session";
 import { stripe, PREMIUM_PRICE_CENTS } from "@/lib/stripe";
+import { captureServerEvent } from "@/lib/analytics-server";
+import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
 
 type Params = { params: Promise<{ leagueId: string }> };
 
@@ -47,6 +49,10 @@ export async function POST(_req: Request, { params }: Params) {
     metadata: { leagueId: league.id, userId: user.id },
     success_url: `${APP_URL}/leagues/${league.id}?upgraded=1`,
     cancel_url: `${APP_URL}/leagues/${league.id}?upgrade=cancelled`,
+  });
+  // Analytics: awaited but can never throw (captureServerEvent swallows errors), so it can't break the request.
+  await captureServerEvent(user.id, ANALYTICS_EVENTS.UPGRADE_CHECKOUT_STARTED, {
+    leagueId: league.id,
   });
   return NextResponse.json({ url: session.url });
 }

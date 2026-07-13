@@ -1,6 +1,6 @@
 # Playoff Best Ball
 
-A hosted multi-tenant NFL playoff best ball league platform. Commissioners create leagues, friends join via invite links, and teams are assembled through an async slow-snake draft with notifications. Scoring runs automatically through the playoffs using optimal best-ball lineup selection. **Free tier:** standard scoring presets, ads shown. **Premium ($25/season):** custom per-value scoring, up to 25 teams, multiple entries per person, next-week projections, multiple leagues, no ads.
+A hosted multi-tenant NFL playoff best ball league platform. Commissioners create leagues, friends join via invite links, and teams are assembled through an async slow-snake draft with notifications. Scoring runs automatically through the playoffs using optimal best-ball lineup selection. **Free tier:** standard scoring presets, ads shown. **Premium ($25/season by default; override with `PREMIUM_PRICE_CENTS`):** custom per-value scoring, up to 25 teams, multiple entries per person, next-week projections, multiple leagues, no ads.
 
 ## Local Setup
 
@@ -34,6 +34,8 @@ stripe listen --forward-to localhost:3000/api/webhooks/stripe
 
 When `STRIPE_SECRET_KEY` is empty the upgrade button returns an error — Premium features are still accessible in the DB by setting `tier = 'PREMIUM'` directly.
 
+The premium price is config-driven: `PREMIUM_PRICE_CENTS` (default `2500` = $25). Invalid or out-of-range values fall back to the default with a console warning.
+
 ### Google AdSense (ads on free tier)
 
 Set the AdSense client and slot in `.env` (see `.env.example`):
@@ -44,6 +46,8 @@ NEXT_PUBLIC_ADSENSE_SLOT=xxxxxxxxxxxxxxxx
 ```
 
 When these variables are empty the ad slot components render nothing — safe for local dev.
+
+> **No ads this season** — the AdSense slot stays env-gated off in production (leave both variables unset).
 
 ### SMS notifications (Twilio)
 
@@ -84,6 +88,35 @@ ODDS_API_KEY=xxxxxxxx
 ```
 
 A free-tier key from [The Odds API](https://the-odds-api.com/) is plenty — odds sync runs once per day as part of the daily stats cron. When the key is empty the odds sync step skips with a console warning and projections fall back to a 0.5 win probability for every team — safe for local dev.
+
+### Analytics (PostHog)
+
+Optional and fully off when unset (see `.env.example`):
+
+```
+NEXT_PUBLIC_POSTHOG_KEY=phc_xxxx     # client: pageviews/autocapture (build-time)
+NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
+POSTHOG_KEY=phc_xxxx                 # server: webhook/cron event capture (runtime)
+POSTHOG_HOST=https://us.i.posthog.com
+```
+
+The `NEXT_PUBLIC_*` pair is inlined into the client bundle at build time; the server pair captures the monetization funnel events (league created/joined, draft completed, upgrade started/completed, dues interest) from API routes, the Stripe webhook, and Inngest functions.
+
+### Ops alerts (Slack)
+
+```
+OPS_ALERT_SLACK_WEBHOOK_URL=https://hooks.slack.com/services/xxx
+```
+
+Background sync jobs (live/daily stats, odds) alert to this incoming webhook after 3 consecutive failures and announce recovery. When empty, alerts go to `console.warn` only — safe for local dev.
+
+### Stats provider switch
+
+```
+STATS_PROVIDER=fake
+```
+
+Unset (default) syncs real data from ESPN. `fake` is the December-beta mode: crons never hit ESPN, and playoff weeks advance via the admin panel's "Advance mock week" button (same simulation as `npm run mock:week`).
 
 - Dev DB runs on port **5434** (to avoid conflicts with other local Postgres instances)
 - Test DB runs on port **5433**
@@ -152,6 +185,14 @@ tests/            # Vitest unit/integration tests
 e2e/              # Playwright end-to-end tests
 data/             # Player pool fixtures (players-2026.json)
 ```
+
+## Deploying
+
+Production runs on Vercel + Neon + Inngest, with secrets in Doppler. The one-time setup — every integration, the full env var table (required vs optional, build-time `NEXT_PUBLIC_*` callouts), seeding, smoke tests, and the December beta → January launch flip — is documented in the operator runbook:
+
+**[`docs/runbooks/production-setup.md`](docs/runbooks/production-setup.md)**
+
+`npm ci` runs `postinstall: prisma generate`, so fresh Vercel builds get a generated Prisma client automatically.
 
 ## Docs
 

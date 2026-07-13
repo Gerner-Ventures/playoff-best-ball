@@ -17,18 +17,19 @@ describe("handleCheckoutCompleted", () => {
     return { user, league };
   }
 
-  it("records the purchase and upgrades the league atomically", async () => {
+  it("records the purchase and upgrades the league atomically (created=true on first call)", async () => {
     const { user, league } = await setup();
-    const purchase = await handleCheckoutCompleted(testDb, {
+    const result = await handleCheckoutCompleted(testDb, {
       sessionId: "cs_test_1", leagueId: league.id, userId: user.id, amountCents: 2500,
     });
-    expect(purchase!.amountCents).toBe(2500);
+    expect(result!.created).toBe(true);
+    expect(result!.purchase.amountCents).toBe(2500);
     const updated = await testDb.league.findUniqueOrThrow({ where: { id: league.id } });
     expect(updated.tier).toBe("PREMIUM");
     expect(parseLeagueSettings(updated.settings).maxEntries).toBe(PREMIUM_MAX_ENTRIES);
   });
 
-  it("is idempotent on webhook retries (same session id)", async () => {
+  it("is idempotent on webhook retries (same session id) — replay reports created=false", async () => {
     const { user, league } = await setup();
     const first = await handleCheckoutCompleted(testDb, {
       sessionId: "cs_test_1", leagueId: league.id, userId: user.id, amountCents: 2500,
@@ -36,7 +37,10 @@ describe("handleCheckoutCompleted", () => {
     const retry = await handleCheckoutCompleted(testDb, {
       sessionId: "cs_test_1", leagueId: league.id, userId: user.id, amountCents: 2500,
     });
-    expect(retry!.id).toBe(first!.id);
+    // Pinning: analytics gates on `created`, so a replayed webhook must not look like a new upgrade.
+    expect(first!.created).toBe(true);
+    expect(retry!.created).toBe(false);
+    expect(retry!.purchase.id).toBe(first!.purchase.id);
     expect(await testDb.leaguePurchase.count()).toBe(1);
   });
 
@@ -60,11 +64,13 @@ describe("handleCheckoutCompleted", () => {
         amountCents: 2500,
       },
     });
-    // Calling with the same sessionId should return the existing row without error.
+    // Calling with the same sessionId should return the existing row without error,
+    // and report created=false — this call did not create the purchase.
     const result = await handleCheckoutCompleted(testDb, {
       sessionId: "cs_race_1", leagueId: league.id, userId: user.id, amountCents: 2500,
     });
-    expect(result!.id).toBe(preCreated.id);
+    expect(result!.created).toBe(false);
+    expect(result!.purchase.id).toBe(preCreated.id);
     expect(await testDb.leaguePurchase.count()).toBe(1);
   });
 
@@ -75,9 +81,11 @@ describe("handleCheckoutCompleted", () => {
       sessionId: "cs_first", leagueId: league.id, userId: user.id, amountCents: 2500,
     });
     // Second purchase with a DIFFERENT session id: league already premium — refund candidate.
-    await handleCheckoutCompleted(testDb, {
+    // A distinct session genuinely creates a new purchase row, so created=true.
+    const duplicate = await handleCheckoutCompleted(testDb, {
       sessionId: "cs_duplicate", leagueId: league.id, userId: user.id, amountCents: 2500,
     });
+    expect(duplicate!.created).toBe(true);
     const updated = await testDb.league.findUniqueOrThrow({ where: { id: league.id } });
     expect(updated.tier).toBe("PREMIUM");
     expect(await testDb.leaguePurchase.count()).toBe(2);

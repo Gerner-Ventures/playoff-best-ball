@@ -301,7 +301,7 @@ model DuesCollectionInterest {
   userId    String
   createdAt DateTime @default(now())
 
-  @@unique([leagueId, userId]) // one waitlist signup per commissioner per league
+  @@unique([leagueId, userId]) // one waitlist signup per member per league
 }
 
 // Injury substitution (league setting, off by default): the original's points count
@@ -336,4 +336,16 @@ model TeamOdds {
   updatedAt DateTime  @updatedAt
 
   @@unique([season, week, team])
+}
+
+// Consecutive-failure tracking per background job, for ops alerting.
+model SyncHealth {
+  id                  String    @id @default(cuid())
+  job                 String    @unique // "stats-sync-live" | "stats-sync-daily" | "odds-sync"
+  consecutiveFailures Int       @default(0)
+  lastError           String?
+  lastFailureAt       DateTime?
+  lastSuccessAt       DateTime?
+  alertedAt           DateTime? // set when we alerted for the current failure streak
+  updatedAt           DateTime  @updatedAt
 }

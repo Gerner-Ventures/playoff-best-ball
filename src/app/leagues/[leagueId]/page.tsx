@@ -11,6 +11,7 @@ import { DraftCard } from "@/components/draft-card";
 import { Leaderboard } from "@/components/leaderboard";
 import { ProjectionsTable } from "@/components/projections-table";
 import { UpgradeButton } from "@/components/upgrade-button";
+import { formatPriceUsd, PREMIUM_PRICE_CENTS } from "@/lib/pricing";
 import { AdSlot } from "@/components/ad-slot";
 import { DuesPanel } from "@/components/dues-panel";
 import { AddEntryButton } from "@/components/add-entry-button";
@@ -75,7 +76,7 @@ export default async function LeaguePage({
             </p>
             {isCommissioner && league.tier === "FREE" && (
               <div className="mt-3">
-                <UpgradeButton leagueId={league.id} />
+                <UpgradeButton leagueId={league.id} priceLabel={formatPriceUsd(PREMIUM_PRICE_CENTS)} />
                 <p className="mt-1 text-xs text-gray-500">Custom scoring, up to 25 teams, more leagues, no ads.</p>
               </div>
             )}

@@ -81,7 +81,7 @@ integrations from earlier ones.
 | `VAPID_PRIVATE_KEY` | runtime | Other half of the pair above |
 | `VAPID_SUBJECT` | runtime | `mailto:` contact for push, e.g. `mailto:hello@njgerner.com` |
 | `INNGEST_EVENT_KEY` / `INNGEST_SIGNING_KEY` | runtime | Auto-injected by the Vercel ↔ Inngest integration (step 4) — do not set by hand |
-| `ODDS_API_KEY` | runtime | Odds sync skips; projections fall back to 0.5 win probability |
+| `ODDS_API_KEY` | runtime | Odds sync skips; projections fall back to 0.5 win probability. **Leave unset during the beta** — `STATS_PROVIDER=fake` does NOT suppress odds sync, so a set key would hit The Odds API for real |
 | `NEXT_PUBLIC_POSTHOG_KEY` | **build** | Client analytics (pageviews/autocapture) fully off |
 | `NEXT_PUBLIC_POSTHOG_HOST` | **build** | Defaults to `https://us.i.posthog.com` |
 | `POSTHOG_KEY` | runtime | Server-side event capture (webhooks/crons) silently off |
@@ -153,6 +153,10 @@ integrations from earlier ones.
    - `NEXT_PUBLIC_POSTHOG_KEY` + `NEXT_PUBLIC_POSTHOG_HOST` (client — **build-time**, set before deploying)
    - `POSTHOG_KEY` + `POSTHOG_HOST` (server — runtime)
 
+   Set **both** pairs or neither: with only the client pair set, pageviews work while the server
+   events (`league_upgraded`, `dues_interest`, …) silently drop — a half-configured funnel looks
+   like a conversion bug.
+
 ## 9. Slack (ops alerts)
 
 1. Create an incoming webhook in the ops channel (Slack app → Incoming Webhooks).
@@ -184,6 +188,7 @@ integrations from earlier ones.
 ## 11. December beta checklist
 
 - [ ] 2–4 friend leagues running on `STATS_PROVIDER=fake`
+- [ ] `SyncHealth` rows updating (one upsert per cron run, including no-op runs, is expected — it doubles as cron liveness proof)
 - [ ] Watch Inngest run history + the `SyncHealth` table for failures; Slack alerts wired
 - [ ] Advance mock weeks (1–4) on a realistic cadence; confirm recaps/previews land
 - [ ] Collect feedback (UX friction, notification volume, dues-interest clicks, premium

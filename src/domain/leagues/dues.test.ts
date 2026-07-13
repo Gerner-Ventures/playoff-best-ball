@@ -3,7 +3,7 @@ import { testDb, resetDb, createTestUser } from "../../../tests/helpers/db";
 import { createLeague } from "./create-league";
 import { joinLeague } from "./join-league";
 import { setDuesPaid, recordDuesInterest } from "./dues";
-import { NotCommissionerError } from "../errors";
+import { NotCommissionerError, NotLeagueMemberError } from "../errors";
 
 async function setup() {
   const commish = await createTestUser("Commish");
@@ -51,10 +51,28 @@ describe("dues", () => {
     ).rejects.toThrow(/entry not in league/i);
   });
 
-  it("records dues-collection interest once per commissioner", async () => {
+  it("records dues-collection interest once per member, reporting idempotent re-clicks", async () => {
     const { commish, league } = await setup();
-    await recordDuesInterest(testDb, { leagueId: league.id, userId: commish.id });
-    await recordDuesInterest(testDb, { leagueId: league.id, userId: commish.id }); // idempotent
+    const first = await recordDuesInterest(testDb, { leagueId: league.id, userId: commish.id });
+    expect(first.alreadyRecorded).toBe(false);
+    const second = await recordDuesInterest(testDb, { leagueId: league.id, userId: commish.id });
+    expect(second.alreadyRecorded).toBe(true);
     expect(await testDb.duesCollectionInterest.count()).toBe(1);
+  });
+
+  it("lets any league member record interest, not just the commissioner", async () => {
+    const { friend, league } = await setup();
+    const result = await recordDuesInterest(testDb, { leagueId: league.id, userId: friend.id });
+    expect(result.alreadyRecorded).toBe(false);
+    expect(await testDb.duesCollectionInterest.count()).toBe(1);
+  });
+
+  it("rejects non-members recording interest", async () => {
+    const { league } = await setup();
+    const outsider = await createTestUser("Outsider");
+    await expect(
+      recordDuesInterest(testDb, { leagueId: league.id, userId: outsider.id }),
+    ).rejects.toThrow(NotLeagueMemberError);
+    expect(await testDb.duesCollectionInterest.count()).toBe(0);
   });
 });

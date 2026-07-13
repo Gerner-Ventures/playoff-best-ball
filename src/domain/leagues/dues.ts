@@ -1,5 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
-import { NotCommissionerError } from "../errors";
+import { NotCommissionerError, NotLeagueMemberError } from "../errors";
 
 async function requireCommissioner(db: PrismaClient, leagueId: string, userId: string) {
   const membership = await db.membership.findUnique({
@@ -18,15 +18,27 @@ export async function setDuesPaid(
   return db.entry.update({ where: { id: input.entryId }, data: { duesPaid: input.paid } });
 }
 
-/** Fake-door signal: which commissioners want us to collect dues. Idempotent. */
+/**
+ * Fake-door signal: which members want us to collect dues next season.
+ * Idempotent per (league, user); reports re-clicks so callers can fire
+ * analytics only on first-time records. Any member may register interest
+ * (the v1 UI only surfaces it on the commissioner-only settings page).
+ */
 export async function recordDuesInterest(
   db: PrismaClient,
   input: { leagueId: string; userId: string },
-) {
-  await requireCommissioner(db, input.leagueId, input.userId);
-  return db.duesCollectionInterest.upsert({
+): Promise<{ alreadyRecorded: boolean }> {
+  const membership = await db.membership.findUnique({
     where: { leagueId_userId: { leagueId: input.leagueId, userId: input.userId } },
-    create: { leagueId: input.leagueId, userId: input.userId },
-    update: {},
   });
+  if (!membership) throw new NotLeagueMemberError();
+
+  const existing = await db.duesCollectionInterest.findUnique({
+    where: { leagueId_userId: { leagueId: input.leagueId, userId: input.userId } },
+  });
+  if (existing) return { alreadyRecorded: true };
+  await db.duesCollectionInterest.create({
+    data: { leagueId: input.leagueId, userId: input.userId },
+  });
+  return { alreadyRecorded: false };
 }

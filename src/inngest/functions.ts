@@ -8,7 +8,7 @@ import { autodraftCurrentPick } from "@/domain/draft/autodraft";
 import { announceDraftState } from "@/lib/draft-events";
 import { startDraftForLeague } from "@/domain/draft/start-draft";
 import { DomainError, DraftAlreadyStartedError } from "@/domain/errors";
-import { espnProvider } from "@/lib/stats/espn-provider";
+import { statsProvider } from "@/lib/stats-provider";
 import { syncWeekStats } from "@/domain/stats/sync-week";
 import { oddsProvider } from "@/lib/odds/odds-api-provider";
 import { syncTeamOdds } from "@/domain/odds/sync-odds";
@@ -221,7 +221,7 @@ export const statsSyncLive = inngest.createFunction(
     try {
       for (const week of activeWeeks) {
         await step.run(`sync-week-${week}`, () =>
-          syncWeekStats(db, espnProvider, { season: CURRENT_SEASON, week }),
+          syncWeekStats(db, statsProvider, { season: CURRENT_SEASON, week }),
         );
       }
     } catch (err) {
@@ -264,7 +264,7 @@ export const statsSyncDaily = inngest.createFunction(
     try {
       for (const week of Object.values(PLAYOFF_WEEKS)) {
         await step.run(`sync-week-${week}`, () =>
-          syncWeekStats(db, espnProvider, { season: CURRENT_SEASON, week }),
+          syncWeekStats(db, statsProvider, { season: CURRENT_SEASON, week }),
         );
       }
     } catch (err) {

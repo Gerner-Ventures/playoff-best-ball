@@ -36,7 +36,7 @@ export default async function AdminPage() {
           ))}
           {games.length === 0 && <li className="p-3 text-gray-500">No games synced yet.</li>}
         </ul>
-        <AdminPanel />
+        <AdminPanel mockMode={process.env.STATS_PROVIDER === "fake"} />
       </main>
     </>
   );

@@ -1,7 +1,8 @@
-import type { PlayerPosition } from "@prisma/client";
-import type { FakeStatsData } from "./fake-provider";
+import type { PlayerPosition, PrismaClient } from "@prisma/client";
+import { FakeStatsProvider, type FakeStatsData } from "./fake-provider";
 import type { ProviderPlayerStats } from "./provider";
 import { emptyStatLine, type StatLine } from "./stat-line";
+import { syncWeekStats } from "./sync-week";
 
 interface MockPlayer {
   externalId: string;
@@ -54,4 +55,47 @@ export function buildMockWeek(players: MockPlayer[], season: number, week: numbe
     stats: { [eventId]: stats },
     rosters: {},
   };
+}
+
+export interface AdvanceMockWeekResult {
+  week: number;
+  gamesCreated: number;
+  statLines: number;
+}
+
+/**
+ * Advances the simulated playoff season by one week (the December beta's lever,
+ * pulled from the admin panel; also the `npm run mock:week` dev script's engine).
+ *
+ * Preserves the original script's behavior exactly: backfill `mock-${id}`
+ * externalIds onto pool players that lack one (so syncWeekStats can match them),
+ * fabricate one FINAL game + a deterministic seeded stat line per pool player
+ * via buildMockWeek, and write it all through the real syncWeekStats pipeline.
+ * The next week is whatever mock week hasn't been simulated yet (1 → 4);
+ * advancing past the Super Bowl throws.
+ */
+export async function advanceMockWeek(
+  db: PrismaClient,
+  { season }: { season: number },
+): Promise<AdvanceMockWeekResult> {
+  const latest = await db.nflGame.findFirst({
+    where: { season, eventId: { startsWith: `mock-${season}-` } },
+    orderBy: { week: "desc" },
+    select: { week: true },
+  });
+  const week = (latest?.week ?? 0) + 1;
+  if (week > 4) throw new Error(`Mock season ${season} is complete (all 4 playoff weeks are FINAL).`);
+
+  const players = await db.player.findMany({ where: { season } });
+  // ensure every player has an externalId so sync can match
+  for (const p of players.filter((p) => !p.externalId)) {
+    await db.player.update({ where: { id: p.id }, data: { externalId: `mock-${p.id}` } });
+  }
+  const withIds = players.map((p) => ({
+    externalId: p.externalId ?? `mock-${p.id}`,
+    name: p.name, position: p.position, nflTeam: p.nflTeam,
+  }));
+  const provider = new FakeStatsProvider(buildMockWeek(withIds, season, week));
+  const result = await syncWeekStats(db, provider, { season, week });
+  return { week, gamesCreated: result.games, statLines: result.statLines };
 }

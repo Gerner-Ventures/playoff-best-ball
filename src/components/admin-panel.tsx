@@ -11,7 +11,7 @@ async function postJson(url: string, body: unknown): Promise<{ ok: boolean; data
   return { ok: res.ok, data: await res.json().catch(() => ({})) };
 }
 
-export function AdminPanel() {
+export function AdminPanel({ mockMode = false }: { mockMode?: boolean }) {
   const [teams, setTeams] = useState("");
   const [week, setWeek] = useState(1);
   const [busy, setBusy] = useState(false);
@@ -92,6 +92,23 @@ export function AdminPanel() {
           {busy ? "Syncing…" : "Sync week"}
         </button>
       </section>
+
+      {mockMode && (
+        <section className="rounded-lg border border-amber-300 bg-amber-50 p-4">
+          <h2 className="font-semibold">Advance mock week</h2>
+          <p className="mt-1 text-sm text-gray-600">
+            Simulated season (STATS_PROVIDER=fake): finalizes the next playoff week with fabricated stats.
+          </p>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void run(() => postJson("/api/admin/mock/advance-week", {}))}
+            className="mt-2 rounded-lg bg-amber-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+          >
+            {busy ? "Advancing…" : "Advance mock week"}
+          </button>
+        </section>
+      )}
 
       {result && <p className="text-sm text-gray-700">{result}</p>}
       {unmatched.length > 0 && (

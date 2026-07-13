@@ -60,6 +60,18 @@ describe("dues", () => {
     expect(await testDb.duesCollectionInterest.count()).toBe(1);
   });
 
+  it("survives concurrent first-clicks: exactly one records, the loser sees alreadyRecorded", async () => {
+    const { commish, league } = await setup();
+    const [a, b] = await Promise.all([
+      recordDuesInterest(testDb, { leagueId: league.id, userId: commish.id }),
+      recordDuesInterest(testDb, { leagueId: league.id, userId: commish.id }),
+    ]);
+    // Neither call may throw (P2002 race loser is the idempotent path), and analytics
+    // fire exactly once: one alreadyRecorded=false, the other true.
+    expect([a.alreadyRecorded, b.alreadyRecorded].sort()).toEqual([false, true]);
+    expect(await testDb.duesCollectionInterest.count()).toBe(1);
+  });
+
   it("lets any league member record interest, not just the commissioner", async () => {
     const { friend, league } = await setup();
     const result = await recordDuesInterest(testDb, { leagueId: league.id, userId: friend.id });

@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@prisma/client";
+import { Prisma, type PrismaClient } from "@prisma/client";
 import { NotCommissionerError, NotLeagueMemberError } from "../errors";
 
 async function requireCommissioner(db: PrismaClient, leagueId: string, userId: string) {
@@ -33,12 +33,17 @@ export async function recordDuesInterest(
   });
   if (!membership) throw new NotLeagueMemberError();
 
-  const existing = await db.duesCollectionInterest.findUnique({
-    where: { leagueId_userId: { leagueId: input.leagueId, userId: input.userId } },
-  });
-  if (existing) return { alreadyRecorded: true };
-  await db.duesCollectionInterest.create({
-    data: { leagueId: input.leagueId, userId: input.userId },
-  });
-  return { alreadyRecorded: false };
+  try {
+    await db.duesCollectionInterest.create({
+      data: { leagueId: input.leagueId, userId: input.userId },
+    });
+    return { alreadyRecorded: false };
+  } catch (err) {
+    // Two concurrent first-clicks (double-click, multi-tab) race to insert; the loser gets a
+    // P2002 unique violation, which is the idempotent "already recorded" case, not an error.
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      return { alreadyRecorded: true };
+    }
+    throw err;
+  }
 }

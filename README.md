@@ -1,6 +1,6 @@
 # Playoff Best Ball
 
-A hosted multi-tenant NFL playoff best ball league platform. Commissioners create leagues, friends join via invite links, and teams are assembled through an async slow-snake draft with notifications. Scoring runs automatically through the playoffs using optimal best-ball lineup selection. **Free tier:** standard scoring presets, ads shown. **Premium ($25/season):** custom per-value scoring, up to 25 teams, multiple leagues, no ads.
+A hosted multi-tenant NFL playoff best ball league platform. Commissioners create leagues, friends join via invite links, and teams are assembled through an async slow-snake draft with notifications. Scoring runs automatically through the playoffs using optimal best-ball lineup selection. **Free tier:** standard scoring presets, ads shown. **Premium ($25/season):** custom per-value scoring, up to 25 teams, multiple entries per person, next-week projections, multiple leagues, no ads.
 
 ## Local Setup
 
@@ -15,7 +15,7 @@ npm run db:seed:players
 npm run dev
 ```
 
-> **Optional:** run `npx inngest-cli@latest dev` in a separate terminal to enable draft pick clocks, notification timers, and scheduled draft starts locally. Drafting works without it; timers and emails just won't fire, and Inngest event sends log a console warning.
+> **Optional:** run `npx inngest-cli@latest dev` in a separate terminal to enable draft pick clocks, notification timers, scheduled draft starts, and the scheduled crons (stat sync, odds sync, weekly recaps/previews) locally. Drafting works without it; timers and emails just won't fire, and Inngest event sends log a console warning.
 
 ### Stripe (Premium upgrades)
 
@@ -75,6 +75,16 @@ The app is an installable **PWA** (manifest + service worker). Web Push requires
 
 When `NEXT_PUBLIC_VAPID_PUBLIC_KEY` is empty the push UI falls back to an "unsupported" message.
 
+### Vegas odds (The Odds API)
+
+Set the key in `.env` (see `.env.example`):
+
+```
+ODDS_API_KEY=xxxxxxxx
+```
+
+A free-tier key from [The Odds API](https://the-odds-api.com/) is plenty — odds sync runs once per day as part of the daily stats cron. When the key is empty the odds sync step skips with a console warning and projections fall back to a 0.5 win probability for every team — safe for local dev.
+
 - Dev DB runs on port **5434** (to avoid conflicts with other local Postgres instances)
 - Test DB runs on port **5433**
 - Magic links are logged to the dev console when `RESEND_API_KEY` is empty
@@ -109,6 +119,12 @@ npm run test:e2e
 | `npm run db:push:test` | Push schema to test DB (5433) |
 | `npm run mock:week -- <1-4>` | Simulate a playoff week against the dev DB (generates fake stat lines for all players and runs the scoring engine) |
 
+## Engagement & analytics
+
+- **Weekly recaps & pre-weekend previews** — an hourly Inngest cron (`engagement-cron`) finds leagues owed a recap (all of a week's games FINAL) or a preview (upcoming games within 48h) and fans out one send event per league × week. Per-league watermarks make sends idempotent — each league gets each recap/preview at most once. Locally these require the Inngest dev server (same note as the other crons above).
+- **Injury substitutions** — a commissioner-only league setting, off by default (League → Settings → "Allow injury substitutions"). The commissioner swaps an injured player for an undrafted player at the same position; the original player's points keep counting for weeks before the substitution's effective week.
+- **Projections (Premium)** — a per-entry projections table: recency-weighted recent playoff scoring × Vegas win probabilities, summed into a next-week optimal-lineup expected total. Without odds data every win probability falls back to 0.5. Premium leagues also allow multiple entries per person (added before the draft starts).
+
 ## Admin panel
 
 `/admin` is unlocked for emails listed in the `ADMIN_EMAILS` environment variable (comma-separated). It provides:
@@ -125,11 +141,13 @@ src/
     draft/        # Draft engine: snake order, slot assignment, pick clock, start/pick/autodraft/queue services
     stats/        # Stat lines, StatsProvider interface, player-pool sync, week-stats sync
     scoring/      # Points engine (compute-points), best-ball optimizer
+    odds/         # Team odds sync, recency-weighted point projections
+    engagement/   # Weekly recap/preview builders + due-work watermarks
   lib/            # DB client, auth config, session helpers
     stats/        # ESPN HTTP adapter (espn-provider, espn-parse)
   app/            # Next.js routes and API handlers
   components/     # Shared UI components
-  inngest/        # Durable functions (pick clock, notification timers, stat sync crons)
+  inngest/        # Durable functions (pick clock, notification timers, stat/odds sync + engagement crons)
 tests/            # Vitest unit/integration tests
 e2e/              # Playwright end-to-end tests
 data/             # Player pool fixtures (players-2026.json)

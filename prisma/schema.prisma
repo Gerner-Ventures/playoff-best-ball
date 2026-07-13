@@ -93,6 +93,8 @@ model League {
   inviteCode  String       @unique
   settings    Json // LeagueSettings (see src/domain/league-settings.ts), versioned via settingsVersion key
   draftScheduledAt DateTime? // commissioner-scheduled auto-start; a Draft row existing makes this moot
+  lastRecapWeek   Int @default(0) // highest playoff week a recap was sent for
+  lastPreviewWeek Int @default(0) // highest playoff week a preview was sent for
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   memberships  Membership[]
@@ -133,6 +135,7 @@ model Entry {
   updatedAt    DateTime         @updatedAt
   picks        DraftPick[]
   queueItems   DraftQueueItem[]
+  substitutions Substitution[]
 
   @@index([leagueId])
   @@index([membershipId])
@@ -161,6 +164,8 @@ model Player {
   picks       DraftPick[]
   queueItems  DraftQueueItem[]
   stats       PlayerStat[]
+  substitutionsAsOriginal   Substitution[] @relation("SubOriginal")
+  substitutionsAsSubstitute Substitution[] @relation("SubSubstitute")
 
   @@unique([season, name, position])
   @@index([season, position])
@@ -297,4 +302,38 @@ model DuesCollectionInterest {
   createdAt DateTime @default(now())
 
   @@unique([leagueId, userId]) // one waitlist signup per commissioner per league
+}
+
+// Injury substitution (league setting, off by default): the original's points count
+// before effectiveWeek, the substitute's from effectiveWeek on. Same position only.
+model Substitution {
+  id                 String   @id @default(cuid())
+  entry              Entry    @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  entryId            String
+  originalPlayer     Player   @relation("SubOriginal", fields: [originalPlayerId], references: [id], onDelete: Restrict)
+  originalPlayerId   String
+  substitutePlayer   Player   @relation("SubSubstitute", fields: [substitutePlayerId], references: [id], onDelete: Restrict)
+  substitutePlayerId String
+  effectiveWeek      Int // OUR playoff week (1..4)
+  reason             String? // "ACL", "concussion" — display only
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@unique([entryId, originalPlayerId]) // one substitution per rostered player
+}
+
+// Team win probabilities from the odds provider, one row per team per week.
+model TeamOdds {
+  id        String    @id @default(cuid())
+  season    Int
+  week      Int // OUR playoff week
+  team      String // abbreviation, matches Player.nflTeam / NflGame teams
+  opponent  String
+  winProb   Float // 0..1, vig-removed
+  moneyline Int? // raw American odds for reference
+  eventTime DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@unique([season, week, team])
 }

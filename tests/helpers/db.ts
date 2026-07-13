@@ -19,6 +19,7 @@ export const testDb = makeTestPrismaClient(); // DATABASE_URL comes from .env.te
 
 export async function resetDb() {
   // Order matters: children before parents (cascades cover most, be explicit anyway)
+  await testDb.substitution.deleteMany();
   await testDb.draftQueueItem.deleteMany();
   await testDb.draftPick.deleteMany();
   await testDb.draft.deleteMany();
@@ -29,6 +30,7 @@ export async function resetDb() {
   await testDb.league.deleteMany();
   await testDb.playerStat.deleteMany();
   await testDb.nflGame.deleteMany();
+  await testDb.teamOdds.deleteMany();
   await testDb.player.deleteMany();
   await testDb.pushSubscription.deleteMany();
   await testDb.session.deleteMany();

@@ -3,7 +3,9 @@ import { notFound, redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { getSessionUser } from "@/lib/session";
 import { getLeagueScores } from "@/lib/league-scores";
+import { tryParseLeagueSettings } from "@/domain/league-settings";
 import { AppNav } from "@/components/app-nav";
+import { SubstitutionPanel } from "@/components/substitution-panel";
 
 const WEEK_LABELS: Record<number, string> = { 1: "Wild Card", 2: "Divisional", 3: "Conference", 4: "Super Bowl" };
 
@@ -23,9 +25,51 @@ export default async function EntryPage({
   // notFound when there's no draft at all — no lineups exist and the league page doesn't link here yet
   const league = await db.league.findUniqueOrThrow({
     where: { id: leagueId },
-    select: { draft: { select: { status: true } } },
+    select: { season: true, settings: true, draft: { select: { status: true } } },
   });
   if (!league.draft) notFound();
+
+  // Commissioner substitution controls — only when the league setting is on.
+  const settings = tryParseLeagueSettings(league.settings);
+  const showSubstitutions =
+    membership.role === "COMMISSIONER" && settings?.substitutionsEnabled === true;
+  let substitutionProps: {
+    roster: { playerId: string; name: string; position: string }[];
+    pool: { id: string; name: string; position: string }[];
+    existing: { originalPlayerId: string; originalName: string; substituteName: string; effectiveWeek: number }[];
+  } | null = null;
+  if (showSubstitutions) {
+    const picks = await db.draftPick.findMany({
+      where: { entryId },
+      include: { player: { select: { name: true, position: true } } },
+    });
+    const pool = await db.player.findMany({
+      where: { season: league.season },
+      select: { id: true, name: true, position: true },
+      orderBy: { name: "asc" },
+    });
+    const subs = await db.substitution.findMany({
+      where: { entryId },
+      include: {
+        originalPlayer: { select: { name: true } },
+        substitutePlayer: { select: { name: true } },
+      },
+    });
+    substitutionProps = {
+      roster: picks.map((p) => ({
+        playerId: p.playerId,
+        name: p.player.name,
+        position: p.player.position,
+      })),
+      pool,
+      existing: subs.map((s) => ({
+        originalPlayerId: s.originalPlayerId,
+        originalName: s.originalPlayer.name,
+        substituteName: s.substitutePlayer.name,
+        effectiveWeek: s.effectiveWeek,
+      })),
+    };
+  }
 
   let scores;
   try {
@@ -54,6 +98,9 @@ export default async function EntryPage({
           {entry.ownerName} · #{rank} · {entry.grandTotal.toFixed(2)} pts ·{" "}
           <Link href={`/leagues/${leagueId}`} className="underline">back to league</Link>
         </p>
+        {substitutionProps && (
+          <SubstitutionPanel leagueId={leagueId} entryId={entryId} {...substitutionProps} />
+        )}
         {entry.weeks.map((week) => (
           <section key={week.week} className="mt-6">
             <h2 className="font-semibold">
@@ -62,7 +109,10 @@ export default async function EntryPage({
             </h2>
             <ul className="mt-2 rounded-lg border">
               {week.lineup.map((slot) => (
-                <li key={slot.slotIndex} className="flex items-center justify-between border-b p-2 text-sm last:border-b-0">
+                <li
+                  key={slot.slotIndex}
+                  className={`flex items-center justify-between border-b p-2 text-sm last:border-b-0${slot.teamEliminated ? " text-gray-400" : ""}`}
+                >
                   <span>
                     <span className="inline-block w-12 font-medium text-gray-500">{slot.slotLabel}</span>
                     {slot.playerId ? (
@@ -71,6 +121,11 @@ export default async function EntryPage({
                       </Link>
                     ) : (
                       <span className="text-gray-400">—</span>
+                    )}
+                    {slot.teamEliminated && (
+                      <span className="ml-2 rounded bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-500">
+                        OUT
+                      </span>
                     )}
                   </span>
                   <span className="tabular-nums">{slot.points.toFixed(2)}</span>

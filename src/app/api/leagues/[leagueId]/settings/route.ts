@@ -19,6 +19,7 @@ const bodySchema = z.object({
     .pipe(z.string().min(1).max(40).regex(/^[\w-]+$/, "Letters, numbers, dashes and underscores only"))
     .nullable()
     .optional(),
+  substitutionsEnabled: z.boolean().optional(),
 });
 
 export async function PATCH(req: Request, { params }: Params) {

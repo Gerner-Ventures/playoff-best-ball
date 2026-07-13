@@ -11,6 +11,7 @@ interface Props {
     scoring: ScoringSettings;
     entryFeeCents: number | null;
     venmoHandle: string | null;
+    substitutionsEnabled: boolean;
   };
   duesInterestJoined: boolean;
 }
@@ -63,6 +64,7 @@ export function LeagueSettingsForm({ leagueId, isPremium, initial, duesInterestJ
   const [customized, setCustomized] = useState(false);
   const [fee, setFee] = useState(initial.entryFeeCents !== null ? String(initial.entryFeeCents / 100) : "");
   const [venmo, setVenmo] = useState(initial.venmoHandle ?? "");
+  const [subsEnabled, setSubsEnabled] = useState(initial.substitutionsEnabled);
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -88,6 +90,7 @@ export function LeagueSettingsForm({ leagueId, isPremium, initial, duesInterestJ
     const body: Record<string, unknown> = {
       entryFeeCents: feeCents,
       venmoHandle: venmo.trim() === "" ? null : venmo.trim(),
+      substitutionsEnabled: subsEnabled,
     };
     if (customized && isPremium) body.scoring = scoring;
     else if (preset !== initial.scoringPreset && preset !== "custom") body.scoringPreset = preset;
@@ -174,6 +177,22 @@ export function LeagueSettingsForm({ leagueId, isPremium, initial, duesInterestJ
             Editing individual values is a Premium feature — presets are free.
           </p>
         )}
+      </section>
+
+      <section>
+        <h2 className="font-semibold">Injury substitutions</h2>
+        <p className="mt-1 text-sm text-gray-500">
+          Commissioner can swap an injured player for an undrafted one (same position); the
+          original&apos;s points keep counting for earlier weeks.
+        </p>
+        <label className="mt-2 flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={subsEnabled}
+            onChange={(e) => setSubsEnabled(e.target.checked)}
+          />
+          Allow injury substitutions
+        </label>
       </section>
 
       <section>

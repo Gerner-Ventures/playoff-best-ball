@@ -115,3 +115,15 @@ export class PremiumFeatureError extends DomainError {
     super(`${feature} is a Premium feature. Upgrade this league to unlock it.`, "PREMIUM_REQUIRED");
   }
 }
+
+export class SubstitutionsDisabledError extends DomainError {
+  constructor() {
+    super("Substitutions are disabled for this league.", "SUBSTITUTIONS_DISABLED");
+  }
+}
+
+export class InvalidSubstitutionError extends DomainError {
+  constructor(reason: string) {
+    super(`Can't make that substitution: ${reason}`, "INVALID_SUBSTITUTION");
+  }
+}

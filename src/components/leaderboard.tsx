@@ -11,6 +11,7 @@ export function Leaderboard({ leagueId, scores }: { leagueId: string; scores: Le
           <tr className="border-b text-left text-gray-500">
             <th className="p-2">#</th>
             <th className="p-2">Team</th>
+            <th className="p-2 text-right">Alive</th>
             {scores.weeks.map((w) => (
               <th key={w} className="p-2 text-right">{WEEK_LABELS[w] ?? w}</th>
             ))}
@@ -26,6 +27,9 @@ export function Leaderboard({ leagueId, scores }: { leagueId: string; scores: Le
                   {entry.name}
                 </Link>
                 <span className="ml-2 text-gray-500">{entry.ownerName}</span>
+              </td>
+              <td className="p-2 text-right tabular-nums text-gray-500">
+                {entry.alivePlayers}/{scores.rosterSize}
               </td>
               {entry.weeks.map((w) => (
                 <td key={w.week} className="p-2 text-right tabular-nums">

@@ -4,13 +4,16 @@ import { db } from "@/lib/db";
 import { getSessionUser } from "@/lib/session";
 import { tryParseLeagueSettings } from "@/domain/league-settings";
 import { getLeagueScores } from "@/lib/league-scores";
+import { getLeagueProjections } from "@/lib/league-projections";
 import { AppNav } from "@/components/app-nav";
 import { InviteLinkButton } from "@/components/invite-link-button";
 import { DraftCard } from "@/components/draft-card";
 import { Leaderboard } from "@/components/leaderboard";
+import { ProjectionsTable } from "@/components/projections-table";
 import { UpgradeButton } from "@/components/upgrade-button";
 import { AdSlot } from "@/components/ad-slot";
 import { DuesPanel } from "@/components/dues-panel";
+import { AddEntryButton } from "@/components/add-entry-button";
 
 export default async function LeaguePage({
   params,
@@ -51,6 +54,8 @@ export default async function LeaguePage({
   const isCommissioner = membership.role === "COMMISSIONER";
   const isDraftComplete = league.draft?.status === "COMPLETE";
   const scores = isDraftComplete ? await getLeagueScores(db, leagueId) : null;
+  const projections =
+    isDraftComplete && league.tier === "PREMIUM" ? await getLeagueProjections(db, leagueId) : null;
 
   return (
     <>
@@ -100,6 +105,25 @@ export default async function LeaguePage({
           </div>
         )}
 
+        {projections && projections.nextWeek !== null && (
+          <div className="mb-8">
+            <ProjectionsTable projections={projections} />
+          </div>
+        )}
+        {isDraftComplete && league.tier === "FREE" && (
+          <section className="mb-8 rounded-lg border border-dashed p-4">
+            <h2 className="flex items-center gap-2 font-semibold">
+              Projections
+              <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">PREMIUM</span>
+            </h2>
+            <p className="mt-1 text-sm text-gray-600">
+              See every team&apos;s projected points — recent scoring × Vegas win probabilities. Included with
+              Premium.
+            </p>
+            {/* No UpgradeButton here: the commissioner's upgrade CTA is already visible in the page header. */}
+          </section>
+        )}
+
         <h2 className="mb-3 font-semibold">Teams</h2>
         <ul className="flex flex-col gap-2">
           {league.entries.map((entry) => (
@@ -112,6 +136,8 @@ export default async function LeaguePage({
             </li>
           ))}
         </ul>
+        {/* Viewer is always a member here — non-members 404 above. */}
+        {league.tier === "PREMIUM" && !league.draft && <AddEntryButton leagueId={league.id} />}
 
         {settings.entryFeeCents !== null && (
           <DuesPanel

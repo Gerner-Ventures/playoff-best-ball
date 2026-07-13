@@ -37,20 +37,21 @@ export async function POST(req: Request) {
     if (session.amount_total === null) {
       console.warn(`[stripe] session ${session.id} has null amount_total — investigate before reconciliation`);
     }
-    const purchase = await handleCheckoutCompleted(db, {
+    const result = await handleCheckoutCompleted(db, {
       sessionId: session.id,
       leagueId: session.metadata.leagueId,
       userId: session.metadata?.userId ?? "unknown",
       amountCents: session.amount_total ?? -1, // -1 = Stripe omitted amount_total; investigate before reconciliation
     });
-    // Fire-and-forget analytics: captureServerEvent never throws. Only capture when the
-    // league was actually upgraded (non-null purchase) and we know who paid — sessions
-    // without userId metadata (not ours / legacy) are skipped rather than misattributed.
+    // Analytics (awaited but can never throw: captureServerEvent swallows errors).
+    // Capture only when THIS delivery created the purchase (created=true) — Stripe
+    // re-delivers webhooks routinely, and replays must not N-count LEAGUE_UPGRADED.
+    // Sessions without userId metadata (not ours / legacy) are skipped rather than misattributed.
     const metadataUserId = session.metadata?.userId;
-    if (purchase && metadataUserId) {
+    if (result?.created && metadataUserId) {
       await captureServerEvent(metadataUserId, ANALYTICS_EVENTS.LEAGUE_UPGRADED, {
         leagueId: session.metadata.leagueId,
-        amountCents: purchase.amountCents,
+        amountCents: result.purchase.amountCents,
       });
     }
   }

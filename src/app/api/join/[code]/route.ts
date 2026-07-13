@@ -25,7 +25,7 @@ export async function POST(req: Request, { params }: Params) {
       inviteCode: code,
       teamName: parsed.data.teamName,
     });
-    // Fire-and-forget analytics: captureServerEvent never throws, so it can't break the request.
+    // Analytics: awaited but can never throw (captureServerEvent swallows errors), so it can't break the request.
     await captureServerEvent(user.id, ANALYTICS_EVENTS.LEAGUE_JOINED, { leagueId: entry.leagueId });
     return NextResponse.json({ leagueId: entry.leagueId }, { status: 201 });
   } catch (err) {

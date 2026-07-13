@@ -125,13 +125,16 @@ export const notifyDraftComplete = inngest.createFunction(
         );
       }
     }
-    // Plain await, not a step: captureServerEvent never throws and needs no retry;
-    // trailing code only executes on the run where all send steps are memoized.
+    // Step-wrapped so the capture is memoized: Inngest re-executes the whole function
+    // body on retries/replays (with completed steps memoized), so trailing non-step code
+    // WOULD re-fire. captureServerEvent never throws, so this step can't fail-retry.
     // distinctId falls back to "system" if the league somehow lost its commissioner.
-    await captureServerEvent(
-      loaded.commissionerUserId ?? "system",
-      ANALYTICS_EVENTS.DRAFT_COMPLETED,
-      { leagueId: event.data.leagueId },
+    await step.run("capture-draft-completed", () =>
+      captureServerEvent(
+        loaded.commissionerUserId ?? "system",
+        ANALYTICS_EVENTS.DRAFT_COMPLETED,
+        { leagueId: event.data.leagueId },
+      ),
     );
   },
 );

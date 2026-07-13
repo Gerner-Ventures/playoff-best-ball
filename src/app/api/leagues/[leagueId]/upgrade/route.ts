@@ -50,7 +50,7 @@ export async function POST(_req: Request, { params }: Params) {
     success_url: `${APP_URL}/leagues/${league.id}?upgraded=1`,
     cancel_url: `${APP_URL}/leagues/${league.id}?upgrade=cancelled`,
   });
-  // Fire-and-forget analytics: captureServerEvent never throws, so it can't break the request.
+  // Analytics: awaited but can never throw (captureServerEvent swallows errors), so it can't break the request.
   await captureServerEvent(user.id, ANALYTICS_EVENTS.UPGRADE_CHECKOUT_STARTED, {
     leagueId: league.id,
   });

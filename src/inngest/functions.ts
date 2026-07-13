@@ -20,6 +20,10 @@ import { effectivePlayerForWeek, getLeagueScores } from "@/lib/league-scores";
 import { roundPoints } from "@/domain/scoring/compute-points";
 import { captureServerEvent } from "@/lib/analytics-server";
 import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
+import { recordSyncOutcome } from "@/domain/ops/sync-health";
+import { sendOpsAlert } from "@/lib/ops-alert";
+
+const errorMessage = (err: unknown) => (err instanceof Error ? err.message : String(err));
 
 /**
  * Pick clock: sleeps until the turn's deadline, then autodrafts if (and only if)
@@ -214,12 +218,41 @@ export const statsSyncLive = inngest.createFunction(
       });
       return [...new Set(games.map((g) => g.week))];
     });
-    if (activeWeeks.length === 0) return { skipped: true };
-    for (const week of activeWeeks) {
-      await step.run(`sync-week-${week}`, () =>
-        syncWeekStats(db, espnProvider, { season: CURRENT_SEASON, week }),
-      );
+    try {
+      for (const week of activeWeeks) {
+        await step.run(`sync-week-${week}`, () =>
+          syncWeekStats(db, espnProvider, { season: CURRENT_SEASON, week }),
+        );
+      }
+    } catch (err) {
+      // Record + alert inside ONE step: Inngest replays the function body with
+      // completed steps memoized, so trailing non-step code would re-fire — a
+      // step keeps one run's outcome counted (and alerted) exactly once.
+      // sendOpsAlert never throws, so it can live inside the same step.
+      await step.run("record-health-failure", async () => {
+        const health = await recordSyncOutcome(db, {
+          job: "stats-sync-live",
+          ok: false,
+          error: errorMessage(err),
+        });
+        if (health.shouldAlert) {
+          await sendOpsAlert(
+            `🚨 stats-sync-live has failed ${health.consecutiveFailures} consecutive runs: ${errorMessage(err)}`,
+          );
+        }
+        return health;
+      });
+      throw err; // rethrow: Inngest retry semantics unchanged
     }
+    // Every run records an outcome, including no-op runs (no active weeks): a
+    // healthy no-op still proves the cron executes, and it keeps recovery
+    // detection simple — success always clears the streak.
+    await step.run("record-health", async () => {
+      const health = await recordSyncOutcome(db, { job: "stats-sync-live", ok: true });
+      if (health.recovered) await sendOpsAlert("✅ stats-sync-live recovered");
+      return health;
+    });
+    if (activeWeeks.length === 0) return { skipped: true };
     return { skipped: false, weeks: activeWeeks };
   },
 );
@@ -228,11 +261,35 @@ export const statsSyncLive = inngest.createFunction(
 export const statsSyncDaily = inngest.createFunction(
   { id: "stats-sync-daily", triggers: { cron: "TZ=America/New_York 0 6 * * *" } },
   async ({ step }) => {
-    for (const week of Object.values(PLAYOFF_WEEKS)) {
-      await step.run(`sync-week-${week}`, () =>
-        syncWeekStats(db, espnProvider, { season: CURRENT_SEASON, week }),
-      );
+    try {
+      for (const week of Object.values(PLAYOFF_WEEKS)) {
+        await step.run(`sync-week-${week}`, () =>
+          syncWeekStats(db, espnProvider, { season: CURRENT_SEASON, week }),
+        );
+      }
+    } catch (err) {
+      // Record + alert inside ONE step so Inngest replays can't double-count
+      // this run's outcome (see stats-sync-live for the full rationale).
+      await step.run("record-health-failure", async () => {
+        const health = await recordSyncOutcome(db, {
+          job: "stats-sync-daily",
+          ok: false,
+          error: errorMessage(err),
+        });
+        if (health.shouldAlert) {
+          await sendOpsAlert(
+            `🚨 stats-sync-daily has failed ${health.consecutiveFailures} consecutive runs: ${errorMessage(err)}`,
+          );
+        }
+        return health;
+      });
+      throw err; // rethrow: Inngest retry semantics unchanged
     }
+    await step.run("record-health", async () => {
+      const health = await recordSyncOutcome(db, { job: "stats-sync-daily", ok: true });
+      if (health.recovered) await sendOpsAlert("✅ stats-sync-daily recovered");
+      return health;
+    });
     await step.run("sync-odds", async () => {
       if (!oddsProvider) {
         console.warn("[odds] ODDS_API_KEY not set — skipping odds sync");
@@ -240,10 +297,25 @@ export const statsSyncDaily = inngest.createFunction(
       }
       // Odds are non-critical by design (projections fall back to 0.5 without
       // them), so a provider failure must not fail the whole daily sync run.
+      // Health tracking is separate ("odds-sync") because failures here are
+      // swallowed and would otherwise be invisible.
       try {
-        return await syncTeamOdds(db, oddsProvider, { season: CURRENT_SEASON });
+        const result = await syncTeamOdds(db, oddsProvider, { season: CURRENT_SEASON });
+        const health = await recordSyncOutcome(db, { job: "odds-sync", ok: true });
+        if (health.recovered) await sendOpsAlert("✅ odds-sync recovered");
+        return result;
       } catch (err) {
         console.error("[odds] sync failed", err);
+        const health = await recordSyncOutcome(db, {
+          job: "odds-sync",
+          ok: false,
+          error: errorMessage(err),
+        });
+        if (health.shouldAlert) {
+          await sendOpsAlert(
+            `🚨 odds-sync has failed ${health.consecutiveFailures} consecutive runs: ${errorMessage(err)}`,
+          );
+        }
         return { skipped: true, error: String(err) };
       }
     });

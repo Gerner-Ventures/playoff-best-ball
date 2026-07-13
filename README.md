@@ -1,6 +1,6 @@
 # Playoff Best Ball
 
-A hosted multi-tenant NFL playoff best ball league platform. Commissioners create leagues, friends join via invite links, and teams are assembled through an async slow-snake draft with notifications. Scoring runs automatically through the playoffs using optimal best-ball lineup selection. **Free tier:** standard scoring presets, ads shown. **Premium ($25/season):** custom per-value scoring, up to 25 teams, multiple entries per person, next-week projections, multiple leagues, no ads.
+A hosted multi-tenant NFL playoff best ball league platform. Commissioners create leagues, friends join via invite links, and teams are assembled through an async slow-snake draft with notifications. Scoring runs automatically through the playoffs using optimal best-ball lineup selection. **Free tier:** standard scoring presets, ads shown. **Premium ($25/season by default; override with `PREMIUM_PRICE_CENTS`):** custom per-value scoring, up to 25 teams, multiple entries per person, next-week projections, multiple leagues, no ads.
 
 ## Local Setup
 

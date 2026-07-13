@@ -4,6 +4,7 @@ import { getSessionUser } from "@/lib/session";
 import { tryParseLeagueSettings } from "@/domain/league-settings";
 import { AppNav } from "@/components/app-nav";
 import { UpgradeButton } from "@/components/upgrade-button";
+import { formatPriceUsd, PREMIUM_PRICE_CENTS } from "@/lib/pricing";
 import { LeagueSettingsForm } from "@/components/league-settings-form";
 
 export default async function LeagueSettingsPage({
@@ -42,7 +43,7 @@ export default async function LeagueSettingsPage({
           {league.tier === "PREMIUM" ? (
             <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">PREMIUM</span>
           ) : (
-            <UpgradeButton leagueId={league.id} />
+            <UpgradeButton leagueId={league.id} priceLabel={formatPriceUsd(PREMIUM_PRICE_CENTS)} />
           )}
         </div>
         <LeagueSettingsForm

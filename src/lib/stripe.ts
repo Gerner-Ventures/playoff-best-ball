@@ -5,4 +5,5 @@ const secretKey = process.env.STRIPE_SECRET_KEY;
 
 export const stripe = secretKey ? new Stripe(secretKey) : null;
 
-export const PREMIUM_PRICE_CENTS = 2500; // ~$25/league/season per the spec (open item: exact price)
+// Price lives in ./pricing so server components can import it without pulling in the Stripe SDK.
+export { PREMIUM_PRICE_CENTS } from "./pricing";

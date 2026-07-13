@@ -18,6 +18,8 @@ import { getEliminatedTeams } from "@/domain/stats/eliminated-teams";
 import { buildWeeklyRecap } from "@/domain/engagement/recap";
 import { effectivePlayerForWeek, getLeagueScores } from "@/lib/league-scores";
 import { roundPoints } from "@/domain/scoring/compute-points";
+import { captureServerEvent } from "@/lib/analytics-server";
+import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
 
 /**
  * Pick clock: sleeps until the turn's deadline, then autodrafts if (and only if)
@@ -101,7 +103,14 @@ export const notifyDraftComplete = inngest.createFunction(
       for (const m of memberships) {
         recipients.push({ membershipId: m.id, recipient: await loadRecipient(db, m.userId) });
       }
-      return { recipients, leagueName: memberships[0]?.league.name ?? "your league" };
+      return {
+        recipients,
+        leagueName: memberships[0]?.league.name ?? "your league",
+        // Analytics actor: the commissioner is the monetization-funnel identity for a
+        // league-level milestone (they created it, they pay for premium).
+        commissionerUserId:
+          memberships.find((m) => m.role === "COMMISSIONER")?.userId ?? null,
+      };
     });
     const draftUrl = `${APP_URL}/leagues/${event.data.leagueId}/draft`;
     const notification = {
@@ -116,6 +125,14 @@ export const notifyDraftComplete = inngest.createFunction(
         );
       }
     }
+    // Plain await, not a step: captureServerEvent never throws and needs no retry;
+    // trailing code only executes on the run where all send steps are memoized.
+    // distinctId falls back to "system" if the league somehow lost its commissioner.
+    await captureServerEvent(
+      loaded.commissionerUserId ?? "system",
+      ANALYTICS_EVENTS.DRAFT_COMPLETED,
+      { leagueId: event.data.leagueId },
+    );
   },
 );
 

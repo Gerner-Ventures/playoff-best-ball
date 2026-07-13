@@ -4,6 +4,8 @@ import { db } from "@/lib/db";
 import { getSessionUser } from "@/lib/session";
 import { joinLeague } from "@/domain/leagues/join-league";
 import { InvalidInviteError, LeagueFullError, DraftAlreadyStartedError } from "@/domain/errors";
+import { captureServerEvent } from "@/lib/analytics-server";
+import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
 
 type Params = { params: Promise<{ code: string }> };
 
@@ -23,6 +25,8 @@ export async function POST(req: Request, { params }: Params) {
       inviteCode: code,
       teamName: parsed.data.teamName,
     });
+    // Fire-and-forget analytics: captureServerEvent never throws, so it can't break the request.
+    await captureServerEvent(user.id, ANALYTICS_EVENTS.LEAGUE_JOINED, { leagueId: entry.leagueId });
     return NextResponse.json({ leagueId: entry.leagueId }, { status: 201 });
   } catch (err) {
     if (err instanceof InvalidInviteError) {

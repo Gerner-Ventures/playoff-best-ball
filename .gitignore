@@ -42,3 +42,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# claude-mem / worktree artifacts (local, not part of the app)
+.claire/
+.github/workflows/CLAUDE.md

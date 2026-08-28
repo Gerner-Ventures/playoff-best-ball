@@ -46,7 +46,9 @@ export const auth = betterAuth({
         }
         const { error } = await resend.emails.send({
           // TODO: finalize sending domain before launch (spec open item: product name/domain)
-          from: process.env.MAGIC_LINK_FROM_EMAIL ?? "Playoff Best Ball <auth@transactional.playoffbestball.com>",
+          // `||` not `??`: the var ships as "" in .env.example, and an empty
+          // string is a defined value, so `??` would pass from: "" to Resend.
+          from: process.env.MAGIC_LINK_FROM_EMAIL || "Playoff Best Ball <auth@transactional.playoffbestball.com>",
           to: email,
           subject: "Your sign-in link",
           text: `Sign in to Playoff Best Ball: ${url}\n\nThis link expires in 5 minutes.`,

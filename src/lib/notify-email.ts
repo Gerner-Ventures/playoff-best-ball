@@ -16,7 +16,7 @@ export async function sendEmailNotification(
   }
   const { error } = await resend.emails.send({
     from:
-      process.env.NOTIFY_FROM_EMAIL ??
+      process.env.NOTIFY_FROM_EMAIL ||
       "Playoff Best Ball <notify@transactional.playoffbestball.com>",
     to: recipient.email,
     subject: n.subject,

@@ -50,12 +50,12 @@ export function AddEntryButton({ leagueId }: { leagueId: string }) {
         <button
           type="submit"
           disabled={submitting}
-          className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-gray-50 disabled:opacity-50"
+          className="disabled:opacity-50 chalk-btn chalk-btn-sm"
         >
           {submitting ? "Adding…" : "Add another team"}
         </button>
       </div>
-      {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+      {error && <p className="mt-1 text-sm text-chalk-coral">{error}</p>}
     </form>
   );
 }

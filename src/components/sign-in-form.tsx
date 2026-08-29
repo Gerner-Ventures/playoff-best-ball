@@ -47,12 +47,12 @@ export function SignInForm({
             const { error } = await authClient.signIn.social({ provider: provider.id, callbackURL });
             if (error) setError(error.message ?? `${provider.name} sign-in failed.`);
           }}
-          className="rounded-lg border px-4 py-3 font-medium hover:bg-gray-50"
+          className="chalk-btn"
         >
           Continue with {provider.name}
         </button>
       ))}
-      {enabled.length > 0 && <div className="text-center text-sm text-gray-500">or</div>}
+      {enabled.length > 0 && <div className="text-center text-sm text-chalk-dim">or</div>}
       <form onSubmit={sendLink} className="flex flex-col gap-2">
         <label htmlFor="email" className="sr-only">Email address</label>
         <input
@@ -64,11 +64,11 @@ export function SignInForm({
           placeholder="you@example.com"
           className="rounded-lg border px-4 py-3"
         />
-        <button type="submit" className="rounded-lg bg-green-700 px-4 py-3 font-semibold text-white">
+        <button type="submit" className="chalk-btn chalk-btn-primary">
           Email me a sign-in link
         </button>
       </form>
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-chalk-coral">{error}</p>}
     </div>
   );
 }

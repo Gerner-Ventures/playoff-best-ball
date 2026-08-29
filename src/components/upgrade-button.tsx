@@ -34,11 +34,11 @@ export function UpgradeButton({ leagueId, priceLabel }: { leagueId: string; pric
         type="button"
         onClick={upgrade}
         disabled={busy}
-        className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600 disabled:opacity-50"
+        className="disabled:opacity-50 chalk-btn chalk-btn-upgrade chalk-btn-sm"
       >
         {busy ? "One sec…" : `Upgrade to Premium — ${priceLabel}`}
       </button>
-      {error && <span className="text-sm text-red-600">{error}</span>}
+      {error && <span className="text-sm text-chalk-coral">{error}</span>}
     </span>
   );
 }

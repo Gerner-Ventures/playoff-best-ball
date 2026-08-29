@@ -21,20 +21,20 @@ export default async function AdminPage() {
       <AppNav userName={user!.name} />
       <main className="mx-auto max-w-2xl p-6">
         <h1 className="text-2xl font-bold">Platform admin</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 text-sm text-chalk-dim">
           Season {CURRENT_SEASON} · {playerCount} players · {statCount} stat lines
         </p>
         <h2 className="mt-6 font-semibold">Games</h2>
-        <ul className="mt-2 rounded-lg border text-sm">
+        <ul className="mt-2 text-sm chalk-card">
           {games.map((g) => (
-            <li key={g.id} className="flex justify-between border-b p-2 last:border-b-0">
+            <li key={g.id} className="flex justify-between border-b p-2 last:border-b-0 border-chalk-line">
               <span>W{g.week}: {g.awayTeam} @ {g.homeTeam}</span>
-              <span className="text-gray-500">
+              <span className="text-chalk-dim">
                 {g.state} {g.state !== "SCHEDULED" && `${g.awayScore}–${g.homeScore}`} · upd {g.updatedAt.toISOString().slice(0, 16)}
               </span>
             </li>
           ))}
-          {games.length === 0 && <li className="p-3 text-gray-500">No games synced yet.</li>}
+          {games.length === 0 && <li className="p-3 text-chalk-dim">No games synced yet.</li>}
         </ul>
         <AdminPanel mockMode={process.env.STATS_PROVIDER === "fake"} />
       </main>

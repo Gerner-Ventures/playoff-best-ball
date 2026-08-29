@@ -1,16 +1,28 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Caveat, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { PwaRegister } from "@/components/pwa-register";
 import { AnalyticsProvider } from "@/components/analytics-provider";
+import { ChalkFilter } from "@/components/chalk-filter";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Chalk headings and flourishes. Caveat is variable (400–700).
+const caveat = Caveat({
+  variable: "--font-chalk",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+// Body copy.
+const plexSans = IBM_Plex_Sans({
+  variable: "--font-sans",
+  weight: ["400", "500", "600"],
+  subsets: ["latin"],
+});
+
+// Every figure: scores, pick codes, clocks. Tabular by construction, so
+// columns line up — the reason data does not live in the chalk face.
+const plexMono = IBM_Plex_Mono({
+  variable: "--font-mono",
+  weight: ["500", "600", "700"],
   subsets: ["latin"],
 });
 
@@ -27,9 +39,10 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${caveat.variable} ${plexSans.variable} ${plexMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <ChalkFilter />
         <PwaRegister />
         <AnalyticsProvider>{children}</AnalyticsProvider>
       </body>

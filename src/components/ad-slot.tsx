@@ -28,7 +28,7 @@ export function AdSlot() {
   if (!CLIENT || !SLOT) {
     if (process.env.NODE_ENV === "production") return null;
     return (
-      <div className="rounded-lg border border-dashed p-4 text-center text-xs text-gray-400">
+      <div className="border-dashed p-4 text-center text-xs text-chalk-dim chalk-card">
         Ad slot (set NEXT_PUBLIC_ADSENSE_CLIENT + NEXT_PUBLIC_ADSENSE_SLOT)
       </div>
     );

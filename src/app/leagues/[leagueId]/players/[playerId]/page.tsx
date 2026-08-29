@@ -36,7 +36,7 @@ export default async function PlayerPage({
         <AppNav userName={user.name} />
         <main className="mx-auto max-w-2xl p-6">
           <h1 className="text-2xl font-bold">Something&apos;s wrong with this league</h1>
-          <p className="mt-2 text-gray-600">Ask your commissioner to contact support.</p>
+          <p className="mt-2 text-chalk-dim">Ask your commissioner to contact support.</p>
         </main>
       </>
     );
@@ -53,26 +53,26 @@ export default async function PlayerPage({
       <AppNav userName={user.name} />
       <main className="mx-auto max-w-2xl p-6">
         <h1 className="text-2xl font-bold">{player.name}</h1>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-chalk-dim">
           {player.position} · {player.nflTeam} ·{" "}
           <Link href={`/leagues/${leagueId}`} className="underline">back to league</Link>
         </p>
-        {games.length === 0 && <p className="mt-6 text-gray-600">No stats yet this postseason.</p>}
+        {games.length === 0 && <p className="mt-6 text-chalk-dim">No stats yet this postseason.</p>}
         {games.map(({ week, breakdown, line }) => (
-          <section key={week} className="mt-6 rounded-lg border p-4">
+          <section key={week} className="mt-6 p-4 chalk-card">
             <h2 className="flex items-center justify-between font-semibold">
               <span>{WEEK_LABELS[week] ?? `Week ${week}`}</span>
-              <span className="tabular-nums">{roundPoints(breakdown.total).toFixed(2)} pts</span>
+              <span className="tabular">{roundPoints(breakdown.total).toFixed(2)} pts</span>
             </h2>
             <dl className="mt-2 grid grid-cols-3 gap-2 text-sm">
               {CATEGORIES.filter((c) => Math.abs(breakdown[c]) > 0.001).map((c) => (
                 <div key={c}>
-                  <dt className="text-gray-500 capitalize">{c}</dt>
-                  <dd className="tabular-nums">{roundPoints(breakdown[c]).toFixed(2)}</dd>
+                  <dt className="text-chalk-dim capitalize">{c}</dt>
+                  <dd className="tabular">{roundPoints(breakdown[c]).toFixed(2)}</dd>
                 </div>
               ))}
             </dl>
-            <p className="mt-2 text-xs text-gray-500">
+            <p className="mt-2 text-xs text-chalk-dim">
               {[
                 line.passYards ? `${line.passYards} pass yds, ${line.passTd} TD, ${line.passInt} INT` : null,
                 line.rushYards ? `${line.rushYards} rush yds, ${line.rushTd} TD` : null,

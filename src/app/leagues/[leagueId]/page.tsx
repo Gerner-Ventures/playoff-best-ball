@@ -46,8 +46,8 @@ export default async function LeaguePage({
       <>
         <AppNav userName={user.name} />
         <main className="mx-auto max-w-2xl p-6">
-          <h1 className="text-2xl font-bold">Something&apos;s wrong with this league</h1>
-          <p className="mt-2 text-gray-600">Ask your commissioner to contact support.</p>
+          <h1 className="chalk chalk-h1 text-3xl">Something&apos;s wrong with this league</h1>
+          <p className="mt-2 text-chalk-dim">Ask your commissioner to contact support.</p>
         </main>
       </>
     );
@@ -62,26 +62,26 @@ export default async function LeaguePage({
     <>
       <AppNav userName={user.name} />
       <main className="mx-auto max-w-2xl p-6">
-        <div className="mb-6 flex items-start justify-between">
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold">{league.name}</h1>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+              <h1 className="chalk chalk-h1 text-4xl sm:text-5xl">{league.name}</h1>
               {league.tier === "PREMIUM" && (
-                <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">PREMIUM</span>
+                <span className="chalk-badge">PREMIUM</span>
               )}
             </div>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-chalk-dim">
               {league.season} playoffs · {league.entries.length}/{settings.maxEntries} teams ·{" "}
               {settings.scoringPreset.replaceAll("_", " ")} scoring
             </p>
             {isCommissioner && league.tier === "FREE" && (
               <div className="mt-3">
                 <UpgradeButton leagueId={league.id} priceLabel={formatPriceUsd(PREMIUM_PRICE_CENTS)} />
-                <p className="mt-1 text-xs text-gray-500">Custom scoring, up to 25 teams, more leagues, no ads.</p>
+                <p className="mt-1 text-xs text-chalk-dim">Custom scoring, up to 25 teams, more leagues, no ads.</p>
               </div>
             )}
             {upgraded === "1" && league.tier === "FREE" && (
-              <p className="mt-2 rounded bg-gray-50 p-2 text-sm text-gray-600">
+              <p className="mt-2 rounded p-2 text-sm text-chalk-dim">
                 Payment received — premium activates in a few seconds; refresh if it doesn&apos;t.
               </p>
             )}
@@ -90,7 +90,7 @@ export default async function LeaguePage({
             {isCommissioner && (
               <Link
                 href={`/leagues/${league.id}/settings`}
-                className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-gray-50"
+                className="chalk-btn chalk-btn-sm"
               >
                 Settings
               </Link>
@@ -101,7 +101,7 @@ export default async function LeaguePage({
 
         {scores && (
           <div className="mb-8">
-            <h2 className="mb-3 font-semibold">Standings</h2>
+            <h2 className="mb-3 chalk chalk-h2 text-3xl text-chalk-mint">Standings</h2>
             <Leaderboard leagueId={leagueId} scores={scores} />
           </div>
         )}
@@ -112,12 +112,12 @@ export default async function LeaguePage({
           </div>
         )}
         {isDraftComplete && league.tier === "FREE" && (
-          <section className="mb-8 rounded-lg border border-dashed p-4">
-            <h2 className="flex items-center gap-2 font-semibold">
+          <section className="mb-8 border-dashed p-4 chalk-card">
+            <h2 className="flex items-center gap-2 chalk chalk-h2 text-3xl text-chalk-mint">
               Projections
-              <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">PREMIUM</span>
+              <span className="chalk-badge">PREMIUM</span>
             </h2>
-            <p className="mt-1 text-sm text-gray-600">
+            <p className="mt-1 text-sm text-chalk-dim">
               See every team&apos;s projected points — recent scoring × Vegas win probabilities. Included with
               Premium.
             </p>
@@ -125,12 +125,12 @@ export default async function LeaguePage({
           </section>
         )}
 
-        <h2 className="mb-3 font-semibold">Teams</h2>
+        <h2 className="mb-3 chalk chalk-h2 text-3xl text-chalk-mint">Teams</h2>
         <ul className="flex flex-col gap-2">
           {league.entries.map((entry) => (
-            <li key={entry.id} className="flex items-center justify-between rounded-lg border p-3">
+            <li key={entry.id} className="flex items-center justify-between p-3 chalk-card">
               <span className="font-medium">{entry.name}</span>
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-chalk-dim">
                 {entry.membership.user.name}
                 {entry.membership.role === "COMMISSIONER" && " · Commissioner"}
               </span>

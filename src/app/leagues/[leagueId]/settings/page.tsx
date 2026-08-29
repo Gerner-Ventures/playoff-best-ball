@@ -29,7 +29,7 @@ export default async function LeagueSettingsPage({
     return (
       <main className="mx-auto max-w-md p-8 text-center">
         <h1 className="text-xl font-bold">Something&apos;s wrong with this league</h1>
-        <p className="mt-2 text-gray-600">Ask your commissioner to contact support.</p>
+        <p className="mt-2 text-chalk-dim">Ask your commissioner to contact support.</p>
       </main>
     );
   }
@@ -41,7 +41,7 @@ export default async function LeagueSettingsPage({
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-bold">League settings</h1>
           {league.tier === "PREMIUM" ? (
-            <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">PREMIUM</span>
+            <span className="chalk-badge">PREMIUM</span>
           ) : (
             <UpgradeButton leagueId={league.id} priceLabel={formatPriceUsd(PREMIUM_PRICE_CENTS)} />
           )}

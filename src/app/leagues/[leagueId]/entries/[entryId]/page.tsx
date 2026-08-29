@@ -80,7 +80,7 @@ export default async function EntryPage({
         <AppNav userName={user.name} />
         <main className="mx-auto max-w-2xl p-6">
           <h1 className="text-2xl font-bold">Something&apos;s wrong with this league</h1>
-          <p className="mt-2 text-gray-600">Ask your commissioner to contact support.</p>
+          <p className="mt-2 text-chalk-dim">Ask your commissioner to contact support.</p>
         </main>
       </>
     );
@@ -94,7 +94,7 @@ export default async function EntryPage({
       <AppNav userName={user.name} />
       <main className="mx-auto max-w-2xl p-6">
         <h1 className="text-2xl font-bold">{entry.name}</h1>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-chalk-dim">
           {entry.ownerName} · #{rank} · {entry.grandTotal.toFixed(2)} pts ·{" "}
           <Link href={`/leagues/${leagueId}`} className="underline">back to league</Link>
         </p>
@@ -105,35 +105,35 @@ export default async function EntryPage({
           <section key={week.week} className="mt-6">
             <h2 className="font-semibold">
               {WEEK_LABELS[week.week] ?? `Week ${week.week}`}{" "}
-              <span className="text-gray-500">— {week.total.toFixed(2)} pts</span>
+              <span className="text-chalk-dim">— {week.total.toFixed(2)} pts</span>
             </h2>
-            <ul className="mt-2 rounded-lg border">
+            <ul className="mt-2 chalk-card">
               {week.lineup.map((slot) => (
                 <li
                   key={slot.slotIndex}
-                  className={`flex items-center justify-between border-b p-2 text-sm last:border-b-0${slot.teamEliminated ? " text-gray-400" : ""}`}
+                  className={`flex items-center justify-between border-b border-chalk-line p-2 text-sm last:border-b-0${slot.teamEliminated ? " text-chalk-dim line-through" : ""}`}
                 >
                   <span>
-                    <span className="inline-block w-12 font-medium text-gray-500">{slot.slotLabel}</span>
+                    <span className="inline-block w-12 font-medium text-chalk-dim">{slot.slotLabel}</span>
                     {slot.playerId ? (
                       <Link href={`/leagues/${leagueId}/players/${slot.playerId}`} className="hover:underline">
                         {slot.playerName}
                       </Link>
                     ) : (
-                      <span className="text-gray-400">—</span>
+                      <span className="text-chalk-dim">—</span>
                     )}
                     {slot.teamEliminated && (
-                      <span className="ml-2 rounded bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-500">
+                      <span className="ml-2 rounded px-1.5 py-0.5 text-xs font-medium text-chalk-dim">
                         OUT
                       </span>
                     )}
                   </span>
-                  <span className="tabular-nums">{slot.points.toFixed(2)}</span>
+                  <span className="tabular">{slot.points.toFixed(2)}</span>
                 </li>
               ))}
             </ul>
             {week.bench.length > 0 && (
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-chalk-dim">
                 Bench: {week.bench.map((b) => `${b.playerName} ${b.points.toFixed(2)}`).join(" · ")}
               </p>
             )}

@@ -19,7 +19,7 @@ export default async function SignInPage({
   };
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center gap-8 p-8">
-      <h1 className="text-2xl font-bold">Sign in</h1>
+      <h1 className="chalk chalk-h1 text-5xl">Sign in</h1>
       <SignInForm callbackURL={callbackURL} socialProviders={socialProviders} />
     </main>
   );

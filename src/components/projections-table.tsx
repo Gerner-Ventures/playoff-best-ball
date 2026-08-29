@@ -6,23 +6,23 @@ export function ProjectionsTable({ projections }: { projections: LeagueProjectio
   if (projections.nextWeek === null) return null; // season over: nothing left to project
   return (
     <section className="mt-8">
-      <h2 className="mb-1 flex items-center gap-2 font-semibold">
+      <h2 className="mb-1 flex items-center gap-2 chalk chalk-h2 text-3xl text-chalk-mint">
         Projections
-        <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">PREMIUM</span>
+        <span className="chalk-badge">PREMIUM</span>
       </h2>
-      <p className="mb-3 text-sm text-gray-500">
+      <p className="mb-3 text-sm text-chalk-dim">
         Projected {WEEK_LABELS[projections.nextWeek]} points — recent scoring × Vegas win probabilities, best-ball lineup.
       </p>
-      <ul className="rounded-lg border text-sm">
+      <ul className="text-sm chalk-card">
         {projections.entries.map((entry, i) => (
-          <li key={entry.entryId} className="flex items-center justify-between border-b p-2 last:border-b-0">
+          <li key={entry.entryId} className="flex items-center justify-between border-b p-2 last:border-b-0 border-chalk-line">
             {/* No alive count here: the leaderboard's Alive column is authoritative; projections resolve
                 eliminations at nextWeek, which can disagree when a substitution has a future effectiveWeek. */}
             <span>
-              <span className="mr-2 text-gray-500">{i + 1}</span>
+              <span className="mr-2 text-chalk-dim">{i + 1}</span>
               <span className="font-medium">{entry.name}</span>
             </span>
-            <span className="font-semibold tabular-nums">{entry.projectedTotal.toFixed(1)}</span>
+            <span className="font-semibold tabular">{entry.projectedTotal.toFixed(1)}</span>
           </li>
         ))}
       </ul>

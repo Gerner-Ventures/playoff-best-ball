@@ -67,16 +67,16 @@ export function SubstitutionPanel({ leagueId, entryId, roster, pool, existing }:
   }
 
   return (
-    <section className="mt-8 rounded-lg border p-4">
+    <section className="mt-8 p-4 chalk-card">
       <h2 className="font-semibold">Injury substitutions</h2>
-      <p className="mt-1 text-sm text-gray-500">
+      <p className="mt-1 text-sm text-chalk-dim">
         Swap an injured player for an undrafted one (same position); the original&apos;s points keep
         counting for earlier weeks.
       </p>
       {existing.length > 0 && (
         <ul className="mt-3 flex flex-col gap-1 text-sm">
           {existing.map((s) => (
-            <li key={s.originalPlayerId} className="flex items-center justify-between rounded border px-2 py-1">
+            <li key={s.originalPlayerId} className="flex items-center justify-between px-2 py-1 chalk-card">
               <span>
                 {s.originalName} → {s.substituteName} from {WEEK_LABELS[s.effectiveWeek] ?? `week ${s.effectiveWeek}`}
               </span>
@@ -84,7 +84,7 @@ export function SubstitutionPanel({ leagueId, entryId, roster, pool, existing }:
                 type="button"
                 disabled={busy}
                 onClick={() => void send("DELETE", { originalPlayerId: s.originalPlayerId })}
-                className="ml-2 rounded px-2 py-0.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+                className="ml-2 text-xs font-medium text-chalk-coral hover:underline disabled:opacity-50"
                 aria-label={`Remove substitution for ${s.originalName}`}
               >
                 Remove
@@ -94,7 +94,7 @@ export function SubstitutionPanel({ leagueId, entryId, roster, pool, existing }:
         </ul>
       )}
       <form onSubmit={apply} className="mt-3 flex flex-wrap items-end gap-3 text-sm">
-        <label className="flex flex-col gap-1 text-gray-600">
+        <label className="flex flex-col gap-1 text-chalk-dim">
           Injured player
           <select
             value={originalId}
@@ -102,7 +102,7 @@ export function SubstitutionPanel({ leagueId, entryId, roster, pool, existing }:
               setOriginalId(e.target.value);
               setSubstituteId("");
             }}
-            className="rounded-lg border px-3 py-2 text-gray-900"
+            className="chalk-input"
           >
             <option value="">Choose…</option>
             {roster.map((p) => (
@@ -112,13 +112,13 @@ export function SubstitutionPanel({ leagueId, entryId, roster, pool, existing }:
             ))}
           </select>
         </label>
-        <label className="flex flex-col gap-1 text-gray-600">
+        <label className="flex flex-col gap-1 text-chalk-dim">
           Substitute
           <select
             value={substituteId}
             onChange={(e) => setSubstituteId(e.target.value)}
             disabled={!original}
-            className="rounded-lg border px-3 py-2 text-gray-900 disabled:bg-gray-50 disabled:text-gray-400"
+            className="chalk-input disabled:opacity-45"
           >
             <option value="">Choose…</option>
             {candidates.map((p) => (
@@ -128,12 +128,12 @@ export function SubstitutionPanel({ leagueId, entryId, roster, pool, existing }:
             ))}
           </select>
         </label>
-        <label className="flex flex-col gap-1 text-gray-600">
+        <label className="flex flex-col gap-1 text-chalk-dim">
           From week
           <select
             value={week}
             onChange={(e) => setWeek(Number(e.target.value))}
-            className="rounded-lg border px-3 py-2 text-gray-900"
+            className="chalk-input"
           >
             {[1, 2, 3, 4].map((w) => (
               <option key={w} value={w}>
@@ -142,25 +142,25 @@ export function SubstitutionPanel({ leagueId, entryId, roster, pool, existing }:
             ))}
           </select>
         </label>
-        <label className="flex flex-col gap-1 text-gray-600">
+        <label className="flex flex-col gap-1 text-chalk-dim">
           Reason (optional)
           <input
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             maxLength={80}
             placeholder="hamstring"
-            className="w-36 rounded-lg border px-3 py-2 text-gray-900"
+            className="w-36 chalk-input"
           />
         </label>
         <button
           type="submit"
           disabled={busy || originalId === "" || substituteId === ""}
-          className="rounded-lg bg-green-700 px-4 py-2 font-semibold text-white disabled:opacity-50"
+          className="disabled:opacity-50 chalk-btn chalk-btn-primary"
         >
           {busy ? "Applying…" : "Apply"}
         </button>
       </form>
-      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+      {error && <p className="mt-2 text-sm text-chalk-coral">{error}</p>}
     </section>
   );
 }

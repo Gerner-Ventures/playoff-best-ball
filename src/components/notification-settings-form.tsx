@@ -81,7 +81,7 @@ export function NotificationSettingsForm({ initial }: Props) {
       <section>
         <h2 className="font-semibold">Text messages</h2>
         <label className="mt-2 flex flex-col gap-1">
-          <span className="text-sm text-gray-600">Phone number (international format)</span>
+          <span className="text-sm text-chalk-dim">Phone number (international format)</span>
           <input
             type="tel"
             value={phone}
@@ -103,7 +103,7 @@ export function NotificationSettingsForm({ initial }: Props) {
 
       <section>
         <h2 className="font-semibold">Push notifications</h2>
-        <p className="mt-1 text-sm text-gray-600">
+        <p className="mt-1 text-sm text-chalk-dim">
           {pushDevices > 0
             ? `Enabled on ${pushDevices} device${pushDevices === 1 ? "" : "s"}.`
             : "Get pinged on this device, even when the site is closed."}
@@ -115,7 +115,7 @@ export function NotificationSettingsForm({ initial }: Props) {
                 type="button"
                 onClick={enablePush}
                 disabled={busy}
-                className="rounded-lg border px-4 py-2 text-sm font-medium disabled:opacity-50"
+                className="disabled:opacity-50 chalk-btn chalk-btn-sm"
               >
                 Enable on this device
               </button>
@@ -124,14 +124,14 @@ export function NotificationSettingsForm({ initial }: Props) {
                   type="button"
                   onClick={disablePush}
                   disabled={busy}
-                  className="rounded-lg border px-4 py-2 text-sm text-gray-500 disabled:opacity-50"
+                  className="disabled:opacity-50 chalk-btn chalk-btn-sm"
                 >
                   Disable on this device
                 </button>
               )}
             </div>
           ) : (
-            <p className="mt-2 text-sm text-gray-500">
+            <p className="mt-2 text-sm text-chalk-dim">
               {support === "unsupported"
                 ? "This browser doesn't support push notifications. On iPhone, add the app to your Home Screen first."
                 : "Push isn't configured on this server yet."}
@@ -143,12 +143,12 @@ export function NotificationSettingsForm({ initial }: Props) {
       <button
         type="submit"
         disabled={busy}
-        className="rounded-lg bg-green-700 px-4 py-3 font-semibold text-white disabled:opacity-50"
+        className="disabled:opacity-50 chalk-btn chalk-btn-primary"
       >
         {busy ? "Saving…" : "Save"}
       </button>
-      {saved && <p className="text-sm text-green-700">Saved.</p>}
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {saved && <p className="text-sm text-chalk-mint">Saved.</p>}
+      {error && <p className="text-sm text-chalk-coral">{error}</p>}
     </form>
   );
 }

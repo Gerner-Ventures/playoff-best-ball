@@ -42,10 +42,10 @@ export function AdminPanel({ mockMode = false }: { mockMode?: boolean }) {
 
   return (
     <div className="mt-8 flex flex-col gap-6">
-      <section className="rounded-lg border p-4">
+      <section className="p-4 chalk-card">
         <h2 className="font-semibold">Sync player pool</h2>
         <label className="mt-2 flex flex-col gap-1 text-sm">
-          <span className="text-gray-600">Playoff team abbreviations (comma-separated)</span>
+          <span className="text-chalk-dim">Playoff team abbreviations (comma-separated)</span>
           <textarea
             value={teams}
             onChange={(e) => setTeams(e.target.value)}
@@ -64,16 +64,16 @@ export function AdminPanel({ mockMode = false }: { mockMode?: boolean }) {
               }),
             )
           }
-          className="mt-2 rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+          className="mt-2 chalk-btn chalk-btn-primary chalk-btn-sm disabled:opacity-50"
         >
           {busy ? "Syncing…" : "Sync pool"}
         </button>
       </section>
 
-      <section className="rounded-lg border p-4">
+      <section className="p-4 chalk-card">
         <h2 className="font-semibold">Sync week stats</h2>
         <label className="mt-2 flex items-center gap-2 text-sm">
-          <span className="text-gray-600">Week (1=WC … 4=SB)</span>
+          <span className="text-chalk-dim">Week (1=WC … 4=SB)</span>
           <input
             type="number"
             min={1}
@@ -87,44 +87,44 @@ export function AdminPanel({ mockMode = false }: { mockMode?: boolean }) {
           type="button"
           disabled={busy}
           onClick={() => void run(() => postJson("/api/admin/sync/week", { week }))}
-          className="mt-2 rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+          className="mt-2 chalk-btn chalk-btn-primary chalk-btn-sm disabled:opacity-50"
         >
           {busy ? "Syncing…" : "Sync week"}
         </button>
       </section>
 
       {mockMode && (
-        <section className="rounded-lg border border-amber-300 bg-amber-50 p-4">
+        <section className="border-chalk-yellow p-4 chalk-card">
           <h2 className="font-semibold">Advance mock week</h2>
-          <p className="mt-1 text-sm text-gray-600">
+          <p className="mt-1 text-sm text-chalk-dim">
             Simulated season (STATS_PROVIDER=fake): finalizes the next playoff week with fabricated stats.
           </p>
           <button
             type="button"
             disabled={busy}
             onClick={() => void run(() => postJson("/api/admin/mock/advance-week", {}))}
-            className="mt-2 rounded-lg bg-amber-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+            className="mt-2 chalk-btn chalk-btn-upgrade chalk-btn-sm disabled:opacity-50"
           >
             {busy ? "Advancing…" : "Advance mock week"}
           </button>
         </section>
       )}
 
-      {result && <p className="text-sm text-gray-700">{result}</p>}
+      {result && <p className="text-sm text-chalk-soft">{result}</p>}
       {unmatched.length > 0 && (
-        <div className="text-sm text-red-600">
+        <div className="text-sm text-chalk-coral">
           <p className="font-medium">Unmatched stat lines ({unmatched.length}) — run a pool sync:</p>
           <ul className="mt-1 list-inside list-disc">
             {unmatched.slice(0, 50).map((u) => (
               <li key={u}>{u}</li>
             ))}
             {unmatched.length > 50 && (
-              <li className="list-none text-gray-500">…and {unmatched.length - 50} more</li>
+              <li className="list-none text-chalk-dim">…and {unmatched.length - 50} more</li>
             )}
           </ul>
         </div>
       )}
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-chalk-coral">{error}</p>}
     </div>
   );
 }

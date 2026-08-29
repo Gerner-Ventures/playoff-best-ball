@@ -17,7 +17,7 @@ export function InviteLinkButton({ code }: { code: string }) {
           window.prompt("Copy your invite link:", `${window.location.origin}/join/${code}`);
         }
       }}
-      className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-gray-50"
+      className="chalk-btn chalk-btn-sm"
     >
       {copied ? "Copied!" : "Copy invite link"}
     </button>

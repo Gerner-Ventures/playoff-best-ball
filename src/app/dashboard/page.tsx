@@ -19,16 +19,16 @@ export default async function DashboardPage() {
       <AppNav userName={user.name} />
       <main className="mx-auto max-w-2xl p-6">
         <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-2xl font-bold">My leagues</h1>
+          <h1 className="chalk chalk-h1 text-4xl sm:text-5xl">My leagues</h1>
           <Link
             href="/leagues/new"
-            className="rounded-lg bg-green-700 px-4 py-2 font-semibold text-white"
+            className="chalk-btn chalk-btn-primary"
           >
             Create league
           </Link>
         </div>
         {memberships.length === 0 ? (
-          <p className="text-gray-600">
+          <p className="text-chalk-dim">
             No leagues yet. Create one, or ask your commissioner for an invite link.
           </p>
         ) : (
@@ -37,16 +37,16 @@ export default async function DashboardPage() {
               <li key={m.id}>
                 <Link
                   href={`/leagues/${m.leagueId}`}
-                  className="flex items-center justify-between rounded-lg border p-4 hover:bg-gray-50"
+                  className="flex items-center justify-between chalk-btn"
                 >
                   <div>
                     <div className="font-semibold">{m.league.name}</div>
-                    <div className="text-sm text-gray-500">
+                    <div className="text-sm text-chalk-dim">
                       {m.entries[0]?.name ?? "No team"}
                       {m.role === "COMMISSIONER" && " · Commissioner"}
                     </div>
                   </div>
-                  <span className="text-sm text-gray-400">{m.league.season} season</span>
+                  <span className="text-sm text-chalk-dim">{m.league.season} season</span>
                 </Link>
               </li>
             ))}

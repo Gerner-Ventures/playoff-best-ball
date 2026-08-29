@@ -83,9 +83,9 @@ export function DraftCard({
 
   if (draftStatus === "NOT_STARTED") {
     return (
-      <div className="rounded-lg border p-4">
-        <h2 className="font-semibold">Draft</h2>
-        <p className="mt-1 text-sm text-gray-600">
+      <div className="p-4 chalk-card">
+        <h2 className="chalk chalk-h2 text-3xl text-chalk-mint">Draft</h2>
+        <p className="mt-1 text-sm text-chalk-dim">
           {isCommissioner
             ? "Once everyone's in, start the draft. Members pick on their own time and get notified on their turn."
             : "The commissioner hasn't started the draft yet. You'll get an email when you're on the clock."}
@@ -95,13 +95,13 @@ export function DraftCard({
             type="button"
             onClick={start}
             disabled={starting || entryCount < 2}
-            className="mt-3 rounded-lg bg-green-700 px-4 py-2 font-semibold text-white disabled:opacity-50"
+            className="mt-3 disabled:opacity-50 chalk-btn chalk-btn-primary"
           >
             {starting ? "Starting…" : "Start draft"}
           </button>
         )}
         {entryCount < 2 && isCommissioner && (
-          <p className="mt-2 text-sm text-gray-500">You need at least 2 teams to start.</p>
+          <p className="mt-2 text-sm text-chalk-dim">You need at least 2 teams to start.</p>
         )}
         {isCommissioner && (
           <div className="mt-4 border-t pt-3">
@@ -119,7 +119,7 @@ export function DraftCard({
                 type="button"
                 onClick={saveSchedule}
                 disabled={busySchedule || scheduleInput === ""}
-                className="rounded-lg border px-3 py-2 text-sm font-medium disabled:opacity-50"
+                className="disabled:opacity-50 chalk-btn chalk-btn-sm"
               >
                 {busySchedule ? "Saving…" : "Schedule"}
               </button>
@@ -128,7 +128,7 @@ export function DraftCard({
                   type="button"
                   onClick={clearSchedule}
                   disabled={busySchedule}
-                  className="rounded-lg border px-3 py-2 text-sm text-gray-500 disabled:opacity-50"
+                  className="disabled:opacity-50 chalk-btn chalk-btn-sm"
                 >
                   Cancel schedule
                 </button>
@@ -137,24 +137,24 @@ export function DraftCard({
           </div>
         )}
         {mounted && scheduledAt && (
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="mt-2 text-sm text-chalk-dim">
             Draft starts automatically {new Date(scheduledAt).toLocaleString()}.
           </p>
         )}
-        {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+        {error && <p className="mt-2 text-sm text-chalk-coral">{error}</p>}
       </div>
     );
   }
 
   return (
-    <div className="rounded-lg border p-4">
-      <h2 className="font-semibold">Draft</h2>
-      <p className="mt-1 text-sm text-gray-600">
+    <div className="p-4 chalk-card">
+      <h2 className="chalk chalk-h2 text-3xl text-chalk-mint">Draft</h2>
+      <p className="mt-1 text-sm text-chalk-dim">
         {draftStatus === "ACTIVE" ? "The draft is live." : "The draft is complete."}
       </p>
       <Link
         href={`/leagues/${leagueId}/draft`}
-        className="mt-3 inline-block rounded-lg bg-green-700 px-4 py-2 font-semibold text-white"
+        className="mt-3 inline-block chalk-btn chalk-btn-primary"
       >
         {draftStatus === "ACTIVE" ? "Go to draft room" : "View results"}
       </Link>

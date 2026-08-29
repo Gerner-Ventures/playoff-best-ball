@@ -22,7 +22,7 @@ export default async function JoinPage({ params }: { params: Promise<{ code: str
     return (
       <main className="mx-auto max-w-md p-8 text-center">
         <h1 className="text-xl font-bold">Invite not found</h1>
-        <p className="mt-2 text-gray-600">Double-check the link with your commissioner.</p>
+        <p className="mt-2 text-chalk-dim">Double-check the link with your commissioner.</p>
       </main>
     );
   }
@@ -36,7 +36,7 @@ export default async function JoinPage({ params }: { params: Promise<{ code: str
     return (
       <main className="mx-auto max-w-md p-8 text-center">
         <h1 className="text-xl font-bold">Something&apos;s wrong with this league</h1>
-        <p className="mt-2 text-gray-600">Ask your commissioner to contact support.</p>
+        <p className="mt-2 text-chalk-dim">Ask your commissioner to contact support.</p>
       </main>
     );
   }
@@ -49,16 +49,16 @@ export default async function JoinPage({ params }: { params: Promise<{ code: str
     <main className="mx-auto flex max-w-md flex-col items-center gap-6 p-8">
       <div className="text-center">
         <h1 className="text-2xl font-bold">{league.name}</h1>
-        <p className="mt-1 text-gray-600">
+        <p className="mt-1 text-chalk-dim">
           {league.season} playoffs · {league._count.entries}/{settings.maxEntries} teams
         </p>
       </div>
       {draftStarted && !isUserMember ? (
-        <p className="text-center text-red-600">
+        <p className="text-center text-chalk-coral">
           The draft has already started — this league is closed to new teams.
         </p>
       ) : isFull ? (
-        <p className="text-center text-red-600">
+        <p className="text-center text-chalk-coral">
           This league is full. The commissioner can upgrade to Premium for more spots.
         </p>
       ) : (

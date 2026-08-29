@@ -128,7 +128,7 @@ export function LeagueSettingsForm({ leagueId, isPremium, initial, duesInterestJ
     <form onSubmit={save} className="mt-6 flex flex-col gap-8">
       <section>
         <h2 className="font-semibold">Scoring</h2>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 text-sm text-chalk-dim">
           Changes apply to all weeks immediately — standings recompute from raw stats.
         </p>
         <div className="mt-2 flex gap-3">
@@ -147,16 +147,16 @@ export function LeagueSettingsForm({ leagueId, isPremium, initial, duesInterestJ
             </label>
           ))}
           {(preset === "custom" || customized) && (
-            <span className="text-sm font-medium text-amber-700">Custom</span>
+            <span className="text-sm font-medium text-chalk-yellow">Custom</span>
           )}
         </div>
         <div className={`mt-4 ${isPremium ? "" : "pointer-events-none opacity-50"}`}>
           {SCORING_GROUPS.map((group) => (
             <fieldset key={group.title} className="mt-3">
-              <legend className="text-sm font-medium text-gray-600">{group.title}</legend>
+              <legend className="text-sm font-medium text-chalk-dim">{group.title}</legend>
               <div className="mt-1 grid grid-cols-3 gap-2 sm:grid-cols-4">
                 {group.fields.map(([key, label]) => (
-                  <label key={key} className="flex flex-col text-xs text-gray-500">
+                  <label key={key} className="flex flex-col text-xs text-chalk-dim">
                     {label}
                     <input
                       type="number"
@@ -164,7 +164,7 @@ export function LeagueSettingsForm({ leagueId, isPremium, initial, duesInterestJ
                       value={scoring[key]}
                       onChange={(e) => setScoringField(key, Number(e.target.value))}
                       disabled={!isPremium}
-                      className="rounded border px-2 py-1 text-sm text-gray-900 disabled:bg-gray-50 disabled:text-gray-400"
+                      className="chalk-input chalk-btn-sm disabled:opacity-45"
                     />
                   </label>
                 ))}
@@ -173,7 +173,7 @@ export function LeagueSettingsForm({ leagueId, isPremium, initial, duesInterestJ
           ))}
         </div>
         {!isPremium && (
-          <p className="mt-2 text-sm text-amber-700">
+          <p className="mt-2 text-sm text-chalk-yellow">
             Editing individual values is a Premium feature — presets are free.
           </p>
         )}
@@ -181,7 +181,7 @@ export function LeagueSettingsForm({ leagueId, isPremium, initial, duesInterestJ
 
       <section>
         <h2 className="font-semibold">Injury substitutions</h2>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 text-sm text-chalk-dim">
           Commissioner can swap an injured player for an undrafted one (same position); the
           original&apos;s points keep counting for earlier weeks.
         </p>
@@ -197,11 +197,11 @@ export function LeagueSettingsForm({ leagueId, isPremium, initial, duesInterestJ
 
       <section>
         <h2 className="font-semibold">Dues (handled outside the app)</h2>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 text-sm text-chalk-dim">
           We never touch the money — this just helps you track who&apos;s paid.
         </p>
         <div className="mt-2 flex gap-4">
-          <label className="flex flex-col text-sm text-gray-600">
+          <label className="flex flex-col text-sm text-chalk-dim">
             Entry fee ($)
             <input
               type="number"
@@ -210,28 +210,28 @@ export function LeagueSettingsForm({ leagueId, isPremium, initial, duesInterestJ
               value={fee}
               onChange={(e) => setFee(e.target.value)}
               placeholder="50"
-              className="w-28 rounded-lg border px-3 py-2 text-gray-900"
+              className="w-28 chalk-input"
             />
           </label>
-          <label className="flex flex-col text-sm text-gray-600">
+          <label className="flex flex-col text-sm text-chalk-dim">
             Venmo handle
             <input
               value={venmo}
               onChange={(e) => setVenmo(e.target.value)}
               placeholder="your-venmo"
-              className="w-48 rounded-lg border px-3 py-2 text-gray-900"
+              className="w-48 chalk-input"
             />
           </label>
         </div>
       </section>
 
-      <section className="rounded-lg border border-dashed p-4">
+      <section className="border-dashed p-4 chalk-card">
         <h2 className="font-semibold">Automatic dues collection</h2>
-        <p className="mt-1 text-sm text-gray-600">
+        <p className="mt-1 text-sm text-chalk-dim">
           We collect buy-ins and handle payouts for you — $1 per entry. Coming for the 2027 season.
         </p>
         {interestJoined ? (
-          <p className="mt-2 text-sm font-medium text-green-700">You&apos;re on the waitlist.</p>
+          <p className="mt-2 text-sm font-medium text-chalk-mint">You&apos;re on the waitlist.</p>
         ) : (
           <button
             type="button"
@@ -247,12 +247,12 @@ export function LeagueSettingsForm({ leagueId, isPremium, initial, duesInterestJ
       <button
         type="submit"
         disabled={busy}
-        className="rounded-lg bg-green-700 px-4 py-3 font-semibold text-white disabled:opacity-50"
+        className="disabled:opacity-50 chalk-btn chalk-btn-primary"
       >
         {busy ? "Saving…" : "Save settings"}
       </button>
-      {saved && <p className="text-sm text-green-700">Saved.</p>}
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {saved && <p className="text-sm text-chalk-mint">Saved.</p>}
+      {error && <p className="text-sm text-chalk-coral">{error}</p>}
     </form>
   );
 }

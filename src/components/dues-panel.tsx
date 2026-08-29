@@ -46,7 +46,7 @@ export function DuesPanel({ leagueId, isCommissioner, entryFeeCents, venmoHandle
   return (
     <section className="mt-8">
       <h2 className="mb-1 font-semibold">Dues</h2>
-      <p className="mb-3 text-sm text-gray-500">
+      <p className="mb-3 text-sm text-chalk-dim">
         {fee} per team{venmoHandle && (
           <>
             {" "}·{" "}
@@ -62,18 +62,18 @@ export function DuesPanel({ leagueId, isCommissioner, entryFeeCents, venmoHandle
         )}{" "}
         · handled outside the app
       </p>
-      <ul className="rounded-lg border text-sm">
+      <ul className="text-sm chalk-card">
         {rows.map((e) => (
-          <li key={e.entryId} className="flex items-center justify-between border-b p-2 last:border-b-0">
+          <li key={e.entryId} className="flex items-center justify-between border-b p-2 last:border-b-0 border-chalk-line">
             <span className={e.isMine ? "font-medium" : ""}>
-              {e.name} <span className="text-gray-500">{e.ownerName}</span>
+              {e.name} <span className="text-chalk-dim">{e.ownerName}</span>
             </span>
             {isCommissioner ? (
               <button
                 type="button"
                 onClick={() => void toggle(e.entryId, !e.duesPaid)}
                 className={`rounded px-3 py-1 text-xs font-semibold ${
-                  e.duesPaid ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"
+                  e.duesPaid ? "border-2 border-chalk-mint text-chalk-mint" : "border-2 border-chalk-line text-chalk-dim"
                 }`}
               >
                 {e.duesPaid ? "Paid ✓" : "Mark paid"}
@@ -81,7 +81,7 @@ export function DuesPanel({ leagueId, isCommissioner, entryFeeCents, venmoHandle
             ) : (
               <span
                 className={`rounded px-3 py-1 text-xs font-semibold ${
-                  e.duesPaid ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-800"
+                  e.duesPaid ? "border-2 border-chalk-mint text-chalk-mint" : "border-2 border-chalk-yellow text-chalk-yellow"
                 }`}
               >
                 {e.duesPaid ? "Paid" : "Unpaid"}
@@ -90,7 +90,7 @@ export function DuesPanel({ leagueId, isCommissioner, entryFeeCents, venmoHandle
           </li>
         ))}
       </ul>
-      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+      {error && <p className="mt-2 text-sm text-chalk-coral">{error}</p>}
     </section>
   );
 }

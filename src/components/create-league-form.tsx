@@ -108,11 +108,11 @@ export function CreateLeagueForm() {
       <button
         type="submit"
         disabled={submitting}
-        className="rounded-lg bg-green-700 px-4 py-3 font-semibold text-white disabled:opacity-50"
+        className="disabled:opacity-50 chalk-btn chalk-btn-primary"
       >
         {submitting ? "Creating…" : "Create league"}
       </button>
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-chalk-coral">{error}</p>}
     </form>
   );
 }

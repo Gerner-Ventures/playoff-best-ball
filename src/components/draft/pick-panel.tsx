@@ -114,14 +114,14 @@ export function PickPanel({
   return (
     <div className="mt-6 grid gap-6 md:grid-cols-2">
       <section>
-        <h2 className="font-semibold">Available players</h2>
+        <h2 className="chalk chalk-h2 text-3xl text-chalk-mint">Available players</h2>
         <div className="mt-2 flex flex-wrap items-center gap-2">
           {POSITIONS.map((pos) => (
             <button
               key={pos}
               type="button"
               onClick={() => setFilter(pos)}
-              className={`rounded px-2 py-1 text-sm ${filter === pos ? "bg-green-700 text-white" : "border"}`}
+              className={`chalk-btn chalk-btn-sm ${filter === pos ? "border-chalk-mint text-chalk-mint" : ""}`}
             >
               {pos}
             </button>
@@ -134,12 +134,12 @@ export function PickPanel({
             aria-label="Search players"
           />
         </div>
-        <ul className="mt-3 max-h-96 overflow-y-auto rounded-lg border">
+        <ul className="mt-3 max-h-96 overflow-y-auto chalk-card">
           {visible.map((p) => (
-            <li key={p.id} className="flex items-center justify-between border-b p-2 last:border-b-0">
+            <li key={p.id} className="flex items-center justify-between border-b p-2 last:border-b-0 border-chalk-line">
               <span>
                 <span className="font-medium">{p.name}</span>{" "}
-                <span className="text-sm text-gray-500">{p.position} · {p.nflTeam}</span>
+                <span className="text-sm text-chalk-dim">{p.position} · {p.nflTeam}</span>
               </span>
               <span className="flex gap-2">
                 {!queue.includes(p.id) && (
@@ -155,32 +155,32 @@ export function PickPanel({
                   type="button"
                   disabled={!myTurn || busy}
                   onClick={() => void draftPlayer(p.id)}
-                  className="rounded bg-green-700 px-2 py-1 text-sm font-semibold text-white disabled:opacity-40"
+                  className="chalk-btn chalk-btn-primary chalk-btn-sm disabled:opacity-40"
                 >
                   Draft
                 </button>
               </span>
             </li>
           ))}
-          {visible.length === 0 && <li className="p-3 text-sm text-gray-500">No players match.</li>}
+          {visible.length === 0 && <li className="p-3 text-sm text-chalk-dim">No players match.</li>}
         </ul>
       </section>
 
       <section>
-        <h2 className="font-semibold">My queue</h2>
-        <p className="mt-1 text-sm text-gray-500">
+        <h2 className="chalk chalk-h2 text-3xl text-chalk-mint">My queue</h2>
+        <p className="mt-1 text-sm text-chalk-dim">
           If your clock runs out, we draft the highest available player from this list (skipping any
           that don&apos;t fit your roster), then best-available.
         </p>
-        <ul className="mt-3 rounded-lg border">
+        <ul className="mt-3 chalk-card">
           {queue.map((playerId, i) => {
             const p = poolById.get(playerId);
             if (!p) return null;
             return (
-              <li key={playerId} className="flex items-center justify-between border-b p-2 last:border-b-0">
-                <span className={takenIds.has(playerId) ? "text-gray-400 line-through" : ""}>
+              <li key={playerId} className="flex items-center justify-between border-b p-2 last:border-b-0 border-chalk-line">
+                <span className={takenIds.has(playerId) ? "text-chalk-dim line-through" : ""}>
                   {i + 1}. {p.name}{" "}
-                  <span className="text-sm text-gray-500">{p.position} · {p.nflTeam}</span>
+                  <span className="text-sm text-chalk-dim">{p.position} · {p.nflTeam}</span>
                 </span>
                 <span className="flex gap-1">
                   <button type="button" aria-label={`Move ${p.name} up`} onClick={() => move(playerId, -1)} className="rounded border px-2 py-1 text-sm">↑</button>
@@ -197,10 +197,10 @@ export function PickPanel({
               </li>
             );
           })}
-          {queue.length === 0 && <li className="p-3 text-sm text-gray-500">Queue is empty.</li>}
+          {queue.length === 0 && <li className="p-3 text-sm text-chalk-dim">Queue is empty.</li>}
         </ul>
       </section>
-      {error && <p className="text-sm text-red-600 md:col-span-2">{error}</p>}
+      {error && <p className="text-sm text-chalk-coral md:col-span-2">{error}</p>}
     </div>
   );
 }

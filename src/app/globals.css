@@ -76,147 +76,149 @@ body > * {
   /* nothing animated yet — placeholder so motion opt-outs stay honest */
 }
 
-/* --- chalk primitives ---------------------------------------------------- */
+@layer components {
+  /* --- chalk primitives ---------------------------------------------------- */
 
-/* Hand-drawn roughness. Skipped when the user prefers reduced transparency or
-   the filter is unsupported; the design reads fine without it. */
-.chalk {
-  filter: url(#chalk-rough);
-}
+  /* Hand-drawn roughness. Skipped when the user prefers reduced transparency or
+     the filter is unsupported; the design reads fine without it. */
+  .chalk {
+    filter: url(#chalk-rough);
+  }
 
-.font-chalk {
-  font-family: var(--font-chalk), "Bradley Hand", cursive;
-}
+  .font-chalk {
+    font-family: var(--font-chalk), "Bradley Hand", cursive;
+  }
 
-/* Every figure. Tabular so scores and pick codes stack in true columns. */
-.tabular {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-variant-numeric: tabular-nums;
-}
+  /* Every figure. Tabular so scores and pick codes stack in true columns. */
+  .tabular {
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+  }
 
-/* A card outlined in chalk. The rotation is what makes it read as drawn rather
-   than printed; keep it under a degree or it looks like a mistake. */
-.chalk-card {
-  border: 3px solid var(--chalk-line);
-  border-radius: 0.75rem;
-  filter: url(#chalk-edge);
-}
+  /* A card outlined in chalk. The rotation is what makes it read as drawn rather
+     than printed; keep it under a degree or it looks like a mistake. */
+  .chalk-card {
+    border: 3px solid var(--chalk-line);
+    border-radius: 0.75rem;
+    filter: url(#chalk-edge);
+  }
 
-.chalk-card-accent {
-  border-width: 4px;
-}
+  .chalk-card-accent {
+    border-width: 4px;
+  }
 
-.chalk-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 44px; /* touch target floor */
-  border: 3px solid var(--chalk-line);
-  border-radius: 0.7rem;
-  padding: 0.55rem 1.4rem;
-  color: var(--chalk-soft);
-  filter: url(#chalk-edge);
-  transition: color 120ms ease, border-color 120ms ease;
-}
+  .chalk-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px; /* touch target floor */
+    border: 3px solid var(--chalk-line);
+    border-radius: 0.7rem;
+    padding: 0.55rem 1.4rem;
+    color: var(--chalk-soft);
+    filter: url(#chalk-edge);
+    transition: color 120ms ease, border-color 120ms ease;
+  }
 
-.chalk-btn:hover {
-  color: var(--chalk);
-  border-color: var(--chalk);
-}
+  .chalk-btn:hover {
+    color: var(--chalk);
+    border-color: var(--chalk);
+  }
 
-.chalk-btn-primary {
-  border-color: var(--chalk-mint);
-  color: var(--chalk-mint);
-  font-family: var(--font-chalk), "Bradley Hand", cursive;
-  font-size: 1.5rem;
-  font-weight: 700;
-}
+  .chalk-btn-primary {
+    border-color: var(--chalk-mint);
+    color: var(--chalk-mint);
+    font-family: var(--font-chalk), "Bradley Hand", cursive;
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
 
-.chalk-btn-primary:hover {
-  border-color: var(--chalk);
-  color: var(--chalk);
-}
+  .chalk-btn-primary:hover {
+    border-color: var(--chalk);
+    color: var(--chalk);
+  }
 
-.chalk-input {
-  width: 100%;
-  min-height: 44px;
-  border: 3px solid var(--chalk-line);
-  border-radius: 0.7rem;
-  padding: 0.55rem 1rem;
-  background: transparent;
-  color: var(--chalk);
-  font-family: var(--font-sans), system-ui, sans-serif;
-}
+  .chalk-input {
+    width: 100%;
+    min-height: 44px;
+    border: 3px solid var(--chalk-line);
+    border-radius: 0.7rem;
+    padding: 0.55rem 1rem;
+    background: transparent;
+    color: var(--chalk);
+    font-family: var(--font-sans), system-ui, sans-serif;
+  }
 
-.chalk-input::placeholder {
-  color: var(--chalk-dim);
-}
+  .chalk-input::placeholder {
+    color: var(--chalk-dim);
+  }
 
-.chalk-input:focus {
-  outline: 2px solid var(--chalk-sky);
-  outline-offset: 2px;
-  border-color: var(--chalk-sky);
-}
+  .chalk-input:focus {
+    outline: 2px solid var(--chalk-sky);
+    outline-offset: 2px;
+    border-color: var(--chalk-sky);
+  }
 
-.chalk-badge {
-  display: inline-block;
-  border: 3px solid var(--chalk-yellow);
-  border-radius: 0.5rem;
-  padding: 0 0.6rem;
-  font-family: var(--font-chalk), "Bradley Hand", cursive;
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: var(--chalk-yellow);
-  filter: url(#chalk-rough);
-}
+  .chalk-badge {
+    display: inline-block;
+    border: 3px solid var(--chalk-yellow);
+    border-radius: 0.5rem;
+    padding: 0 0.6rem;
+    font-family: var(--font-chalk), "Bradley Hand", cursive;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--chalk-yellow);
+    filter: url(#chalk-rough);
+  }
 
-.chalk-btn-sm {
-  min-height: 36px;
-  padding: 0.35rem 0.9rem;
-  font-size: 0.9rem;
-}
+  .chalk-btn-sm {
+    min-height: 36px;
+    padding: 0.35rem 0.9rem;
+    font-size: 0.9rem;
+  }
 
-.chalk-btn-primary.chalk-btn-sm {
-  font-size: 1.15rem;
-}
+  .chalk-btn-primary.chalk-btn-sm {
+    font-size: 1.15rem;
+  }
 
-/* The paid CTA. Yellow is the only place it appears at button scale, so it
-   reads as the one commercial moment rather than another action. */
-.chalk-btn-upgrade {
-  border-color: var(--chalk-yellow);
-  color: var(--chalk-yellow);
-  font-family: var(--font-chalk), "Bradley Hand", cursive;
-  font-size: 1.5rem;
-  font-weight: 700;
-}
+  /* The paid CTA. Yellow is the only place it appears at button scale, so it
+     reads as the one commercial moment rather than another action. */
+  .chalk-btn-upgrade {
+    border-color: var(--chalk-yellow);
+    color: var(--chalk-yellow);
+    font-family: var(--font-chalk), "Bradley Hand", cursive;
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
 
-.chalk-btn-upgrade:hover {
-  border-color: var(--chalk);
-  color: var(--chalk);
-}
+  .chalk-btn-upgrade:hover {
+    border-color: var(--chalk);
+    color: var(--chalk);
+  }
 
-.chalk-btn:disabled,
-.chalk-btn[aria-disabled="true"] {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
+  .chalk-btn:disabled,
+  .chalk-btn[aria-disabled="true"] {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
 
-.chalk-btn:disabled:hover,
-.chalk-btn[aria-disabled="true"]:hover {
-  color: inherit;
-  border-color: inherit;
-}
+  .chalk-btn:disabled:hover,
+  .chalk-btn[aria-disabled="true"]:hover {
+    color: inherit;
+    border-color: inherit;
+  }
 
-/* Headings. Chalk face, but never for figures — see .tabular. */
-.chalk-h1 {
-  font-family: var(--font-chalk), "Bradley Hand", cursive;
-  font-weight: 700;
-  line-height: 1.05;
-  color: var(--chalk);
-}
+  /* Headings. Chalk face, but never for figures — see .tabular. */
+  .chalk-h1 {
+    font-family: var(--font-chalk), "Bradley Hand", cursive;
+    font-weight: 700;
+    line-height: 1.05;
+    color: var(--chalk);
+  }
 
-.chalk-h2 {
-  font-family: var(--font-chalk), "Bradley Hand", cursive;
-  font-weight: 700;
-  line-height: 1.1;
+  .chalk-h2 {
+    font-family: var(--font-chalk), "Bradley Hand", cursive;
+    font-weight: 700;
+    line-height: 1.1;
+  }
 }

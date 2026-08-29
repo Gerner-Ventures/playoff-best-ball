@@ -24,7 +24,7 @@ export function DraftRoom({ leagueId, leagueName }: { leagueId: string; leagueNa
       {state.status === "ACTIVE" && state.deadline && onClock && (
         <div
           data-testid="turn-banner"
-          className={`mt-3 chalk-card chalk-card-accent p-3 ${myTurn ? "border-chalk-coral text-chalk-coral" : "text-chalk-soft"}`}
+          className={`mt-3 chalk-card chalk-card-accent p-3 ${myTurn ? "chalk-card-coral text-chalk-coral" : "text-chalk-soft"}`}
         >
           {myTurn ? (
             <span className="font-semibold">

@@ -221,4 +221,25 @@ body > * {
     font-weight: 700;
     line-height: 1.1;
   }
+  /* Accent variants.
+   *
+   * Declared after the base they modify, so they win on source order without
+   * depending on a Tailwind utility to override a primitive. `.chalk-card`'s
+   * `border` shorthand also sets a colour, which a utility would have to fight.
+   */
+  .chalk-card-yellow {
+    border-color: var(--chalk-yellow);
+  }
+
+  .chalk-card-coral {
+    border-color: var(--chalk-coral);
+  }
+
+  .chalk-card-mint {
+    border-color: var(--chalk-mint);
+  }
+
+  .chalk-btn-between {
+    justify-content: space-between;
+  }
 }

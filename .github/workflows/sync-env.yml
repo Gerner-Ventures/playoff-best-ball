@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dopplerhq/cli-action@v3
+      - uses: dopplerhq/cli-action@v4
       - run: npm i -g vercel@latest
       - name: Sync secrets
         run: ./scripts/sync-doppler-to-vercel.sh "${{ inputs.target || 'production' }}"

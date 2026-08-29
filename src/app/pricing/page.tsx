@@ -87,7 +87,7 @@ export default async function PricingPage() {
             </Link>
           </section>
 
-          <section className="chalk-card chalk-card-accent flex flex-col gap-5 border-chalk-yellow p-7">
+          <section className="chalk-card chalk-card-accent chalk-card-yellow flex flex-col gap-5 p-7">
             <div className="flex items-center gap-3">
               <h2 className="chalk chalk-h2 text-4xl text-chalk-yellow">Premium</h2>
               <span className="chalk-badge">PER LEAGUE</span>

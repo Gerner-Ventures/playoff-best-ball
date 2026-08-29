@@ -22,6 +22,7 @@ model User {
   accounts      Account[]
   memberships   Membership[]
   pushSubscriptions PushSubscription[]
+  mockDraft     MockDraft?
 
   @@map("user")
 }
@@ -348,4 +349,29 @@ model SyncHealth {
   lastSuccessAt       DateTime?
   alertedAt           DateTime? // set when we alerted for the current failure streak
   updatedAt           DateTime  @updatedAt
+}
+
+enum MockDraftStatus {
+  ACTIVE
+  COMPLETE
+}
+
+/// Solo practice draft against bots. Deliberately NOT a League: no Entry,
+/// Membership or User rows are synthesised, so mock data can never leak into
+/// the crons, emails, stats sync or revenue analytics that walk real leagues.
+/// Teams are seats ("0", "1", ...); picks are JSON because there is exactly one
+/// writer and no races for DB constraints to arbitrate.
+model MockDraft {
+  id               String          @id @default(cuid())
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId           String          @unique // one in progress per user
+  season           Int
+  config           Json // { teamCount, rosterSlots } — mockDraftConfigSchema
+  order            Json // shuffled seat ids; validated by draftOrderSchema
+  humanSeat        String // which seat in `order` belongs to the user
+  picks            Json // MockPick[] — see src/domain/mock-draft/state.ts
+  currentPickIndex Int             @default(0)
+  status           MockDraftStatus @default(ACTIVE)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
 }

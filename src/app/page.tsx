@@ -2,13 +2,24 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/session";
 import { ChalkPlayDiagram } from "@/components/chalk-play-diagram";
+import { formatPriceUsd, PREMIUM_PRICE_CENTS } from "@/lib/pricing";
 
 export default async function LandingPage() {
   const user = await getSessionUser();
   if (user) redirect("/dashboard");
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-10 sm:px-10">
-      <div className="chalk font-chalk text-2xl font-bold text-chalk">Playoff Best Ball</div>
+      <div className="flex items-center justify-between gap-6">
+        <div className="chalk font-chalk text-2xl font-bold text-chalk">Playoff Best Ball</div>
+        <div className="flex items-center gap-5 text-sm">
+          <Link href="/pricing" className="text-chalk-dim hover:text-chalk hover:underline">
+            Pricing
+          </Link>
+          <Link href="/sign-in" className="text-chalk-dim hover:text-chalk hover:underline">
+            Sign in
+          </Link>
+        </div>
+      </div>
 
       <div className="mt-12 flex flex-col items-start gap-12 lg:mt-20 lg:flex-row lg:items-center lg:gap-16">
         <div className="flex max-w-xl flex-col gap-7">
@@ -36,7 +47,9 @@ export default async function LandingPage() {
             <Link href="/sign-in" className="chalk-btn chalk-btn-primary text-3xl">
               Get started
             </Link>
-            <span className="text-sm text-chalk-dim">free to play · $25 for premium</span>
+            <span className="text-sm text-chalk-dim">
+              free to play · {formatPriceUsd(PREMIUM_PRICE_CENTS)} for premium
+            </span>
           </div>
         </div>
 

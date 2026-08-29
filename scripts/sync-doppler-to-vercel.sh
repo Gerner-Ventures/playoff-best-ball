@@ -17,7 +17,17 @@ TARGET="${1:-production}"
 
 command -v doppler >/dev/null || { echo "doppler CLI not found"; exit 1; }
 command -v vercel  >/dev/null || { echo "vercel CLI not found"; exit 1; }
-[ -f .vercel/project.json ] || { echo "Repo not linked — run 'vercel link' first"; exit 1; }
+# Locally the repo is linked via `vercel link`. In CI there is no .vercel/, so
+# reconstruct it from the org/project ids the workflow provides.
+if [ ! -f .vercel/project.json ]; then
+  if [ -n "${VERCEL_ORG_ID:-}" ] && [ -n "${VERCEL_PROJECT_ID:-}" ]; then
+    mkdir -p .vercel
+    printf '{"projectId":"%s","orgId":"%s"}\n' "$VERCEL_PROJECT_ID" "$VERCEL_ORG_ID" > .vercel/project.json
+  else
+    echo "Repo not linked — run 'vercel link', or set VERCEL_ORG_ID and VERCEL_PROJECT_ID"
+    exit 1
+  fi
+fi
 
 # Names to push (all prd secrets minus Doppler's own reserved trio).
 mapfile -t KEYS < <(

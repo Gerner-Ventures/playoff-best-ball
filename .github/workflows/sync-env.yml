@@ -1,0 +1,29 @@
+name: Sync Doppler → Vercel
+
+# Vercel env vars drift from Doppler the moment someone edits Doppler and
+# forgets to run the sync script. This runs it for them.
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Vercel environment to sync
+        type: choice
+        options: [production, preview]
+        default: production
+  schedule:
+    - cron: "0 7 * * 1" # Mondays, 07:00 UTC
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dopplerhq/cli-action@v3
+      - run: npm i -g vercel@latest
+      - name: Sync secrets
+        run: ./scripts/sync-doppler-to-vercel.sh "${{ inputs.target || 'production' }}"
+        env:
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}

@@ -29,6 +29,14 @@ if [ ! -f .vercel/project.json ]; then
   fi
 fi
 
+# In CI the Vercel CLI does not pick the token up from the environment for
+# `env add`; pass it (and the scope) explicitly. Empty locally, where the CLI
+# uses the logged-in session.
+VERCEL_ARGS=()
+# if-blocks, not `[ ] && ...`: under `set -e` a false test would exit the script.
+if [ -n "${VERCEL_TOKEN:-}" ]; then VERCEL_ARGS+=(--token "$VERCEL_TOKEN"); fi
+if [ -n "${VERCEL_ORG_ID:-}" ]; then VERCEL_ARGS+=(--scope "$VERCEL_ORG_ID"); fi
+
 # Names to push (all prd secrets minus Doppler's own reserved trio).
 mapfile -t KEYS < <(
   doppler secrets download --no-file --format json --project "$PROJECT" --config "$CONFIG" \
@@ -39,7 +47,7 @@ echo "Syncing ${#KEYS[@]} secrets from Doppler $PROJECT/$CONFIG -> Vercel $TARGE
 for k in "${KEYS[@]}"; do
   v="$(doppler secrets get "$k" --plain --project "$PROJECT" --config "$CONFIG")"
   # --force overwrites an existing value; printf (no trailing newline) keeps the value exact.
-  printf '%s' "$v" | vercel env add "$k" "$TARGET" --force >/dev/null
+  printf '%s' "$v" | vercel env add "$k" "$TARGET" --force ${VERCEL_ARGS[@]+"${VERCEL_ARGS[@]}"} >/dev/null
   echo "  ✓ $k"
 done
 

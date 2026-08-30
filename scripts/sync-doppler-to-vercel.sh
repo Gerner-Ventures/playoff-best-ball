@@ -37,10 +37,18 @@ VERCEL_ARGS=()
 if [ -n "${VERCEL_TOKEN:-}" ]; then VERCEL_ARGS+=(--token "$VERCEL_TOKEN"); fi
 if [ -n "${VERCEL_ORG_ID:-}" ]; then VERCEL_ARGS+=(--scope "$VERCEL_ORG_ID"); fi
 
-# Names to push (all prd secrets minus Doppler's own reserved trio).
+# Names to push: all prd secrets minus Doppler's own reserved trio, minus anything
+# suffixed _LIVE. The _LIVE names are parked copies of live-mode credentials kept for
+# the launch swap (see production-setup.md §5) — no code reads them, so syncing them
+# would load a live payment credential into the app's runtime env for nothing.
+#
+# Today that suffix covers exactly: STRIPE_SECRET_KEY_LIVE, STRIPE_WEBHOOK_SECRET_LIVE,
+# STRIPE_PUBLISH_KEY_LIVE. Note the skip is silent — if you ever add a secret the app
+# genuinely needs whose name happens to end in _LIVE, it will not reach Vercel and
+# nothing will tell you. Rename it, or narrow this filter to the names above.
 mapfile -t KEYS < <(
   doppler secrets download --no-file --format json --project "$PROJECT" --config "$CONFIG" \
-    | python3 -c "import json,sys; [print(k) for k in json.load(sys.stdin) if not k.startswith('DOPPLER_')]"
+    | python3 -c "import json,sys; [print(k) for k in json.load(sys.stdin) if not k.startswith('DOPPLER_') and not k.endswith('_LIVE')]"
 )
 
 echo "Syncing ${#KEYS[@]} secrets from Doppler $PROJECT/$CONFIG -> Vercel $TARGET"

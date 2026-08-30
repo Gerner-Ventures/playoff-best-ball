@@ -1,81 +1,74 @@
 ---
 title: "Security Hardening: API Authentication"
-status: draft
+status: resolved
 owner: ng
 team: playoff-best-ball
 ticket_project: Gerner-Ventures/playoff-best-ball
 created: 2026-02-26
-updated: 2026-02-26
+updated: 2026-08-30
 tags: [security, authentication, api]
 ---
 
 # Security Hardening: API Authentication
 
-Add authentication to all admin and write/sync API endpoints that are currently publicly accessible.
+**Resolved by the v1 rebuild, not by patching the endpoints this spec named.**
 
-## 1. Background
+## 1. What this described
 
-<!-- specwright:system:1 status:todo -->
+Written 2026-02-26 against the prototype, where every API route was reachable without
+authentication: admin player/roster/substitution management, and the write/sync
+endpoints for stats, odds, props, projections and cron.
 
-All API endpoints are publicly accessible without authentication. Admin endpoints allow unrestricted access to player management, roster operations, and substitution controls. Write/sync endpoints allow triggering data syncs, updating odds, and running cron jobs without authorization. This exposes the application to data manipulation and abuse.
+**Related:** [#11](https://github.com/Gerner-Ventures/playoff-best-ball/issues/11),
+[#12](https://github.com/Gerner-Ventures/playoff-best-ball/issues/12)
 
-**Related:** [#11](https://github.com/Gerner-Ventures/playoff-best-ball/issues/11), [#12](https://github.com/Gerner-Ventures/playoff-best-ball/issues/12)
+## 2. Why it is resolved
 
-## 2. Admin Endpoint Authentication
+Every route this spec named was deleted in the ground-up rebuild — `/api/sync`,
+`/api/props`, `/api/odds`, `/api/cron`, `/api/admin/players`, `/api/admin/rosters`,
+`/api/admin/substitutions` and `/api/admin/health` no longer exist. The rebuild put
+authorization on every route from the start rather than retrofitting it, so the
+acceptance criteria below are met by construction.
 
-<!-- specwright:system:2 status:todo -->
-<!-- specwright:ticket:github:11 -->
+Audit of every route under `src/app/api`, 2026-08-30:
 
-Add authentication to all routes under `/api/admin/*`:
-- `/api/admin/players` — player CRUD
-- `/api/admin/rosters` — roster management
-- `/api/admin/substitutions` — substitution controls
-- `/api/admin/players/overview` — player overview
-- `/api/admin/players/unmatched` — unmatched players
-- `/api/admin/health` — health check
+| Routes | Gate |
+|---|---|
+| `admin/stats`, `admin/sync/pool`, `admin/sync/week`, `admin/mock/advance-week` | `isAdmin(user)` — platform operators via `ADMIN_EMAILS`; non-operators get **404**, not 403, so a probe cannot distinguish "gated" from "absent" |
+| All `leagues/*`, `me/*`, `mock-draft/*`, `join/*`, `players`, `push/subscriptions` | `getSessionUser()`; 401 without a session |
+| `webhooks/stripe` | Stripe signature via `constructEvent` |
+| `inngest` | Inngest signing key |
+| `auth/[...all]` | Public by design (sign-in). The password family is additionally gated by a database sentinel — see below |
 
-### Acceptance Criteria
+There is no unauthenticated write path left, and no cron endpoint to protect: durable
+jobs run through Inngest, which signs its own requests, rather than a URL anyone can
+hit.
 
-- [ ] All `/api/admin/*` endpoints require authentication
-- [ ] Unauthenticated requests receive 401 response
-- [ ] Admin UI passes authentication token with API requests
-- [ ] Health check endpoint remains accessible (or uses separate auth)
+### Acceptance criteria
 
-## 3. Write/Sync Endpoint Authentication
+- [x] All admin endpoints require authentication — `isAdmin`, on all four
+- [x] Unauthenticated requests are rejected — 404 for admin, 401 elsewhere
+- [x] Admin UI authenticates — `/admin` is a server component behind the same check
+- [x] Write/sync endpoints require authentication — the sync routes are admin-gated
+- [x] Cron uses a separate mechanism — Inngest signing keys, not an API key on a URL
+- [x] Auth mechanism chosen and applied consistently — Better Auth sessions, with
+      `isAdmin` layered for operator routes
 
-<!-- specwright:system:3 status:todo -->
-<!-- specwright:ticket:github:12 -->
+## 3. Answers to the original open questions
 
-Add authentication to all write and sync endpoints:
-- `/api/sync` — data synchronization
-- `/api/odds` and `/api/odds/manual` — odds updates
-- `/api/props` — props management
-- `/api/projections/sync` — projection synchronization
-- `/api/players/update-teams` — team updates
-- `/api/cron` — cron job trigger
+- **Which auth provider?** Better Auth (magic link, plus Google/Apple when configured).
+- **Do read-only endpoints stay public?** No. Everything league-scoped requires a
+  session, because league data is private to its members.
+- **Is the health check admin-only?** Moot — there is no health endpoint. Sync health is
+  surfaced inside the admin panel.
 
-### Acceptance Criteria
+## 4. One live caveat
 
-- [ ] All write/sync endpoints require authentication
-- [ ] Cron endpoints use a separate API key or service account token
-- [ ] Unauthenticated requests receive 401 response
-- [ ] Existing data sync flows continue to work with authentication
+`emailAndPassword` is mounted when the demo deployment attests demo mode via env, and
+gated a second time by a `DemoEnvironment` row that only `npm run demo:seed` writes
+(`src/app/api/auth/[...all]/route.ts`). `PASSWORD_PATHS` there is a **denylist** of
+Better Auth's password routes, so a password route added upstream is unguarded until
+it is added to that list. Worth re-checking on a Better Auth upgrade.
 
-## 4. Authentication Mechanism
-
-<!-- specwright:system:4 status:todo -->
-
-Choose and implement an authentication mechanism appropriate for a Next.js application with both UI-driven and automated (cron) access patterns.
-
-### Acceptance Criteria
-
-- [ ] Authentication mechanism chosen (e.g., NextAuth, Clerk, or simple API key)
-- [ ] Middleware or wrapper applied consistently to all protected routes
-- [ ] API keys for cron/sync endpoints stored as environment variables
-- [ ] Authentication state persists across browser sessions
-
-## 5. Open Questions
-
-- Which auth provider? (NextAuth with GitHub, Clerk, simple API key for admin?)
-- Should read-only endpoints (public scoreboard) remain unauthenticated?
-- Is the health check endpoint admin-only or public?
+Verified against production 2026-08-30: `POST /api/auth/sign-up/email` and
+`/sign-in/email` both return 404 on `playoffbestball.com`.

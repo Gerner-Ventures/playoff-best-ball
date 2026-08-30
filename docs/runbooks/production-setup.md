@@ -25,11 +25,14 @@ integrations from earlier ones.
    DATABASE_URL="postgresql://<user>:<pass>@<pooler-host>/<db>?sslmode=require" npx prisma db push
    ```
 
-> **Tradeoff — `db push`, no migration files:** v1 deliberately uses `prisma db push`
-> instead of `prisma migrate` (single developer, single environment). That means there is
-> no migration history and no automatic rollback path — schema changes are applied by
-> re-running `db push`, which can drop data on destructive changes (Prisma will warn).
-> Revisit adopting `prisma migrate` at launch (pre-launch hardening).
+> **Schema changes go through versioned migrations.** `prisma/migrations/` is the
+> source of truth and `scripts/vercel-build.sh` runs `prisma migrate deploy` on
+> **production deploys only** — preview deploys skip it, because Vercel resolves
+> `DATABASE_URL` per environment and a PR must not be able to reshape a database by
+> being deployed. CI replays migrations into a shadow database and fails when
+> `schema.prisma` has no matching migration, so drift is caught before merge, not in
+> production. Use `npm run db:migrate` locally to author one; `db push` is for
+> throwaway databases only.
 
 ## 2. Doppler (secrets)
 
@@ -82,9 +85,9 @@ integrations from earlier ones.
 | `VAPID_SUBJECT` | runtime | `mailto:` contact for push, e.g. `mailto:hello@njgerner.com` |
 | `INNGEST_EVENT_KEY` / `INNGEST_SIGNING_KEY` | runtime | Auto-injected by the Vercel ↔ Inngest integration (step 4) — do not set by hand |
 | `ODDS_API_KEY` | runtime | Odds sync skips; projections fall back to 0.5 win probability. **Leave unset during the beta** — `STATS_PROVIDER=fake` does NOT suppress odds sync, so a set key would hit The Odds API for real |
-| `NEXT_PUBLIC_POSTHOG_KEY` | **build** | Client analytics (pageviews/autocapture) fully off |
+| `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN` | **build** | Client analytics (pageviews/autocapture) fully off |
 | `NEXT_PUBLIC_POSTHOG_HOST` | **build** | Defaults to `https://us.i.posthog.com` |
-| `POSTHOG_KEY` | runtime | Server-side event capture (webhooks/crons) silently off |
+| `POSTHOG_PROJECT_TOKEN` | runtime | Server-side event capture (webhooks/crons) silently off |
 | `POSTHOG_HOST` | runtime | Defaults to `https://us.i.posthog.com` |
 | `OPS_ALERT_SLACK_WEBHOOK_URL` | runtime | Sync-failure alerts go to `console.warn` only |
 | `PREMIUM_PRICE_CENTS` | runtime | Defaults to `2500` ($25). Invalid/out-of-range values fall back to the default with a warning. Final price decided at launch |
@@ -191,8 +194,8 @@ flow; checkout is server-created and hosted. It is kept in sync out of tidiness 
 
 1. Create project `playoff-best-ball` in the **Gerner Ventures** org.
 2. Copy the project API key into both pairs:
-   - `NEXT_PUBLIC_POSTHOG_KEY` + `NEXT_PUBLIC_POSTHOG_HOST` (client — **build-time**, set before deploying)
-   - `POSTHOG_KEY` + `POSTHOG_HOST` (server — runtime)
+   - `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN` + `NEXT_PUBLIC_POSTHOG_HOST` (client — **build-time**, set before deploying)
+   - `POSTHOG_PROJECT_TOKEN` + `POSTHOG_HOST` (server — runtime)
 
    Set **both** pairs or neither: with only the client pair set, pageviews work while the server
    events (`league_upgraded`, `dues_interest`, …) silently drop — a half-configured funnel looks

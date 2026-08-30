@@ -91,24 +91,68 @@ the seeded state is always state the app itself could produce.
 To advance the playoffs one round, use `/admin` → "Advance mock week", or
 `npm run mock:week`. Both default to whichever season the database already holds.
 
-## Deploying (not yet done — see the plan)
+## The deployed demo
 
-A separate Vercel project from this repo, production branch `main`, with its own Neon
-database. `VERCEL_ENV=production` there, so `scripts/vercel-build.sh` applies migrations
-unchanged. Pointing at `main` rather than a `demo` branch means the demo never drifts
-from production and adds no second review surface — the demo is defined entirely by its
-environment.
+**https://playoff-best-ball-demo.vercel.app** — sign in as `you@demo.example.com`
+with the password in `src/domain/demo/fixtures.ts`.
 
-Environment to set on the demo project:
+Vercel project `playoff-best-ball-demo` (`prj_oZ1IZJ1BLzyfHW7JeC3q6Z5iObG8`), a
+*separate* project from `playoff-best-ball`, connected to the same GitHub repo with
+`main` as its production branch. `VERCEL_ENV=production` there, so
+`scripts/vercel-build.sh` applies migrations unchanged, and the separate env store is
+what makes `DEMO_MODE` unable to leak into production.
+
+Its own Neon database, provisioned through the Vercel Marketplace on the free plan in
+`iad1`. Entirely separate from the production database.
+
+Environment currently set (Production scope):
 
 | Variable | Value |
 |---|---|
 | `DEMO_MODE` | `1` |
-| `BETTER_AUTH_URL` | the demo host, which must be on the allowlist in `src/lib/demo-mode.ts` |
+| `BETTER_AUTH_URL` | `https://playoff-best-ball-demo.vercel.app` — must be on the allowlist in `src/lib/demo-mode.ts` |
+| `BETTER_AUTH_SECRET` | generated, demo-only |
 | `STATS_PROVIDER` | `fake` |
-| `ADMIN_EMAILS` | your email, to reach `/admin` |
-| `STRIPE_SECRET_KEY` | test key or blank — **a live key refuses to boot** |
-| `RESEND_API_KEY`, `TWILIO_*`, `VAPID_*`, `OPS_ALERT_SLACK_WEBHOOK_URL`, `ODDS_API_KEY` | blank |
-| `INNGEST_EVENT_KEY`, `INNGEST_SIGNING_KEY` | unset |
+| `DEMO_DATA_SOURCE` | `historical:2024` |
+| `ADMIN_EMAILS` | `hello@njgerner.com` |
+| `DATABASE_URL` + `POSTGRES_*` | injected by the Neon integration |
+| everything else | unset — blank keys mean "log", not "throw", under demo mode |
 
-Then seed it once, which also writes the sentinel row.
+Stripe, Resend, Twilio, VAPID, Slack, Odds and **both Inngest keys** are deliberately
+unset. No Inngest keys means no cron fires at all, which is the load-bearing layer of
+the insulation described above.
+
+### Custom domain (not finished)
+
+`demo.playoffbestball.com` is already aliased to the project and already on the
+allowlist, but `playoffbestball.com` runs on third-party nameservers (Route 53), so it
+does not resolve yet. To finish:
+
+1. Add `A demo.playoffbestball.com -> 76.76.21.21` in Route 53.
+2. `vercel domains verify demo.playoffbestball.com --scope njgerners-projects`
+3. Change `BETTER_AUTH_URL` on the demo project to `https://demo.playoffbestball.com`
+   and redeploy. No code change needed — the host is already allowlisted.
+
+### Keeping it current
+
+The demo builds from `main`. Until the demo branch is merged, `main` does not contain
+this code, so a push to `main` would redeploy the demo from a commit that has no demo
+mode and password sign-in would stop working. The current deployment was made directly
+from the branch with `vercel deploy --prod`.
+
+### Re-seeding a deployed demo
+
+`demo:seed` needs the demo database URL and demo-mode env in the local process:
+
+```bash
+vercel link --project playoff-best-ball-demo
+vercel env pull .env.demo             # then DELETE or rename it — see below
+```
+
+`vercel env pull` writes `.env.local` by default, and **Next.js loads `.env.local` at
+higher precedence than `.env`**, so leaving it in place silently points local `npm run
+dev` at the cloud demo database. Pull to a differently-named file, or delete it when
+you are done.
+
+Use the **unpooled** URL for `prisma migrate deploy`; migrations need a direct
+connection and fail through pgbouncer.

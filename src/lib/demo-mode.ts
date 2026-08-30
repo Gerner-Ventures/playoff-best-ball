@@ -33,6 +33,12 @@
  * excludes production by construction instead.
  */
 export const DEMO_HOSTNAMES = [
+  // The demo project's Vercel-assigned production alias. Live today.
+  "playoff-best-ball-demo.vercel.app",
+  // The intended custom domain. Aliased to the demo project already, but
+  // playoffbestball.com runs on third-party (Route 53) nameservers, so it only
+  // resolves once an A record for demo -> 76.76.21.21 exists. Listed now so
+  // switching BETTER_AUTH_URL to it later needs no code change.
   "demo.playoffbestball.com",
   "localhost:3000", // local dev
   "localhost:3100", // playwright webServer

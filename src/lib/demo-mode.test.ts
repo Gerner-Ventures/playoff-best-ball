@@ -33,6 +33,25 @@ describe("resolveDemoMode", () => {
       });
     });
 
+    it("enables on the deployed demo's vercel.app alias", () => {
+      const result = resolveDemoMode({
+        DEMO_MODE: "1",
+        BETTER_AUTH_URL: "https://playoff-best-ball-demo.vercel.app",
+      });
+      expect(result).toEqual({ enabled: true, reason: "demo-host" });
+    });
+
+    it("refuses the PRODUCTION project's vercel.app alias", () => {
+      // The two projects' aliases differ by one word. Getting this wrong would
+      // open password sign-in on the real app.
+      const result = resolveDemoMode({
+        DEMO_MODE: "1",
+        BETTER_AUTH_URL: "https://playoff-best-ball.vercel.app",
+      });
+      expect(result.enabled).toBe(false);
+      expect(result.reason).toBe("fatal");
+    });
+
     it("enables on localhost so the seeder can mint users locally", () => {
       const result = resolveDemoMode({ DEMO_MODE: "1", BETTER_AUTH_URL: "http://localhost:3000" });
       expect(result.enabled).toBe(true);

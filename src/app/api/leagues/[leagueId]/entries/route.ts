@@ -4,6 +4,8 @@ import { db } from "@/lib/db";
 import { getSessionUser } from "@/lib/session";
 import { addEntry } from "@/domain/leagues/add-entry";
 import { DomainError } from "@/domain/errors";
+import { captureServerEvent } from "@/lib/analytics-server";
+import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
 
 type Params = { params: Promise<{ leagueId: string }> };
 
@@ -19,6 +21,7 @@ export async function POST(req: Request, { params }: Params) {
 
   try {
     const entry = await addEntry(db, { leagueId, userId: user.id, teamName: parsed.data.teamName });
+    await captureServerEvent(user.id, ANALYTICS_EVENTS.ENTRY_ADDED, { leagueId });
     return NextResponse.json({ ok: true, entryId: entry.id }, { status: 201 });
   } catch (err) {
     if (err instanceof DomainError) {

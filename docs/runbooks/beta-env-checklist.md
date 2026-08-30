@@ -4,15 +4,14 @@ Companion to `production-setup.md`. This is the minimum to get a **working** bet
 on the existing Vercel project. Paste these into **Vercel → playoff-best-ball → Settings →
 Environment Variables** (Production), or into Doppler `prd` if you're using the sync.
 
-Beta posture (locked 2026-07-13): `STATS_PROVIDER=fake`, Stripe **test** keys, no ads,
-placeholder `*.vercel.app` domain.
+Beta posture (locked 2026-07-13): `STATS_PROVIDER=fake`, Stripe **test** keys, no ads.
+The domain is settled: `playoffbestball.com`, with magic links sent from
+`auth@transactional.playoffbestball.com` (verified in Resend).
 
-> ⚠️ **Before setting env, fix the deploy pipeline first.** The Vercel project's last
-> deploy was Jan 25, 2026 (old prototype) — the July rebuild never shipped. Reconnect the
-> Git integration: **Vercel → playoff-best-ball → Settings → Git → connect
-> `Gerner-Ventures/playoff-best-ball`, production branch `main`**. (The repo moved orgs
-> since January, which is why pushes stopped auto-deploying.) Once reconnected, a push to
-> `main` — or **Deployments → Redeploy** — ships the current code.
+> **Deploys are wired up.** Pushing `main` builds and promotes to production
+> automatically, and `playoffbestball.com` is the production domain. Preview deploys
+> build too, but have no usable database of their own yet — `DATABASE_URL` at Preview
+> scope still points at the pre-rebuild prototype, so DB-backed pages will error there.
 
 ---
 
@@ -49,7 +48,7 @@ placeholder `*.vercel.app` domain.
 | Google sign-in | `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` (setting ID without secret **throws at boot**) |
 | SMS "on the clock" | `TWILIO_ACCOUNT_SID` + `TWILIO_AUTH_TOKEN` + `TWILIO_FROM_NUMBER` (else SMS logs to console) |
 | Web push | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` (**build-time**) + `VAPID_PRIVATE_KEY` + `VAPID_SUBJECT` — `npx web-push generate-vapid-keys` |
-| Analytics | `NEXT_PUBLIC_POSTHOG_KEY` (**build-time**) + `POSTHOG_KEY` — set BOTH pairs or the funnel half-breaks |
+| Analytics | `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN` (**build-time**) + `POSTHOG_PROJECT_TOKEN` — set BOTH pairs or the funnel half-breaks |
 | Ops alerts | `OPS_ALERT_SLACK_WEBHOOK_URL` (else sync failures only hit function logs) |
 
 > **Build-time vars** (`NEXT_PUBLIC_*`) are inlined at build. Set them *before* the deploy;

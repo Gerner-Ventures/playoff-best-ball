@@ -1,19 +1,31 @@
 #!/usr/bin/env bash
 #
-# Push every secret from Doppler (playoff-best-ball / prd) into the linked
-# Vercel project's Production environment. Idempotent — re-run after adding
-# or changing secrets in Doppler. Reserved DOPPLER_* vars are skipped.
+# Push every secret from a Doppler config into the matching Vercel environment:
+# prd -> Production, stg -> Preview. Idempotent — re-run after adding or changing
+# secrets in Doppler. Reserved DOPPLER_* vars and parked *_LIVE names are skipped.
 #
 # Prereqs (in THIS terminal): `doppler` authed, `vercel` logged in, and the
 # repo linked (`.vercel/` present from `vercel link`).
 #
 # Usage:  ./scripts/sync-doppler-to-vercel.sh [environment]
-#         environment defaults to "production" (use "preview" to also fill previews)
+#         environment defaults to "production" (prd config); "preview" syncs the
+#         stg config instead — never prd, see the case block below
 set -euo pipefail
 
 PROJECT="playoff-best-ball"
-CONFIG="prd"
 TARGET="${1:-production}"
+
+# The Doppler config follows the Vercel environment. This is a safety property, not
+# a convenience: CONFIG used to be hardcoded to "prd", so `sync ... preview` would
+# have pushed PRODUCTION secrets into the Preview environment — including
+# DATABASE_URL, pointing every preview deployment at the production database. That
+# never fired only because `vercel env add <preview>` prompts for a Git branch and
+# CI has no TTY, so the run died before writing anything.
+case "$TARGET" in
+  production) CONFIG="prd" ;;
+  preview)    CONFIG="stg" ;;
+  *) echo "Unknown target '$TARGET' (expected: production, preview)"; exit 1 ;;
+esac
 
 command -v doppler >/dev/null || { echo "doppler CLI not found"; exit 1; }
 command -v vercel  >/dev/null || { echo "vercel CLI not found"; exit 1; }
@@ -55,7 +67,11 @@ echo "Syncing ${#KEYS[@]} secrets from Doppler $PROJECT/$CONFIG -> Vercel $TARGE
 for k in "${KEYS[@]}"; do
   v="$(doppler secrets get "$k" --plain --project "$PROJECT" --config "$CONFIG")"
   # --force overwrites an existing value; printf (no trailing newline) keeps the value exact.
-  printf '%s' "$v" | vercel env add "$k" "$TARGET" --force ${VERCEL_ARGS[@]+"${VERCEL_ARGS[@]}"} >/dev/null
+  # --yes accepts the default for the "Git branch?" prompt that a preview target
+  # triggers (default = all preview branches). Without it the CLI blocks forever in
+  # CI, which has no TTY. The value stays on stdin rather than --value so it never
+  # appears in the process list.
+  printf '%s' "$v" | vercel env add "$k" "$TARGET" --force --yes ${VERCEL_ARGS[@]+"${VERCEL_ARGS[@]}"} >/dev/null
   echo "  ✓ $k"
 done
 

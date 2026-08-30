@@ -17,33 +17,41 @@ function makeTestPrismaClient() {
 
 export const testDb = makeTestPrismaClient(); // DATABASE_URL comes from .env.test via dotenv-cli
 
+// Deliberately never truncated.
+//
+// DemoEnvironment marks a database as a demo database (see src/lib/demo-mode.ts).
+// It is a property of the database, not of any test's data — wiping it would
+// silently downgrade a demo database on the next reset and turn password sign-in
+// off. tests/demo-mode-integration.test.ts pins this.
+const PRESERVED_TABLES = ["_prisma_migrations", "DemoEnvironment"];
+
+let truncateStatement: string | null = null;
+
+/**
+ * One TRUNCATE, not twenty deletes.
+ *
+ * This runs before every test in a 300+ test suite, so the round trips dominated
+ * it — that cost is what put the suite close enough to Vitest's timeout for CI to
+ * cross it intermittently.
+ *
+ * The table list comes from the database rather than a hand-written array:
+ * CASCADE removes the need to order children before parents, and a newly added
+ * model is covered automatically instead of being silently skipped until someone
+ * remembers to update this file.
+ */
 export async function resetDb() {
-  // Order matters: children before parents (cascades cover most, be explicit anyway)
-  //
-  // Deliberately NOT reset: DemoEnvironment. It marks a database as a demo database
-  // (see src/lib/demo-mode.ts) and is a property of the database, not of any test's
-  // data. Wiping it here would silently downgrade a demo database on the next reset
-  // and turn password sign-in off. tests/demo-mode-integration.test.ts pins this.
-  await testDb.mockDraft.deleteMany();
-  await testDb.substitution.deleteMany();
-  await testDb.draftQueueItem.deleteMany();
-  await testDb.draftPick.deleteMany();
-  await testDb.draft.deleteMany();
-  await testDb.entry.deleteMany();
-  await testDb.membership.deleteMany();
-  await testDb.duesCollectionInterest.deleteMany();
-  await testDb.leaguePurchase.deleteMany();
-  await testDb.league.deleteMany();
-  await testDb.playerStat.deleteMany();
-  await testDb.syncHealth.deleteMany();
-  await testDb.nflGame.deleteMany();
-  await testDb.teamOdds.deleteMany();
-  await testDb.player.deleteMany();
-  await testDb.pushSubscription.deleteMany();
-  await testDb.session.deleteMany();
-  await testDb.account.deleteMany();
-  await testDb.verification.deleteMany();
-  await testDb.user.deleteMany();
+  if (!truncateStatement) {
+    const rows = await testDb.$queryRaw<{ tablename: string }[]>`
+      SELECT tablename FROM pg_tables WHERE schemaname = 'public'
+    `;
+    const tables = rows
+      .map((r) => r.tablename)
+      .filter((t) => !PRESERVED_TABLES.includes(t))
+      .map((t) => `"public"."${t}"`);
+    if (tables.length === 0) throw new Error("resetDb found no tables — is the test database migrated?");
+    truncateStatement = `TRUNCATE TABLE ${tables.join(", ")} RESTART IDENTITY CASCADE`;
+  }
+  await testDb.$executeRawUnsafe(truncateStatement);
 }
 
 export async function createTestUser(name = "Test User") {
@@ -90,7 +98,13 @@ export async function setTestStat(
   });
 }
 
-/** A pool big enough to fully draft `entryCount` standard 9-slot rosters. */
+/**
+ * A pool big enough to fully draft `entryCount` standard 9-slot rosters.
+ *
+ * One createMany, not ~130 awaited inserts. Callers still get the rows back in
+ * insertion order, which `defaultRank` encodes, so ordering semantics are
+ * unchanged from the row-at-a-time version this replaced.
+ */
 export async function createStandardPool(entryCount: number) {
   const counts: [PlayerPosition, number][] = [
     ["QB", 2 * entryCount],
@@ -100,9 +114,22 @@ export async function createStandardPool(entryCount: number) {
     ["K", entryCount + 1],
     ["DST", entryCount + 1],
   ];
-  const players = [];
+  const data = [];
   for (const [position, n] of counts) {
-    for (let i = 0; i < n; i++) players.push(await createTestPlayer(position));
+    for (let i = 0; i < n; i++) {
+      playerCounter += 1;
+      data.push({
+        season: CURRENT_SEASON,
+        name: `Player ${playerCounter} (${position})`,
+        position,
+        nflTeam: "KC",
+        defaultRank: playerCounter,
+      });
+    }
   }
-  return players;
+  await testDb.player.createMany({ data });
+  return testDb.player.findMany({
+    where: { name: { in: data.map((d) => d.name) } },
+    orderBy: { defaultRank: "asc" },
+  });
 }

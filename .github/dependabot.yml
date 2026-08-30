@@ -11,6 +11,20 @@ updates:
         dependency-type: development
       production-dependencies:
         dependency-type: production
+    # Two packages are held back deliberately. Each entry blocks only the
+    # version that breaks us, so patches to the current major still arrive.
+    # Delete an entry once its condition below is met.
+    ignore:
+      # typescript-eslint refuses to run against TS 7 ("does not support TS 7.0"),
+      # which fails `npm run lint` outright.
+      # Unblock: when typescript-eslint ships TS 7 support.
+      - dependency-name: "typescript"
+        versions: [">=7.0.0"]
+      # eslint-config-next still pulls an eslint-plugin-react that throws inside
+      # its own rule setup on eslint 10; its peer range stops at ^9.
+      # Unblock: when eslint-config-next supports eslint 10.
+      - dependency-name: "eslint"
+        versions: [">=10.0.0"]
   - package-ecosystem: github-actions
     directory: /
     schedule:

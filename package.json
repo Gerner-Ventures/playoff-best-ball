@@ -15,6 +15,7 @@
     "dev": "next dev",
     "lint": "eslint",
     "demo:capture": "dotenv -e .env -- tsx scripts/capture-season.ts",
+    "demo:seed": "dotenv -e .env -- tsx scripts/demo-seed.ts",
     "mock:week": "dotenv -e .env -- tsx scripts/mock-week.ts",
     "postinstall": "prisma generate",
     "start": "next start",

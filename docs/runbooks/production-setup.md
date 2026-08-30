@@ -120,8 +120,49 @@ integrations from earlier ones.
 
 > **Beta runs TEST keys:** keep `STRIPE_SECRET_KEY` on a test-mode key (and create the
 > webhook endpoint in test mode) until launch. Beta upgrades use Stripe test cards
-> (e.g. `4242 4242 4242 4242`) — no real charges. Launch flip: swap to live keys and a
-> live-mode webhook endpoint.
+> (e.g. `4242 4242 4242 4242`) — no real charges.
+
+### Mode convention: active vs. parked
+
+The code reads exactly two Stripe variables — `STRIPE_SECRET_KEY` (`src/lib/stripe.ts`)
+and `STRIPE_WEBHOOK_SECRET` (`src/app/api/webhooks/stripe/route.ts`). Those are the
+**active** pair, and during the beta they hold test-mode values.
+
+The live-mode values are **parked** in Doppler `prd` under `_LIVE` suffixes:
+
+| Parked (nothing reads these) | Active (the code reads these) |
+|---|---|
+| `STRIPE_SECRET_KEY_LIVE` | `STRIPE_SECRET_KEY` |
+| `STRIPE_WEBHOOK_SECRET_LIVE` | `STRIPE_WEBHOOK_SECRET` |
+| `STRIPE_PUBLISH_KEY_LIVE` | `STRIPE_PUBLISH_KEY` (unused — see below) |
+
+Parking rather than deleting means going live is a copy, not a scavenger hunt through
+the Stripe dashboard. There is deliberately **no runtime switch** between the two: the
+secret key and the webhook secret must move together, and the webhook secret is only
+half the story — Stripe decides which endpoint it posts to, from its own dashboard. A
+flag inside the app can flip the key but cannot repoint Stripe, and that mismatch
+charges real cards while `constructEvent` rejects the callback, so the purchase never
+lands. Mode changes are therefore a deliberate config edit plus a redeploy.
+
+`STRIPE_PUBLISH_KEY` is currently read by nothing — there is no client-side Stripe.js
+flow; checkout is server-created and hosted. It is kept in sync out of tidiness only.
+
+### Going live (launch)
+
+1. In Doppler `prd`, copy each parked value into its active name:
+   `STRIPE_SECRET_KEY_LIVE` → `STRIPE_SECRET_KEY`, and the same for the webhook secret.
+2. Create (or re-enable) a **live-mode** webhook endpoint in Stripe at
+   `https://playoffbestball.com/api/webhooks/stripe` with the same two events, and put
+   its signing secret in `STRIPE_WEBHOOK_SECRET`. A test-mode signing secret will not
+   validate live-mode calls, and vice versa — this is the step that is easiest to skip
+   and worst to get wrong.
+3. Run the Doppler → Vercel sync, then **redeploy** — Vercel snapshots env per
+   deployment, so a running build keeps the old values.
+4. Verify with one real purchase before announcing: the checkout completes, the webhook
+   returns 200 in the Stripe dashboard's endpoint log, and a `LeaguePurchase` row exists.
+
+> Purchases do not cross modes. Any Premium league bought under test keys has a
+> test-mode session ID, and will not appear in live-mode Stripe reporting.
 
 ## 6. Resend (email)
 

@@ -26,8 +26,12 @@ placeholder `*.vercel.app` domain.
 | `RESEND_API_KEY` | ⬜ Resend dashboard key. **Prod throws on every email send without it → nobody can sign in.** |
 | `MAGIC_LINK_FROM_EMAIL` | ⬜ *Only if* you don't verify `transactional.playoffbestball.com` in Resend — set an address on a domain you DO control (e.g. `Playoff Best Ball <auth@njgerner.com>`) |
 | `NOTIFY_FROM_EMAIL` | ⬜ Same reasoning as above (e.g. `Playoff Best Ball <notify@njgerner.com>`) |
-| `STRIPE_SECRET_KEY` | ⬜ Stripe **test** secret key (`sk_test_...`) |
-| `STRIPE_WEBHOOK_SECRET` | ⬜ From the test-mode webhook endpoint → `https://<app>.vercel.app/api/webhooks/stripe` (events: `checkout.session.completed`, `checkout.session.async_payment_succeeded`) |
+| `STRIPE_SECRET_KEY` | ✅ Stripe **test** secret key (`sk_test_...`) — live key is parked as `STRIPE_SECRET_KEY_LIVE` |
+| `STRIPE_WEBHOOK_SECRET` | ✅ Signing secret of the **test-mode** endpoint `we_1U9xUf…` → `https://playoffbestball.com/api/webhooks/stripe` (events: `checkout.session.completed`, `checkout.session.async_payment_succeeded`) — live secret parked as `STRIPE_WEBHOOK_SECRET_LIVE` |
+
+> **Stripe mode is a config edit, not a runtime switch.** The `_LIVE` variables are
+> parked copies that nothing reads. See "Mode convention" and "Going live" in
+> `production-setup.md` §5 before flipping to live keys.
 | `ADMIN_EMAILS` | ⬜ `hello@njgerner.com` (comma-separate more) — unlocks `/admin` + "Advance mock week" |
 | `STATS_PROVIDER` | ✅ `fake` (weeks advance from `/admin`; crons never hit ESPN) |
 

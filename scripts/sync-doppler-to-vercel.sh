@@ -37,10 +37,13 @@ VERCEL_ARGS=()
 if [ -n "${VERCEL_TOKEN:-}" ]; then VERCEL_ARGS+=(--token "$VERCEL_TOKEN"); fi
 if [ -n "${VERCEL_ORG_ID:-}" ]; then VERCEL_ARGS+=(--scope "$VERCEL_ORG_ID"); fi
 
-# Names to push (all prd secrets minus Doppler's own reserved trio).
+# Names to push: all prd secrets minus Doppler's own reserved trio, minus anything
+# suffixed _LIVE. The _LIVE names are parked copies of live-mode credentials kept for
+# the launch swap (see production-setup.md §5) — no code reads them, so syncing them
+# would load a live payment credential into the app's runtime env for nothing.
 mapfile -t KEYS < <(
   doppler secrets download --no-file --format json --project "$PROJECT" --config "$CONFIG" \
-    | python3 -c "import json,sys; [print(k) for k in json.load(sys.stdin) if not k.startswith('DOPPLER_')]"
+    | python3 -c "import json,sys; [print(k) for k in json.load(sys.stdin) if not k.startswith('DOPPLER_') and not k.endswith('_LIVE')]"
 )
 
 echo "Syncing ${#KEYS[@]} secrets from Doppler $PROJECT/$CONFIG -> Vercel $TARGET"

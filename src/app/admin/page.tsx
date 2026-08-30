@@ -5,10 +5,15 @@ import { isAdmin } from "@/lib/admin";
 import { AppNav } from "@/components/app-nav";
 import { AdminPanel } from "@/components/admin-panel";
 import { CURRENT_SEASON } from "@/domain/season";
+import { stripeModeFromKey } from "@/lib/stripe-mode";
 
 export default async function AdminPage() {
   const user = await getSessionUser();
   if (!isAdmin(user)) notFound();
+
+  // Read per-request, not at module scope: the mode must reflect the running
+  // deployment's env, and this page is the only place it's observable.
+  const stripeMode = stripeModeFromKey(process.env.STRIPE_SECRET_KEY);
 
   const [games, playerCount, statCount] = await Promise.all([
     db.nflGame.findMany({ where: { season: CURRENT_SEASON }, orderBy: [{ week: "asc" }, { startsAt: "asc" }] }),
@@ -23,6 +28,21 @@ export default async function AdminPage() {
         <h1 className="text-2xl font-bold">Platform admin</h1>
         <p className="mt-1 text-sm text-chalk-dim">
           Season {CURRENT_SEASON} · {playerCount} players · {statCount} stat lines
+        </p>
+        <p className="mt-3 flex items-center gap-2 text-sm text-chalk-dim">
+          Stripe
+          <span
+            className={
+              stripeMode === "test"
+                ? "chalk-badge"
+                : "chalk-badge border-chalk-coral text-chalk-coral"
+            }
+          >
+            {stripeMode.toUpperCase()}
+          </span>
+          {stripeMode === "live" && "— real cards will be charged"}
+          {stripeMode === "off" && "— no key set; upgrade routes answer 501"}
+          {stripeMode === "unknown" && "— key does not look like sk_test_ or sk_live_"}
         </p>
         <h2 className="mt-6 font-semibold">Games</h2>
         <ul className="mt-2 text-sm chalk-card">

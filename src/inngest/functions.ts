@@ -9,6 +9,7 @@ import { announceDraftState } from "@/lib/draft-events";
 import { startDraftForLeague } from "@/domain/draft/start-draft";
 import { DomainError, DraftAlreadyStartedError } from "@/domain/errors";
 import { statsProvider } from "@/lib/stats-provider";
+import { DEMO_MODE_REQUESTED } from "@/lib/demo-mode";
 import { syncWeekStats } from "@/domain/stats/sync-week";
 import { oddsProvider } from "@/lib/odds/odds-api-provider";
 import { syncTeamOdds } from "@/domain/odds/sync-odds";
@@ -205,6 +206,9 @@ export const draftScheduledStart = inngest.createFunction(
 export const statsSyncLive = inngest.createFunction(
   { id: "stats-sync-live", triggers: { cron: "*/2 * * * *" } },
   async ({ step }) => {
+    // A demo's schedule is a fiction anchored to seed time; letting a sync run
+    // against it would advance the demo the moment a shifted startsAt slipped past.
+    if (DEMO_MODE_REQUESTED) return { skipped: "demo" };
     const activeWeeks = await step.run("find-active-weeks", async () => {
       const games = await db.nflGame.findMany({
         where: {
@@ -261,6 +265,9 @@ export const statsSyncLive = inngest.createFunction(
 export const statsSyncDaily = inngest.createFunction(
   { id: "stats-sync-daily", triggers: { cron: "TZ=America/New_York 0 6 * * *" } },
   async ({ step }) => {
+    // This one syncs ALL FOUR weeks unconditionally. On a demo that would finalize
+    // the entire season on the first 6am tick — "live, week 2 of 4" gone by morning.
+    if (DEMO_MODE_REQUESTED) return { skipped: "demo" };
     try {
       for (const week of Object.values(PLAYOFF_WEEKS)) {
         await step.run(`sync-week-${week}`, () =>
@@ -331,6 +338,10 @@ export const statsSyncDaily = inngest.createFunction(
 export const engagementCron = inngest.createFunction(
   { id: "engagement-cron", triggers: { cron: "0 * * * *" } },
   async ({ step }) => {
+    // Recaps and previews fan out to real Resend/Twilio/push sends. The demo's
+    // addresses are undeliverable by construction, but this keeps the send path
+    // from running at all rather than relying on that.
+    if (DEMO_MODE_REQUESTED) return { skipped: "demo" };
     const dueRecaps = await step.run("find-recaps", () => findDueRecaps(db));
     const duePreviews = await step.run("find-previews", () => findDuePreviews(db));
     for (const { leagueId, week } of dueRecaps) {

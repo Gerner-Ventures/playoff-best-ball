@@ -50,3 +50,7 @@ next-env.d.ts
 # the only real one is the root file.
 CLAUDE.md
 !/CLAUDE.md
+
+# Playwright run artifacts (incl. the demo seed handoff written by e2e/seed.setup.ts)
+test-results/
+playwright-report/

@@ -18,6 +18,11 @@
         "name": "next"
       }
     ],
+    // baseUrl is required for Playwright's loader to resolve the "@/" alias.
+    // tsc and vitest resolve it without one (vitest has its own alias config),
+    // but e2e/global-setup.ts imports domain code that uses "@/" and fails
+    // without this.
+    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     }

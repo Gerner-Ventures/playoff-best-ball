@@ -108,7 +108,7 @@ function parseMadeAttempted(raw: string | undefined): { made: number; missed: nu
 }
 
 /** ESPN abbreviation → our fantasy position, or null if non-fantasy. */
-function mapPosition(abbr: string | undefined): PlayerPosition | null {
+export function mapPosition(abbr: string | undefined): PlayerPosition | null {
   switch ((abbr ?? "").toUpperCase()) {
     case "QB":
       return "QB";
@@ -133,9 +133,24 @@ const TEAM_ALIASES: Record<string, string> = {
   WSH: "WAS",
 };
 
-function normalizeTeam(abbr: string): string {
+export function normalizeTeam(abbr: string): string {
   const upper = abbr.toUpperCase();
   return TEAM_ALIASES[upper] ?? upper;
+}
+
+// The reverse trip. Everything we store and display is canonical (WAS, JAX), but
+// ESPN's own endpoints only answer to its abbreviations — /teams/was/roster is a
+// 400, /teams/wsh/roster is a 200. Without this, the admin pool sync throws for
+// Washington and Jacksonville when an operator types the abbreviation the app
+// showed them.
+const ESPN_TEAM_ALIASES: Record<string, string> = Object.fromEntries(
+  Object.entries(TEAM_ALIASES).map(([espn, ours]) => [ours, espn]),
+);
+
+/** Canonical abbreviation -> the one ESPN's URLs expect. */
+export function toEspnTeam(abbr: string): string {
+  const upper = abbr.toUpperCase();
+  return ESPN_TEAM_ALIASES[upper] ?? upper;
 }
 
 const STATE_MAP: Record<string, ProviderGameState> = {
@@ -360,7 +375,10 @@ function applyFieldGoals(
         const made = type.includes("good") || (!type.includes("miss") && !type.includes("no good"));
 
         // Match the kicker named in the play text (e.g. "C.Little 43 yard...").
-        const nameMatch = (play.text ?? "").match(/^([A-Z]\.[A-Za-z'-]+)/);
+        // trim() is load-bearing: ESPN emits some drive plays with a leading space,
+        // and this match is anchored. Without it those kicks match nothing and are
+        // dropped — 3 of 5 field goals in the real 2024 HOU/LAC wild-card game.
+        const nameMatch = (play.text ?? "").trim().match(/^([A-Z]\.[A-Za-z'-]+)/);
         const token = nameMatch ? lastNameToken(nameMatch[1]) : "";
         const kicker = token ? kickerByLastName.get(token) : undefined;
         if (!kicker) {

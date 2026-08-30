@@ -108,7 +108,7 @@ function parseMadeAttempted(raw: string | undefined): { made: number; missed: nu
 }
 
 /** ESPN abbreviation → our fantasy position, or null if non-fantasy. */
-function mapPosition(abbr: string | undefined): PlayerPosition | null {
+export function mapPosition(abbr: string | undefined): PlayerPosition | null {
   switch ((abbr ?? "").toUpperCase()) {
     case "QB":
       return "QB";
@@ -133,9 +133,24 @@ const TEAM_ALIASES: Record<string, string> = {
   WSH: "WAS",
 };
 
-function normalizeTeam(abbr: string): string {
+export function normalizeTeam(abbr: string): string {
   const upper = abbr.toUpperCase();
   return TEAM_ALIASES[upper] ?? upper;
+}
+
+// The reverse trip. Everything we store and display is canonical (WAS, JAX), but
+// ESPN's own endpoints only answer to its abbreviations — /teams/was/roster is a
+// 400, /teams/wsh/roster is a 200. Without this, the admin pool sync throws for
+// Washington and Jacksonville when an operator types the abbreviation the app
+// showed them.
+const ESPN_TEAM_ALIASES: Record<string, string> = Object.fromEntries(
+  Object.entries(TEAM_ALIASES).map(([espn, ours]) => [ours, espn]),
+);
+
+/** Canonical abbreviation -> the one ESPN's URLs expect. */
+export function toEspnTeam(abbr: string): string {
+  const upper = abbr.toUpperCase();
+  return ESPN_TEAM_ALIASES[upper] ?? upper;
 }
 
 const STATE_MAP: Record<string, ProviderGameState> = {

@@ -14,7 +14,7 @@ export interface MockPlayer {
 }
 
 /** Deterministic pseudo-random from a string seed (no Math.random — reproducible). */
-function seededNumber(seed: string, max: number): number {
+export function seededNumber(seed: string, max: number): number {
   let h = 0;
   for (const c of seed) h = (h * 31 + c.charCodeAt(0)) | 0;
   return Math.abs(h) % max;
@@ -137,7 +137,7 @@ export async function advanceMockWeek(
 }
 
 /** The pre-existing default: fabricate a season from whatever players are in the pool. */
-async function syntheticSourceFromPool(
+export async function syntheticSourceFromPool(
   db: PrismaClient,
   season: number,
 ): Promise<SeasonDataSource> {

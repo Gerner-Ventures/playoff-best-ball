@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { DraftState } from "@/lib/draft-state";
+import { PositionChip } from "@/components/position-chip";
 
 type ActiveState = Extract<DraftState, { status: "ACTIVE" | "COMPLETE" }>;
 
@@ -14,6 +15,13 @@ interface PoolPlayer {
 }
 
 const POSITIONS = ["ALL", "QB", "RB", "WR", "TE", "K", "DST"] as const;
+
+/*
+ * Adaptive density, applied as utilities rather than a second component class:
+ * controls keep the 44px touch floor on a phone (where picks actually get made)
+ * and tighten to 36px from md up (where you are studying the board on a laptop).
+ */
+const DENSE = "md:min-h-9 md:px-3 md:py-1 md:text-sm";
 
 export function PickPanel({
   state,
@@ -112,16 +120,18 @@ export function PickPanel({
   if (state.status === "COMPLETE") return null;
 
   return (
-    <div className="mt-6 grid gap-6 md:grid-cols-2">
+    <div className="mt-8 grid gap-8 md:grid-cols-2">
       <section>
-        <h2 className="chalk chalk-h2 text-3xl text-chalk-mint">Available players</h2>
-        <div className="mt-2 flex flex-wrap items-center gap-2">
+        <h2 className="text-lg font-semibold text-ink">Available players</h2>
+
+        <div className="mt-3 flex flex-wrap items-center gap-2">
           {POSITIONS.map((pos) => (
             <button
               key={pos}
               type="button"
               onClick={() => setFilter(pos)}
-              className={`chalk-btn chalk-btn-sm ${filter === pos ? "border-chalk-mint text-chalk-mint" : ""}`}
+              aria-pressed={filter === pos}
+              className={`btn btn-sm ${filter === pos ? "border-brand text-brand" : ""}`}
             >
               {pos}
             </button>
@@ -130,23 +140,28 @@ export function PickPanel({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search"
-            className="ml-auto rounded-lg border px-3 py-1 text-sm"
+            className={`input ml-auto w-full sm:w-40 ${DENSE}`}
             aria-label="Search players"
           />
         </div>
-        <ul className="mt-3 max-h-96 overflow-y-auto chalk-card">
+
+        <ul className="card mt-3 max-h-96 overflow-y-auto">
           {visible.map((p) => (
-            <li key={p.id} className="flex items-center justify-between border-b p-2 last:border-b-0 border-chalk-line">
-              <span>
-                <span className="font-medium">{p.name}</span>{" "}
-                <span className="text-sm text-chalk-dim">{p.position} · {p.nflTeam}</span>
+            <li
+              key={p.id}
+              className="flex flex-col gap-2 border-b border-rule p-3 last:border-b-0 sm:flex-row sm:items-center sm:justify-between sm:gap-4 md:p-2"
+            >
+              <span className="flex min-w-0 flex-wrap items-center gap-2">
+                <PositionChip position={p.position} />
+                <span className="font-medium text-ink">{p.name}</span>
+                <span className="tabular text-sm text-ink-muted">{p.nflTeam}</span>
               </span>
-              <span className="flex gap-2">
+              <span className="flex shrink-0 gap-2">
                 {!queue.includes(p.id) && (
                   <button
                     type="button"
                     onClick={() => void saveQueue([...queue, p.id])}
-                    className="rounded border px-2 py-1 text-sm"
+                    className={`btn btn-sm ${DENSE}`}
                   >
                     Queue
                   </button>
@@ -155,41 +170,64 @@ export function PickPanel({
                   type="button"
                   disabled={!myTurn || busy}
                   onClick={() => void draftPlayer(p.id)}
-                  className="chalk-btn chalk-btn-primary chalk-btn-sm disabled:opacity-40"
+                  className={`btn btn-primary ${DENSE}`}
                 >
                   Draft
                 </button>
               </span>
             </li>
           ))}
-          {visible.length === 0 && <li className="p-3 text-sm text-chalk-dim">No players match.</li>}
+          {visible.length === 0 && <li className="p-3 text-sm text-ink-muted">No players match.</li>}
         </ul>
       </section>
 
       <section>
-        <h2 className="chalk chalk-h2 text-3xl text-chalk-mint">My queue</h2>
-        <p className="mt-1 text-sm text-chalk-dim">
+        <h2 className="text-lg font-semibold text-ink">My queue</h2>
+        <p className="mt-1 text-sm text-ink-muted">
           If your clock runs out, we draft the highest available player from this list (skipping any
           that don&apos;t fit your roster), then best-available.
         </p>
-        <ul className="mt-3 chalk-card">
+
+        <ul className="card mt-3">
           {queue.map((playerId, i) => {
             const p = poolById.get(playerId);
             if (!p) return null;
+            const taken = takenIds.has(playerId);
             return (
-              <li key={playerId} className="flex items-center justify-between border-b p-2 last:border-b-0 border-chalk-line">
-                <span className={takenIds.has(playerId) ? "text-chalk-dim line-through" : ""}>
-                  {i + 1}. {p.name}{" "}
-                  <span className="text-sm text-chalk-dim">{p.position} · {p.nflTeam}</span>
+              <li
+                key={playerId}
+                className="flex flex-col gap-2 border-b border-rule p-3 last:border-b-0 sm:flex-row sm:items-center sm:justify-between sm:gap-4 md:p-2"
+              >
+                <span className="flex min-w-0 flex-wrap items-center gap-2">
+                  <span className="tabular text-sm text-ink-muted">{i + 1}</span>
+                  <PositionChip position={p.position} />
+                  {/* Taken by someone else. The strikethrough carries the state; the
+                      colour stays legible because you still need to read the name. */}
+                  <span className={taken ? "is-out font-medium" : "font-medium text-ink"}>{p.name}</span>
+                  <span className="tabular text-sm text-ink-muted">{p.nflTeam}</span>
                 </span>
-                <span className="flex gap-1">
-                  <button type="button" aria-label={`Move ${p.name} up`} onClick={() => move(playerId, -1)} className="rounded border px-2 py-1 text-sm">↑</button>
-                  <button type="button" aria-label={`Move ${p.name} down`} onClick={() => move(playerId, 1)} className="rounded border px-2 py-1 text-sm">↓</button>
+                <span className="flex shrink-0 gap-1">
+                  <button
+                    type="button"
+                    aria-label={`Move ${p.name} up`}
+                    onClick={() => move(playerId, -1)}
+                    className={`btn btn-sm ${DENSE}`}
+                  >
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={`Move ${p.name} down`}
+                    onClick={() => move(playerId, 1)}
+                    className={`btn btn-sm ${DENSE}`}
+                  >
+                    ↓
+                  </button>
                   <button
                     type="button"
                     aria-label={`Remove ${p.name} from queue`}
                     onClick={() => void saveQueue(queue.filter((id) => id !== playerId))}
-                    className="rounded border px-2 py-1 text-sm"
+                    className={`btn btn-sm ${DENSE}`}
                   >
                     ✕
                   </button>
@@ -197,10 +235,15 @@ export function PickPanel({
               </li>
             );
           })}
-          {queue.length === 0 && <li className="p-3 text-sm text-chalk-dim">Queue is empty.</li>}
+          {queue.length === 0 && <li className="p-3 text-sm text-ink-muted">Queue is empty.</li>}
         </ul>
       </section>
-      {error && <p className="text-sm text-chalk-coral md:col-span-2">{error}</p>}
+
+      {error && (
+        <p role="alert" className="text-sm text-warn md:col-span-2">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

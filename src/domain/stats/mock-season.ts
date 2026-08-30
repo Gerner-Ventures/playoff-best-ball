@@ -1,10 +1,12 @@
-import type { PlayerPosition, PrismaClient } from "@prisma/client";
+import type { GameState, PlayerPosition, PrismaClient } from "@prisma/client";
 import { FakeStatsProvider, type FakeStatsData } from "./fake-provider";
 import type { ProviderPlayerStats } from "./provider";
 import { emptyStatLine, type StatLine } from "./stat-line";
 import { syncWeekStats } from "./sync-week";
+import { sourceIdForEventId, type SeasonDataSource } from "./season-source";
+import { createSyntheticSource } from "./sources/synthetic-source";
 
-interface MockPlayer {
+export interface MockPlayer {
   externalId: string;
   name: string;
   position: PlayerPosition;
@@ -64,38 +66,92 @@ export interface AdvanceMockWeekResult {
 }
 
 /**
+ * The next week to play: the lowest week that is not yet FINAL, falling back to
+ * one past the highest FINAL week when nothing is pending.
+ *
+ * The fallback is what the original implementation did (highest existing week + 1),
+ * and it still covers the case where only played weeks exist. The pending branch is
+ * new and necessary: once a demo seeder writes the full four-week bracket up front,
+ * "highest week that exists" is always 4 and the season looks complete before a
+ * single game has been advanced. Mirrors how league-projections derives nextWeek.
+ */
+export function nextWeekToAdvance(games: { week: number; state: GameState }[]): number {
+  const pending = games.filter((g) => g.state !== "FINAL").map((g) => g.week);
+  if (pending.length > 0) return Math.min(...pending);
+  const finished = games.filter((g) => g.state === "FINAL").map((g) => g.week);
+  return (finished.length > 0 ? Math.max(...finished) : 0) + 1;
+}
+
+export interface AdvanceMockWeekInput {
+  season: number;
+  /** Defaults to the synthetic source built from the season's player pool. */
+  source?: SeasonDataSource;
+  /** Anchor for the fictional schedule; defaults to the real clock. */
+  now?: Date;
+}
+
+/**
  * Advances the simulated playoff season by one week (the December beta's lever,
  * pulled from the admin panel; also the `npm run mock:week` dev script's engine).
  *
- * Preserves the original script's behavior exactly: backfill `mock-${id}`
- * externalIds onto pool players that lack one (so syncWeekStats can match them),
- * fabricate one FINAL game + a deterministic seeded stat line per pool player
- * via buildMockWeek, and write it all through the real syncWeekStats pipeline.
- * The next week is whatever mock week hasn't been simulated yet (1 → 4);
- * advancing past the Super Bowl throws.
+ * Behavior with no `source` is unchanged: backfill `mock-${id}` externalIds onto
+ * pool players that lack one (so syncWeekStats can match them), then write one
+ * fabricated FINAL game plus a deterministic seeded stat line per pool player
+ * through the real syncWeekStats pipeline. Advancing past the Super Bowl throws.
+ *
+ * With a `source`, the same lever plays the next week of whatever season that
+ * source describes — a captured real postseason, for instance.
  */
 export async function advanceMockWeek(
   db: PrismaClient,
-  { season }: { season: number },
+  { season, source, now = new Date() }: AdvanceMockWeekInput,
 ): Promise<AdvanceMockWeekResult> {
-  const latest = await db.nflGame.findFirst({
-    where: { season, eventId: { startsWith: `mock-${season}-` } },
-    orderBy: { week: "desc" },
-    select: { week: true },
+  const existing = await db.nflGame.findMany({
+    where: { season },
+    select: { week: true, state: true, eventId: true },
   });
-  const week = (latest?.week ?? 0) + 1;
-  if (week > 4) throw new Error(`Mock season ${season} is complete (all 4 playoff weeks are FINAL).`);
 
+  const week = nextWeekToAdvance(existing);
+  if (week > 4) {
+    throw new Error(`Mock season ${season} is complete (all 4 playoff weeks are FINAL).`);
+  }
+
+  const resolved = source ?? (await syntheticSourceFromPool(db, season));
+
+  // A season may only ever hold one source: eliminations are derived by unioning
+  // the losers of every FINAL game, so half a real bracket plus half a fabricated
+  // one produces a nonsense set of eliminated teams. Refuse rather than corrupt.
+  const incumbent = existing.map((g) => sourceIdForEventId(g.eventId)).find((id) => id !== null);
+  if (incumbent && incumbent !== resolved.id) {
+    throw new Error(
+      `Season ${season} already holds ${incumbent} data; refusing to write ${resolved.id} on top. ` +
+        "Re-seed with --reset to switch sources.",
+    );
+  }
+
+  // The source hands back all four weeks; FakeStatsProvider filters to the one
+  // being advanced, so this writes exactly that week.
+  const data = resolved.seasonData({ playedThroughWeek: week, now, season });
+  const result = await syncWeekStats(db, new FakeStatsProvider(data), { season, week });
+  return { week, gamesCreated: result.games, statLines: result.statLines };
+}
+
+/** The pre-existing default: fabricate a season from whatever players are in the pool. */
+async function syntheticSourceFromPool(
+  db: PrismaClient,
+  season: number,
+): Promise<SeasonDataSource> {
   const players = await db.player.findMany({ where: { season } });
-  // ensure every player has an externalId so sync can match
+  // Every player needs an externalId or syncWeekStats cannot match its stat line.
   for (const p of players.filter((p) => !p.externalId)) {
     await db.player.update({ where: { id: p.id }, data: { externalId: `mock-${p.id}` } });
   }
-  const withIds = players.map((p) => ({
-    externalId: p.externalId ?? `mock-${p.id}`,
-    name: p.name, position: p.position, nflTeam: p.nflTeam,
-  }));
-  const provider = new FakeStatsProvider(buildMockWeek(withIds, season, week));
-  const result = await syncWeekStats(db, provider, { season, week });
-  return { week, gamesCreated: result.games, statLines: result.statLines };
+  return createSyntheticSource(
+    players.map((p) => ({
+      externalId: p.externalId ?? `mock-${p.id}`,
+      name: p.name,
+      position: p.position,
+      nflTeam: p.nflTeam,
+    })),
+  );
 }

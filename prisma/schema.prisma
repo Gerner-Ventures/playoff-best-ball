@@ -46,6 +46,9 @@ model Account {
   id                    String    @id
   accountId             String
   providerId            String
+  // better-auth 1.7 scopes account identity by issuer: `local:credential` for
+  // password/magic-link accounts, `local:oauth:<providerId>` for social.
+  issuer                String
   userId                String
   user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   accessToken           String?
@@ -58,6 +61,7 @@ model Account {
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
+  @@unique([issuer, accountId])
   @@index([userId])
   @@map("account")
 }

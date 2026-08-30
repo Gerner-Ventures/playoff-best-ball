@@ -11,17 +11,10 @@ updates:
         dependency-type: development
       production-dependencies:
         dependency-type: production
-    # Three packages are held back deliberately. Each entry blocks only the
+    # Two packages are held back deliberately. Each entry blocks only the
     # version that breaks us, so patches to the current major still arrive.
     # Delete an entry once its condition below is met.
     ignore:
-      # 1.7 scopes account identity by a new `issuer` column on `account`, so
-      # upgrading needs a schema change, a migration and a backfill of existing
-      # rows against production auth data — not something to take in a dependency
-      # PR. Guide: https://better-auth.com/docs/guides/1-7-upgrade-guide
-      # Unblock: do the migration, then remove this.
-      - dependency-name: "better-auth"
-        versions: [">=1.7.0"]
       # typescript-eslint refuses to run against TS 7 ("does not support TS 7.0"),
       # which fails `npm run lint` outright.
       # Unblock: when typescript-eslint ships TS 7 support.

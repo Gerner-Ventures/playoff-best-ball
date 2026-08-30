@@ -6,6 +6,8 @@ import { getDraftState } from "@/lib/draft-state";
 import { safeAnnounceDraftState } from "@/lib/draft-events";
 import { startDraft } from "@/domain/draft/start-draft";
 import { DomainError } from "@/domain/errors";
+import { captureServerEvent } from "@/lib/analytics-server";
+import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
 
 type Params = { params: Promise<{ leagueId: string }> };
 
@@ -34,6 +36,7 @@ export async function POST(_req: Request, { params }: Params) {
   try {
     await startDraft(db, { leagueId, userId: auth.user.id });
     await safeAnnounceDraftState(db, leagueId); // arms the first pick clock + notification
+    await captureServerEvent(auth.user.id, ANALYTICS_EVENTS.DRAFT_STARTED, { leagueId });
     return NextResponse.json(await getDraftState(db, leagueId, auth.user.id), { status: 201 });
   } catch (err) {
     if (err instanceof ZodError) {

@@ -136,7 +136,52 @@ npx playwright install chromium  # first run only
 npm run test:e2e
 ```
 
-> `npm run test:e2e` seeds the test-DB player pool automatically via Playwright global setup — no manual seed step required.
+> `npm run test:e2e` prepares the test DB automatically via the Playwright `setup`
+> project (`e2e/seed.setup.ts`): it resets the database, seeds the player pool, and
+> seeds a live-playoffs demo world for the demo specs to read. No manual step.
+
+## Seeing the app in each phase
+
+There is no way to reach the interesting states of this product by clicking around
+from an empty database — a draft needs twelve people, and the playoffs need a
+season of results. `demo:seed` builds a whole world in one command.
+
+```bash
+npm run demo:seed -- --phase=live --week=2   # mid-playoffs: standings, projections
+npm run demo:seed -- --phase=draft           # your turn, on the clock
+npm run demo:seed -- --phase=pre-draft       # league filling up, draft not started
+```
+
+It prints the URLs and the sign-in it created (`you@demo.example.com`). You get a
+12-team PREMIUM league and an 8-team FREE one, both commissioned by that account,
+so the paywall boundary is visible side by side with the feature.
+
+**Season data** comes from a real captured postseason by default, or the fabricated
+generator if you want full control:
+
+```bash
+npm run demo:seed -- --phase=live --source=historical:2024   # real 2024 playoffs
+npm run demo:seed -- --phase=live --source=historical:2023
+npm run demo:seed -- --phase=live --source=synthetic         # made-up players/stats
+npm run mock:week                                            # play the next round
+```
+
+Real data is worth preferring: because you know what the numbers should be, scoring
+bugs are visible by eye. Two have already been found this way — see
+`docs/superpowers/specs/2026-08-29-demo-environment-design.md`.
+
+Captured seasons live in `data/seasons/<year>/season.json` and are committed, so
+nothing depends on ESPN at runtime. To add another:
+
+```bash
+npm run demo:capture -- --season=2022
+```
+
+Adding a season is data-only — the file is discovered by directory scan.
+
+Password sign-in is what makes the demo shareable, and it is gated on four
+independent factors (an explicit flag, a compiled-in host allowlist, no live Stripe
+key, and a database sentinel). See `docs/runbooks/demo-environment.md`.
 
 ## Scripts
 
@@ -150,7 +195,9 @@ npm run test:e2e
 | `npm run test:e2e` | Playwright end-to-end tests |
 | `npm run db:push` | Push schema to dev DB (5434) |
 | `npm run db:push:test` | Push schema to test DB (5433) |
-| `npm run mock:week -- <1-4>` | Simulate a playoff week against the dev DB (generates fake stat lines for all players and runs the scoring engine) |
+| `npm run demo:seed -- --phase=<pre-draft\|draft\|live> [--week=N] [--source=…]` | Build a full demo world in that phase (see above) |
+| `npm run demo:capture -- --season=<year>` | Capture a real postseason from ESPN into `data/seasons/` (one-time, committed) |
+| `npm run mock:week [-- --source=…]` | Play the next playoff week against the dev DB. Defaults to whichever season the database already holds |
 
 ## Engagement & analytics
 

@@ -139,21 +139,18 @@ type SentinelDb = {
   };
 };
 
-let sentinelPresent = false; // memoized only once TRUE — see below
-
 /**
  * Whether this database has been deliberately marked as a demo database.
  *
- * Memoizes only the `true` result: a false is worth re-checking (the operator may
- * not have marked it yet), while a true cannot become false without someone
- * deleting the row, and caching it keeps the auth path off the database on every
- * password request.
+ * Deliberately NOT memoized. Caching a `true` would mean that deleting the
+ * sentinel — the documented way to revoke demo status from a database — leaves
+ * password auth enabled until the process restarts, which is the wrong direction
+ * to be wrong in. The cost is one indexed lookup on a single-row table, and only
+ * on password sign-in attempts, which happen on demo deployments and nowhere else.
  */
 export async function isDemoEnvironment(db: SentinelDb): Promise<boolean> {
-  if (sentinelPresent) return true;
   const row = await db.demoEnvironment.findUnique({ where: { id: SENTINEL_ID } });
-  sentinelPresent = row !== null;
-  return sentinelPresent;
+  return row !== null;
 }
 
 /**
@@ -167,7 +164,6 @@ export async function markDemoEnvironment(db: SentinelDb, label: string): Promis
     create: { id: SENTINEL_ID, label },
     update: { label },
   });
-  sentinelPresent = true;
 }
 
 /**

@@ -65,6 +65,15 @@ describe("isDemoEnvironment", () => {
     expect(await testDb.demoEnvironment.count()).toBe(1);
   });
 
+  it("goes false again when the sentinel is removed", async () => {
+    // Revoking demo status from a database must take effect immediately, not at
+    // the next process restart — which is why this lookup is not cached.
+    await markDemoEnvironment(testDb, "temporary");
+    expect(await isDemoEnvironment(testDb)).toBe(true);
+    await testDb.demoEnvironment.deleteMany();
+    expect(await isDemoEnvironment(testDb)).toBe(false);
+  });
+
   it("survives resetDb, so the demo database stays a demo database", async () => {
     // resetDb() is the e2e/unit clean-slate helper. If it wiped the sentinel, a
     // reset would silently downgrade a demo database and password auth would stop.

@@ -67,6 +67,30 @@ Blank outbound keys mean **log, not throw**, when demo mode is on — `notify-em
 `notify-sms`, `notify-push` and the magic-link sender all carve out the demo. Real
 production still fails loudly on a missing key.
 
+## Seeding
+
+```bash
+npm run demo:seed -- --phase=live --week=2 --source=historical:2024
+npm run demo:seed -- --phase=draft
+npm run demo:seed -- --phase=pre-draft --source=synthetic
+```
+
+The seeder rebuilds only its own corner: the two pinned invite codes (`DEMO2026`,
+`DEMOFREE`), the `@demo.example.com` accounts, and the season's game and stat rows.
+It deliberately does not call `resetDb`, because it runs against a long-lived
+database that may hold other data.
+
+It also writes the `DemoEnvironment` sentinel row, which is why running it is the
+step that makes password sign-in work on a fresh demo database — and why running it
+against production is the one thing never to do.
+
+Everything is built through the real domain functions (`createLeague`,
+`joinLeague`, `startDraftForLeague`, `autodraftCurrentPick`, `syncWeekStats`), so
+the seeded state is always state the app itself could produce.
+
+To advance the playoffs one round, use `/admin` → "Advance mock week", or
+`npm run mock:week`. Both default to whichever season the database already holds.
+
 ## Deploying (not yet done — see the plan)
 
 A separate Vercel project from this repo, production branch `main`, with its own Neon

@@ -1,3 +1,12 @@
+-- No down-migration: this is additive (new column + index) and the backfill is
+-- derived, not destructive. Reversing it means dropping the index and column,
+-- which also means downgrading better-auth below 1.7.
+--
+-- Runs in one transaction, so the UPDATE, the SET NOT NULL and the (non-
+-- concurrent) CREATE UNIQUE INDEX hold a lock on `account` for the duration.
+-- Logins contend for those rows, so expect a brief blip on the deploy that
+-- applies this rather than a fully transparent migration.
+--
 -- better-auth 1.7 scopes account identity by `issuer`, which is NOT NULL with a
 -- unique (issuer, accountId). Existing rows predate the column, so add it
 -- nullable, backfill, then enforce — a plain NOT NULL add would fail on any

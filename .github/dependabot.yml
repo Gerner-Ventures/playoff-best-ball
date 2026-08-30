@@ -11,7 +11,7 @@ updates:
         dependency-type: development
       production-dependencies:
         dependency-type: production
-    # Three packages are held back deliberately. Each entry blocks only the
+    # Two packages are held back deliberately. Each entry blocks only the
     # version that breaks us, so patches to the current major still arrive.
     # Delete an entry once its condition below is met.
     ignore:

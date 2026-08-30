@@ -20,7 +20,7 @@ jobs:
           --health-cmd "pg_isready -U pbb" --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           # Node 24 bundles npm 11 — must match the npm major that generates
           # package-lock.json locally, or `npm ci` rejects the lockfile shape

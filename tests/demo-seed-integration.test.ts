@@ -9,7 +9,6 @@ import { getLeagueProjections } from "@/lib/league-projections";
 import { getLeagueScores } from "@/lib/league-scores";
 import { CURRENT_SEASON } from "@/domain/season";
 import { entryIdForPick } from "@/domain/draft/snake-order";
-import { seedPlayers, PLAYERS_FIXTURE } from "../prisma/seed-players";
 
 // Proves each phase is reachable and coherent. These are the assertions that stand
 // in for clicking through the site, so they check what a visitor would actually
@@ -74,7 +73,17 @@ describe("seedDemo", () => {
     // may have missed the captured postseason, so they have no stat line — and
     // deleteDemoData spares Player rows, so they persist across re-seeds.
     it("ranks players the captured season does not know behind every one it does", async () => {
-      await seedPlayers(testDb, PLAYERS_FIXTURE);
+      // Two stand-ins rather than the 39-player fixture via seedPlayers: that
+      // upserts one row at a time (see its Phase 3 TODO) and pushed this past the
+      // 5s default on CI. What the invariant needs is a player the source cannot
+      // match sitting at a draftable rank, which these reproduce exactly — names
+      // that no captured postseason will ever contain.
+      await testDb.player.createMany({
+        data: [
+          { season: CURRENT_SEASON, name: "Fixture Orphan One", position: "WR", nflTeam: "ZZZ", defaultRank: 1 },
+          { season: CURRENT_SEASON, name: "Fixture Orphan Two", position: "RB", nflTeam: "ZZZ", defaultRank: 2 },
+        ],
+      });
       await seed("pre-draft");
 
       const players = await testDb.player.findMany({

@@ -18,11 +18,11 @@
         "name": "next"
       }
     ],
-    // baseUrl is required for Playwright's loader to resolve the "@/" alias.
-    // tsc and vitest resolve it without one (vitest has its own alias config),
-    // but e2e/global-setup.ts imports domain code that uses "@/" and fails
-    // without this.
-    "baseUrl": ".",
+    // No baseUrl: TypeScript 6 deprecates it (TS5101) and 7 drops it. "paths"
+    // entries are resolved relative to this file without one, which is all the
+    // "@/" alias needs. The old comment here said Playwright's loader required
+    // baseUrl for e2e/global-setup.ts — that file no longer exists; the setup
+    // project that replaced it is an ordinary test file and resolves paths fine.
     "paths": {
       "@/*": ["./src/*"]
     }

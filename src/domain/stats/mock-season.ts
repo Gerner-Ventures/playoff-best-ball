@@ -125,7 +125,7 @@ export async function advanceMockWeek(
   if (incumbent && incumbent !== resolved.id) {
     throw new Error(
       `Season ${season} already holds ${incumbent} data; refusing to write ${resolved.id} on top. ` +
-        "Re-seed with --reset to switch sources.",
+        "Re-run `npm run demo:seed` to switch sources; it clears the season first.",
     );
   }
 

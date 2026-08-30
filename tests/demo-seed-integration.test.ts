@@ -8,6 +8,8 @@ import { listCapturedSeasons, loadSeasonSnapshot } from "@/lib/demo/season-snaps
 import { getLeagueProjections } from "@/lib/league-projections";
 import { getLeagueScores } from "@/lib/league-scores";
 import { CURRENT_SEASON } from "@/domain/season";
+import { entryIdForPick } from "@/domain/draft/snake-order";
+import { seedPlayers, PLAYERS_FIXTURE } from "../prisma/seed-players";
 
 // Proves each phase is reachable and coherent. These are the assertions that stand
 // in for clicking through the site, so they check what a visitor would actually
@@ -66,6 +68,37 @@ describe("seedDemo", () => {
       const players = await testDb.player.count({ where: { season: CURRENT_SEASON } });
       expect(players).toBeGreaterThanOrEqual(96);
     });
+
+    // The e2e setup and the documented local flow (`db:seed:players`, then
+    // `demo:seed`) both leave dev-fixture players in the season. Their real teams
+    // may have missed the captured postseason, so they have no stat line — and
+    // deleteDemoData spares Player rows, so they persist across re-seeds.
+    it("ranks players the captured season does not know behind every one it does", async () => {
+      await seedPlayers(testDb, PLAYERS_FIXTURE);
+      await seed("pre-draft");
+
+      const players = await testDb.player.findMany({
+        where: { season: CURRENT_SEASON },
+        select: { name: true, defaultRank: true, externalId: true },
+        orderBy: { defaultRank: "asc" },
+      });
+      const orphans = players.filter((p) => p.externalId === null);
+      const captured = players.filter((p) => p.externalId !== null);
+      expect(orphans.length).toBeGreaterThan(0); // else this proves nothing
+      expect(captured.length).toBeGreaterThan(0);
+
+      // autodraft orders purely by defaultRank with no source filter, so anything
+      // ranked above a real player can be taken in round 1 and then score zero all
+      // season — silently hollowing out the real-ground-truth premise.
+      const worstCaptured = Math.max(...captured.map((p) => p.defaultRank));
+      const bestOrphan = Math.min(...orphans.map((p) => p.defaultRank));
+      expect(bestOrphan).toBeGreaterThan(worstCaptured);
+
+      // No collisions either: two players sharing a rank makes draft order depend
+      // on undefined tiebreaks.
+      const ranks = players.map((p) => p.defaultRank);
+      expect(new Set(ranks).size).toBe(ranks.length);
+    });
   });
 
   describe("draft", () => {
@@ -77,13 +110,11 @@ describe("seedDemo", () => {
       expect(draft.status).toBe("ACTIVE");
       expect(draft.currentDeadline!.getTime()).toBeGreaterThan(Date.now());
 
+      // Via the shared helper, not a local copy of the snake math: a duplicated
+      // copy keeps passing against stale logic if the real turn-boundary rule ever
+      // changes, which is the regression this assertion exists to catch.
       const order = draft.order as string[];
-      const onClock = order[
-        Math.floor(draft.currentPickIndex / order.length) % 2 === 0
-          ? draft.currentPickIndex % order.length
-          : order.length - 1 - (draft.currentPickIndex % order.length)
-      ];
-      expect(onClock).toBe(result.onClockEntryId);
+      expect(entryIdForPick(order, draft.currentPickIndex)).toBe(result.onClockEntryId);
     });
 
     it("has real picks behind it, so the board is not empty", async () => {

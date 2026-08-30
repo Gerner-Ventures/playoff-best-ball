@@ -295,9 +295,11 @@ async function applyDefaultRanks(
   // syncPlayerPool appends ranks in roster order, which would have autodraft take
   // all of one team before touching the next — an obviously fake board.
   const ranks = source.defaultRanks();
+  // Ordered so the orphan ranking below is deterministic run to run.
   const players = await db.player.findMany({
     where: { season },
     select: { id: true, externalId: true },
+    orderBy: [{ defaultRank: "asc" }, { id: "asc" }],
   });
   const idByExternal = new Map(players.map((p) => [p.externalId, p.id]));
 
@@ -305,16 +307,35 @@ async function applyDefaultRanks(
     .map((r) => ({ id: idByExternal.get(r.externalId), defaultRank: r.defaultRank }))
     .filter((u): u is { id: string; defaultRank: number } => u.id !== undefined);
 
+  // Players already in the season that this source knows nothing about — the local
+  // dev fixture (data/players-2026.json) seeded by `db:seed:players`, whose real
+  // teams may have missed the captured postseason. deleteDemoData deliberately
+  // spares Player rows, so they persist across seeds.
+  //
+  // They must be ranked too. Left alone they keep fixture ranks 1..39, which
+  // collide with the captured ranks assigned above — and autodraft picks purely by
+  // `orderBy: defaultRank asc` with no source filter, so a stat-less orphan gets
+  // taken in round 1 and scores zero for the whole season, quietly undermining the
+  // real-ground-truth premise. Rank them after every captured player instead:
+  // still draftable if a league somehow exhausts the pool, never picked before a
+  // player who actually has a stat line.
+  const ranked = new Set(updates.map((u) => u.id));
+  const orphans = players
+    .filter((p) => !ranked.has(p.id))
+    .map((p, i) => ({ id: p.id, defaultRank: updates.length + 1 + i }));
+
+  const all = [...updates, ...orphans];
+
   // defaultRank is unique per season, so shift every row out of the way first —
   // otherwise a partial reordering collides with ranks not yet reassigned.
   const offset = players.length + 1000;
   await db.$transaction(
-    updates.map((u) =>
+    all.map((u) =>
       db.player.update({ where: { id: u.id }, data: { defaultRank: u.defaultRank + offset } }),
     ),
   );
   await db.$transaction(
-    updates.map((u) =>
+    all.map((u) =>
       db.player.update({ where: { id: u.id }, data: { defaultRank: u.defaultRank } }),
     ),
   );
@@ -359,6 +380,23 @@ async function draftUntilPersonaIsOnClock(
     const onClock = entryIdForPick(league.entryIds, index);
     if (index >= target && onClock === league.personaEntryId) break;
     if (!(await autodraftCurrentPick(db, { leagueId: league.id, expectedPickIndex: index }))) break;
+  }
+
+  // The loop has two other exits: the draft ran to completion, or autodraft gave
+  // up. Both would fall through and return personaEntryId anyway, reporting a
+  // finished draft as "persona on the clock" — a draft-phase seed that silently
+  // produced the wrong phase. `target` is derived from the roster slot count and
+  // the league size, so a future change to either could make it unreachable on the
+  // persona's turn. Fail loudly rather than hand back a lie.
+  const stoppedAt = await currentPickIndex(db, league.id);
+  if (stoppedAt === null || entryIdForPick(league.entryIds, stoppedAt) !== league.personaEntryId) {
+    throw new Error(
+      `Demo draft seed for league ${league.id} did not stop with the persona on the clock: ` +
+        (stoppedAt === null
+          ? "the draft completed first"
+          : `stopped at pick ${stoppedAt}, which belongs to another entry`) +
+        `. target=${target}, totalPicks=${picks}, entries=${league.entryIds.length}.`,
+    );
   }
 
   // Refresh the deadline so it is measured from now rather than from whenever the

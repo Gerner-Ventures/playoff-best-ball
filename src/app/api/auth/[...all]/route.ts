@@ -9,7 +9,27 @@ const handlers = toNextJsHandler(auth.handler);
 // the database sentinel. That leaves the config able to check only the environment.
 // This wrapper adds the second half of the gate: the password endpoints are MOUNTED
 // when the env attests demo mode, but only REACHABLE when the database also says so.
-const PASSWORD_PATHS = ["/sign-up/email", "/sign-in/email"];
+//
+// The whole password family, not just the two obvious entry points: Better Auth
+// mounts all of these off `emailAndPassword.enabled`. Between the env attesting
+// demo mode and `npm run demo:seed` writing the sentinel, anything missing here is
+// reachable while the stated invariant says password auth is off. /change-*,
+// /delete-user and /reset-password also need a session or a token, so they are
+// narrower than sign-in — but "needs a session" is not the gate this file exists
+// to enforce.
+//
+// Enumerated from better-auth/dist/api/routes/*.mjs. Being a denylist, a password
+// route added upstream is uncovered until listed here — worth re-checking on a
+// better-auth upgrade.
+const PASSWORD_PATHS = [
+  "/sign-up/email",
+  "/sign-in/email",
+  "/request-password-reset",
+  "/reset-password",
+  "/change-password",
+  "/change-email",
+  "/delete-user",
+];
 
 export const GET = handlers.GET;
 

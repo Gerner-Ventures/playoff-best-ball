@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import { Caveat, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { PwaRegister } from "@/components/pwa-register";
-import { AnalyticsProvider } from "@/components/analytics-provider";
 import { ChalkFilter } from "@/components/chalk-filter";
+import { AnalyticsIdentity } from "@/components/analytics-provider";
+import { getSessionUser } from "@/lib/session";
 
 // Chalk headings and flourishes. Caveat is variable (400–700).
 const caveat = Caveat({
@@ -31,11 +32,13 @@ export const metadata: Metadata = {
   description: "Run an NFL playoff best ball league with your friends.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const user = await getSessionUser();
+
   return (
     <html
       lang="en"
@@ -44,7 +47,8 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <ChalkFilter />
         <PwaRegister />
-        <AnalyticsProvider>{children}</AnalyticsProvider>
+        {user && <AnalyticsIdentity userId={user.id} email={user.email} name={user.name} />}
+        {children}
       </body>
     </html>
   );

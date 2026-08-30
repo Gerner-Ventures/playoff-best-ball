@@ -5,6 +5,8 @@ import { getSessionUser } from "@/lib/session";
 import { updateLeagueSettings } from "@/domain/leagues/update-settings";
 import { DomainError } from "@/domain/errors";
 import { scoringPresetNameSchema, scoringSettingsSchema } from "@/domain/league-settings";
+import { captureServerEvent } from "@/lib/analytics-server";
+import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
 
 type Params = { params: Promise<{ leagueId: string }> };
 
@@ -32,6 +34,7 @@ export async function PATCH(req: Request, { params }: Params) {
 
   try {
     const league = await updateLeagueSettings(db, { leagueId, userId: user.id, ...parsed.data });
+    await captureServerEvent(user.id, ANALYTICS_EVENTS.LEAGUE_SETTINGS_UPDATED, { leagueId });
     return NextResponse.json({ ok: true, tier: league.tier });
   } catch (err) {
     if (err instanceof DomainError) {

@@ -7,6 +7,8 @@ import { CURRENT_SEASON } from "@/domain/season";
 import { mockDraftConfigSchema } from "@/domain/mock-draft/config";
 import { startMockDraft, discardMockDraft } from "@/domain/mock-draft/start";
 import { getMockDraftState } from "@/domain/mock-draft/state";
+import { captureServerEvent } from "@/lib/analytics-server";
+import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
 
 export async function GET() {
   const user = await getSessionUser();
@@ -24,6 +26,9 @@ export async function POST(req: Request) {
 
   try {
     await startMockDraft(db, { userId: user.id, season: CURRENT_SEASON, config: parsed.data });
+    await captureServerEvent(user.id, ANALYTICS_EVENTS.MOCK_DRAFT_STARTED, {
+      team_count: parsed.data.teamCount,
+    });
     return NextResponse.json(await getMockDraftState(db, user.id), { status: 201 });
   } catch (err) {
     if (err instanceof ZodError) {

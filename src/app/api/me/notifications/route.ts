@@ -6,6 +6,8 @@ import {
   getNotificationSettings,
   updateNotificationSettings,
 } from "@/domain/users/notification-settings";
+import { captureServerEvent } from "@/lib/analytics-server";
+import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
 
 const E164 = /^\+[1-9]\d{6,14}$/;
 
@@ -34,5 +36,8 @@ export async function PATCH(req: Request) {
     );
   }
   const settings = await updateNotificationSettings(db, { userId: user.id, ...parsed.data });
+  await captureServerEvent(user.id, ANALYTICS_EVENTS.NOTIFICATION_SETTINGS_UPDATED, {
+    sms_opt_in: settings.smsOptIn,
+  });
   return NextResponse.json(settings);
 }

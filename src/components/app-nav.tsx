@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import posthog from "posthog-js";
 
 export function AppNav({ userName }: { userName: string }) {
   const router = useRouter();
@@ -24,6 +25,7 @@ export function AppNav({ userName }: { userName: string }) {
                 window.alert("Sign out failed — please try again.");
                 return;
               }
+              posthog.reset();
               router.refresh();
               router.push("/");
             } catch {

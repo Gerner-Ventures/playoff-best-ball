@@ -15,6 +15,11 @@ const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KE
 
 export const auth = betterAuth({
   database: prismaAdapter(db, { provider: "postgresql" }),
+  // No account.identityStrategy here on purpose: 1.7.2 does not expose that option
+  // (the upgrade guide describes it, the shipped types don't have it). The defaults
+  // already write the issuers we want — `local:credential` for password/magic-link
+  // accounts and `local:oauth:<providerId>` for social — which is what the
+  // 20260830000000_account_issuer backfill reproduces for pre-1.7 rows.
   // E2E-only escape hatch: password auth lets Playwright create sessions
   // without an email round-trip. Never enabled in production.
   emailAndPassword: {

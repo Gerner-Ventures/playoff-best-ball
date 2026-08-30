@@ -360,7 +360,10 @@ function applyFieldGoals(
         const made = type.includes("good") || (!type.includes("miss") && !type.includes("no good"));
 
         // Match the kicker named in the play text (e.g. "C.Little 43 yard...").
-        const nameMatch = (play.text ?? "").match(/^([A-Z]\.[A-Za-z'-]+)/);
+        // trim() is load-bearing: ESPN emits some drive plays with a leading space,
+        // and this match is anchored. Without it those kicks match nothing and are
+        // dropped — 3 of 5 field goals in the real 2024 HOU/LAC wild-card game.
+        const nameMatch = (play.text ?? "").trim().match(/^([A-Z]\.[A-Za-z'-]+)/);
         const token = nameMatch ? lastNameToken(nameMatch[1]) : "";
         const kicker = token ? kickerByLastName.get(token) : undefined;
         if (!kicker) {

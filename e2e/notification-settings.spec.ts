@@ -25,5 +25,9 @@ test("rejects a malformed phone number", async ({ page }) => {
   await page.goto("/settings/notifications");
   await page.getByPlaceholder("+15555550123").fill("555-1234");
   await page.getByRole("button", { name: "Save" }).click();
-  await expect(page.getByText(/international format/i)).toBeVisible();
+  // Match the API's exact rejection message, not /international format/: the field
+  // label ("Phone number (international format)") also matches that, so the loose
+  // regex passed whenever the error had not rendered yet — and passed vacuously
+  // altogether while a hydration bug meant Save never fired at all.
+  await expect(page.getByText("Use international format, e.g. +15555550123")).toBeVisible();
 });

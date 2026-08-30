@@ -5,7 +5,9 @@ const secretKey = process.env.STRIPE_SECRET_KEY;
 
 export const stripe = secretKey ? new Stripe(secretKey) : null;
 
-// Price and mode live in their own modules so server components can import them
-// without pulling in the Stripe SDK.
+// Price lives in ./pricing so server components can import it without pulling in the Stripe SDK.
 export { PREMIUM_PRICE_CENTS } from "./pricing";
-export { stripeModeFromKey, type StripeMode } from "./stripe-mode";
+
+// Mode is deliberately NOT re-exported here: ./stripe-mode exists so the admin page
+// can read the mode without this module's `import Stripe from "stripe"`, and a
+// re-export would hand future callers a path that drags the SDK back in.

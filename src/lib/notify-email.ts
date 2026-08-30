@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import type { Notification, NotifyRecipient } from "./notify";
+import { DEMO_MODE_REQUESTED } from "./demo-mode";
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
@@ -8,7 +9,9 @@ export async function sendEmailNotification(
   n: Notification,
 ): Promise<void> {
   if (!resend) {
-    if (process.env.NODE_ENV === "production") {
+    // The demo deliberately runs with production NODE_ENV and no outbound keys, so
+    // notifications must log rather than throw there. Real production still fails loudly.
+    if (process.env.NODE_ENV === "production" && !DEMO_MODE_REQUESTED) {
       throw new Error("RESEND_API_KEY is not set; cannot send notifications");
     }
     console.log(`[dev] email ${recipient.email}: ${n.subject} — ${n.text}`);

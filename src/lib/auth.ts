@@ -3,6 +3,7 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { magicLink } from "better-auth/plugins/magic-link";
 import { Resend } from "resend";
 import { db } from "./db";
+import { DEMO_MODE_REQUESTED } from "./demo-mode";
 
 if (process.env.GOOGLE_CLIENT_ID && !process.env.GOOGLE_CLIENT_SECRET) {
   throw new Error("GOOGLE_CLIENT_ID is set but GOOGLE_CLIENT_SECRET is missing");
@@ -15,10 +16,16 @@ const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KE
 
 export const auth = betterAuth({
   database: prismaAdapter(db, { provider: "postgresql" }),
-  // E2E-only escape hatch: password auth lets Playwright create sessions
-  // without an email round-trip. Never enabled in production.
+  // Password auth exists for two callers that have no inbox: Playwright, and the
+  // demo deployment. This only MOUNTS the endpoints — reaching them additionally
+  // requires the database sentinel, enforced in the auth route's POST wrapper
+  // (src/app/api/auth/[...all]/route.ts), because Better Auth evaluates this
+  // config at module init and cannot await a query. Never on in real production:
+  // DEMO_MODE_REQUESTED is false unless the host is on a compiled-in allowlist.
   emailAndPassword: {
-    enabled: process.env.E2E_TEST_MODE === "1" && process.env.NODE_ENV !== "production",
+    enabled:
+      (process.env.E2E_TEST_MODE === "1" && process.env.NODE_ENV !== "production") ||
+      DEMO_MODE_REQUESTED,
   },
   socialProviders: {
     ...(process.env.GOOGLE_CLIENT_ID && {
@@ -38,7 +45,10 @@ export const auth = betterAuth({
     magicLink({
       sendMagicLink: async ({ email, url }) => {
         if (!resend) {
-          if (process.env.NODE_ENV === "production") {
+          // The demo runs with NODE_ENV=production and no Resend key on purpose, so
+          // it must log rather than throw — otherwise every sign-in attempt 500s.
+          // Real production still fails loudly on a missing key.
+          if (process.env.NODE_ENV === "production" && !DEMO_MODE_REQUESTED) {
             throw new Error("RESEND_API_KEY is not set; cannot send magic-link emails");
           }
           console.log(`[dev] magic link for ${email}: ${url}`);

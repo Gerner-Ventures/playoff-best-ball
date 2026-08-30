@@ -1,5 +1,6 @@
 import twilio from "twilio";
 import { smsBodyFor, type Notification, type NotifyRecipient } from "./notify";
+import { DEMO_MODE_REQUESTED } from "./demo-mode";
 
 const sid = process.env.TWILIO_ACCOUNT_SID;
 const token = process.env.TWILIO_AUTH_TOKEN;
@@ -13,7 +14,8 @@ export async function sendSmsNotification(
   if (!recipient.phone) throw new Error("sendSmsNotification called without a phone number");
   const body = smsBodyFor(n);
   if (!client || !from) {
-    if (process.env.NODE_ENV === "production") {
+    // See notify-email.ts: the demo runs production NODE_ENV with no outbound keys.
+    if (process.env.NODE_ENV === "production" && !DEMO_MODE_REQUESTED) {
       throw new Error("Twilio env (TWILIO_ACCOUNT_SID/AUTH_TOKEN/FROM_NUMBER) is not set");
     }
     console.log(`[dev] sms ${recipient.phone}: ${body}`);

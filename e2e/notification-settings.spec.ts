@@ -1,11 +1,5 @@
-import { test, expect, type Page } from "@playwright/test";
-
-async function signUp(page: Page, name: string, email: string) {
-  const res = await page.request.post("/api/auth/sign-up/email", {
-    data: { name, email, password: "e2e-password-123" },
-  });
-  expect(res.ok(), `sign-up failed: ${res.status()} ${await res.text()}`).toBeTruthy();
-}
+import { test, expect } from "@playwright/test";
+import { signUp } from "./helpers/auth";
 
 test("saves phone + sms opt-in and persists across reload", async ({ page }) => {
   await signUp(page, "Notify", `notify-${Date.now()}@example.com`);

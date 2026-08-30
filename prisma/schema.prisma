@@ -379,3 +379,22 @@ model MockDraft {
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 }
+
+/// Marks a database as belonging to a DEMO deployment, where email+password
+/// sign-in is allowed. The out-of-band factor in the demo-mode gate: every other
+/// factor (DEMO_MODE, BETTER_AUTH_URL, the Stripe key) lives in the same env
+/// store, so copying one environment's variables wholesale into another would
+/// make all of them agree and all of them be wrong. A row in a specific database
+/// cannot be created by an env misclick.
+///
+/// The migration creates this table everywhere; nothing in the request path ever
+/// writes to it. The row is inserted only by `npm run demo:seed`, which an
+/// operator runs deliberately against the demo database. Production therefore has
+/// the table and zero rows, permanently.
+///
+/// `resetDb()` in tests/helpers/db.ts must NOT delete this — see the note there.
+model DemoEnvironment {
+  id        String   @id @default("singleton")
+  label     String // free text: which demo this is, for operators reading the DB
+  createdAt DateTime @default(now())
+}

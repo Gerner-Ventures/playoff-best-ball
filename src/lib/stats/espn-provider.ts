@@ -4,7 +4,7 @@ import type {
   ProviderPlayerStats,
   ProviderPoolPlayer,
 } from "@/domain/stats/provider";
-import { parseScoreboard, parseGameStats, parseRoster } from "./espn-parse";
+import { parseScoreboard, parseGameStats, parseRoster, toEspnTeam } from "./espn-parse";
 
 const BASE = "https://site.api.espn.com/apis/site/v2/sports/football/nfl";
 
@@ -31,7 +31,9 @@ export class EspnStatsProvider implements StatsProvider {
   }
 
   async fetchTeamRoster(_season: number, team: string): Promise<ProviderPoolPlayer[]> {
-    const data = await getJson(`${BASE}/teams/${team.toLowerCase()}/roster`);
+    // Callers pass our canonical abbreviation; ESPN's URLs want its own.
+    const data = await getJson(`${BASE}/teams/${toEspnTeam(team).toLowerCase()}/roster`);
+    // parseRoster re-canonicalizes, so players still come back tagged WAS/JAX.
     return parseRoster(data, team);
   }
 }

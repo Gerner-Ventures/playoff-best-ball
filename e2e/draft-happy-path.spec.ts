@@ -1,11 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-
-async function signUp(page: Page, name: string, email: string) {
-  const res = await page.request.post("/api/auth/sign-up/email", {
-    data: { name, email, password: "e2e-password-123" },
-  });
-  expect(res.ok(), `sign-up failed: ${res.status()} ${await res.text()}`).toBeTruthy();
-}
+import { signUp } from "./helpers/auth";
 
 test.setTimeout(60_000);
 

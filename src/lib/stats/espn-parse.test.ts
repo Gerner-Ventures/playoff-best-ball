@@ -1,7 +1,10 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { parseScoreboard, parseGameStats, parseRoster } from "./espn-parse";
+import { parseScoreboard, parseGameStats, parseRoster, toEspnTeam, normalizeTeam } from "./espn-parse";
+
+/** Mirrors what the parser stores for an ESPN abbreviation. */
+const normalizeTeamForTest = normalizeTeam;
 
 const fixture = (name: string) =>
   JSON.parse(readFileSync(path.join(__dirname, "../../../tests/fixtures", name), "utf8"));
@@ -251,6 +254,66 @@ describe("parseGameStats — synthetic edge cases", () => {
     const lines = parseGameStats(summary);
     expect(lines.find((l) => l.externalId === "wr1")!.stats.fgMade).toEqual([]);
     expect(lines.find((l) => l.externalId === "k1")!.stats.fgMade).toEqual([45]);
+  });
+
+  it("credits FG plays whose text has leading whitespace", () => {
+    // ESPN emits some drive plays with a leading space (" K.Fairbairn 37 yard
+    // field goal is GOOD, ..."). The kicker regex is anchored, so an untrimmed
+    // match drops those kicks silently: in the real 2024 HOU/LAC wild-card game,
+    // 3 of 5 field goals were lost this way, more than halving both kickers'
+    // scores. Distance drives the points (3/4/5 by range), so this is not cosmetic.
+    const summary = {
+      ...syntheticSummary({
+        categories: [
+          {
+            name: "kicking",
+            labels: ["FG", "XP", "PTS"],
+            athletes: [{ id: "k1", name: "Ka'imi Fairbairn", stats: ["3/3", "2/2", "11"] }],
+          },
+        ],
+      }),
+      drives: {
+        previous: [
+          {
+            plays: [
+              { type: { text: "Field Goal Good" }, text: "K.Fairbairn 41 yard field goal is GOOD", statYardage: 41 },
+              { type: { text: "Field Goal Good" }, text: " K.Fairbairn 37 yard field goal is GOOD", statYardage: 37 },
+              { type: { text: "Field Goal Good" }, text: "  K.Fairbairn 30 yard field goal is GOOD", statYardage: 30 },
+            ],
+          },
+        ],
+      },
+    };
+    const lines = parseGameStats(summary);
+    const kicker = lines.find((l) => l.externalId === "k1")!;
+    expect([...kicker.stats.fgMade].sort((a, b) => a - b)).toEqual([30, 37, 41]);
+  });
+});
+
+describe("toEspnTeam", () => {
+  // The parser canonicalizes ESPN's WSH -> WAS and JAC -> JAX on the way in, so
+  // every abbreviation the app stores and shows is the canonical one. Sending that
+  // back to ESPN's roster endpoint 400s (verified live: /teams/was/roster -> 400,
+  // /teams/wsh/roster -> 200), which failed the whole admin pool sync.
+  it("maps canonical abbreviations back to ESPN's", () => {
+    expect(toEspnTeam("WAS")).toBe("WSH");
+    expect(toEspnTeam("JAX")).toBe("JAC");
+  });
+
+  it("passes through abbreviations that need no translation", () => {
+    for (const team of ["KC", "BUF", "PHI", "LAR"]) expect(toEspnTeam(team)).toBe(team);
+  });
+
+  it("is case-insensitive, since admins type these by hand", () => {
+    expect(toEspnTeam("was")).toBe("WSH");
+  });
+
+  it("round-trips every alias", () => {
+    // Whatever ESPN calls a team, canonicalizing then reversing must return us to
+    // something ESPN accepts, or the pool sync breaks for that team.
+    for (const espn of ["WSH", "JAC"]) {
+      expect(toEspnTeam(normalizeTeamForTest(espn))).toBe(espn);
+    }
   });
 });
 

@@ -1,6 +1,7 @@
 import webpush from "web-push";
 import type { PrismaClient } from "@prisma/client";
 import { smsBodyFor, type Notification, type NotifyRecipient } from "./notify";
+import { DEMO_MODE_REQUESTED } from "./demo-mode";
 
 const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 const privateKey = process.env.VAPID_PRIVATE_KEY;
@@ -30,7 +31,8 @@ export async function sendPushNotification(
 ): Promise<void> {
   if (recipient.pushSubscriptions.length === 0) return;
   if (!configured) {
-    if (process.env.NODE_ENV === "production") {
+    // See notify-email.ts: the demo runs production NODE_ENV with no outbound keys.
+    if (process.env.NODE_ENV === "production" && !DEMO_MODE_REQUESTED) {
       throw new Error("VAPID keys are not set but push subscriptions exist");
     }
     console.log(`[dev] push ${recipient.email}: ${n.subject}`);

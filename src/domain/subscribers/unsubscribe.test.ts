@@ -66,4 +66,19 @@ describe("resubscribeByToken", () => {
     expect(await resubscribeByToken(testDb, { token: r.unsubscribeToken, now: at(5) })).toEqual({ result: "already_active" });
     expect(await resubscribeByToken(testDb, { token: newToken(), now: at(5) })).toEqual({ result: "invalid" });
   });
+
+  it("survives a double-click: one resubscribes, the other is already active, nothing throws", async () => {
+    const r = await row("UNSUBSCRIBED", at(0));
+    const results = await Promise.all([
+      resubscribeByToken(testDb, { token: r.unsubscribeToken, now: at(5) }),
+      resubscribeByToken(testDb, { token: r.unsubscribeToken, now: at(5) }),
+    ]);
+    expect(results.map((x) => x.result).sort()).toEqual(["already_active", "resubscribed"]);
+  });
+
+  it("rejects a PENDING row's token and leaves it PENDING (not a valid transition)", async () => {
+    const r = await row("PENDING");
+    expect(await resubscribeByToken(testDb, { token: r.unsubscribeToken, now: at(5) })).toEqual({ result: "invalid" });
+    expect((await testDb.emailSubscriber.findUniqueOrThrow({ where: { id: r.id } })).status).toBe("PENDING");
+  });
 });

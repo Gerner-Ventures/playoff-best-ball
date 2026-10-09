@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
+import type { PrismaClient } from "@prisma/client";
 import { testDb, resetDb } from "../../../tests/helpers/db";
 import { requestSubscription } from "./subscribe";
 import { confirmSubscription, CONFIRM_TTL_MS } from "./confirm";
@@ -11,6 +12,24 @@ async function pending(email = "fan@example.com") {
   await requestSubscription(testDb, mail.sender, TEST_URLS, { email, source: "footer", now: at(0) });
   const row = await testDb.emailSubscriber.findUniqueOrThrow({ where: { email } });
   return { token: tokenFromEmail(mail.sent[0]), row };
+}
+
+/**
+ * A `db` whose emailSubscriber.findUnique runs `race` right after it resolves, and
+ * before confirmSubscription's own updateMany executes — deterministically
+ * reproducing "something else changes this row between the read and the write".
+ */
+function racingDb(race: () => Promise<unknown>): PrismaClient {
+  return {
+    emailSubscriber: {
+      findUnique: async (args: Parameters<typeof testDb.emailSubscriber.findUnique>[0]) => {
+        const result = await testDb.emailSubscriber.findUnique(args);
+        await race();
+        return result;
+      },
+      updateMany: testDb.emailSubscriber.updateMany.bind(testDb.emailSubscriber),
+    },
+  } as unknown as PrismaClient;
 }
 
 describe("confirmSubscription", () => {
@@ -60,5 +79,13 @@ describe("confirmSubscription", () => {
     await confirmSubscription(testDb, { token, now: at(5) });
     await unsubscribeByToken(testDb, { token: row.unsubscribeToken, now: at(10) });
     expect(await confirmSubscription(testDb, { token, now: at(11) })).toEqual({ result: "invalid" });
+  });
+
+  it("never reports confirmed when an unsubscribe lands between the read and the write", async () => {
+    const { token, row } = await pending();
+    const db = racingDb(() => unsubscribeByToken(testDb, { token: row.unsubscribeToken, now: at(6) }));
+
+    expect(await confirmSubscription(db, { token, now: at(5) })).toEqual({ result: "invalid" });
+    expect((await testDb.emailSubscriber.findUniqueOrThrow({ where: { id: row.id } })).status).toBe("UNSUBSCRIBED");
   });
 });

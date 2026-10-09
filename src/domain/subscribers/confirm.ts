@@ -27,10 +27,17 @@ export async function confirmSubscription(
   if (!row.confirmSentAt || input.now.getTime() - row.confirmSentAt.getTime() > CONFIRM_TTL_MS) {
     return { result: "expired" };
   }
-  // Conditional on PENDING: of two concurrent clicks, exactly one wins.
+  // Conditional on PENDING *and* this token's hash: of two concurrent clicks, exactly one wins.
+  // Binding to the hash also means a concurrent unsubscribe, or a new signup that rotates the
+  // hash, makes this write match nothing — so a raced or stale link can never report "confirmed"
+  // for a row it no longer describes.
   const { count } = await db.emailSubscriber.updateMany({
-    where: { id: row.id, status: "PENDING" },
+    where: { id: row.id, status: "PENDING", confirmTokenHash: hashToken(input.token) },
     data: { status: "ACTIVE", confirmedAt: input.now },
   });
-  return count === 1 ? { result: "confirmed", subscriberId: row.id, source: row.source } : { result: "already_confirmed" };
+  if (count === 1) return { result: "confirmed", subscriberId: row.id, source: row.source };
+  // Lost the race (or never qualified): re-read to report what's actually true now, rather than
+  // assuming the only way to lose is "someone else already confirmed".
+  const current = await db.emailSubscriber.findUnique({ where: { id: row.id } });
+  return current?.status === "ACTIVE" ? { result: "already_confirmed" } : { result: "invalid" };
 }

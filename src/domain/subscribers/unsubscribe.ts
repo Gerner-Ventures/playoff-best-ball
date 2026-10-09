@@ -29,7 +29,9 @@ export type ResubscribeResult =
 /**
  * Undo for a mis-clicked unsubscribe. It goes straight back to ACTIVE with no
  * re-confirmation: the unsubscribe token was only ever sent to this inbox, so
- * holding it proves control of the address.
+ * holding it proves control of the address. Only ever a valid transition from
+ * UNSUBSCRIBED — a PENDING row (whose confirm link may be long expired) is not
+ * silently activated by this token, and a concurrent confirm can't be clobbered.
  */
 export async function resubscribeByToken(
   db: PrismaClient,
@@ -38,10 +40,13 @@ export async function resubscribeByToken(
   if (!isWellFormedToken(input.token)) return { result: "invalid" };
   const row = await db.emailSubscriber.findUnique({ where: { unsubscribeToken: input.token } });
   if (!row) return { result: "invalid" };
-  if (row.status === "ACTIVE") return { result: "already_active" };
-  await db.emailSubscriber.update({
-    where: { id: row.id },
+  // Conditional on UNSUBSCRIBED: of two concurrent clicks, exactly one wins.
+  const { count } = await db.emailSubscriber.updateMany({
+    where: { id: row.id, status: "UNSUBSCRIBED" },
     data: { status: "ACTIVE", unsubscribedAt: null, confirmedAt: row.confirmedAt ?? input.now },
   });
-  return { result: "resubscribed", subscriberId: row.id };
+  if (count === 1) return { result: "resubscribed", subscriberId: row.id };
+  // Lost the race (or never qualified): re-read to report what's actually true now.
+  const current = await db.emailSubscriber.findUnique({ where: { id: row.id } });
+  return current?.status === "ACTIVE" ? { result: "already_active" } : { result: "invalid" };
 }

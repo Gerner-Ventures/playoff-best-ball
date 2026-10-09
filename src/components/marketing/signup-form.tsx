@@ -14,12 +14,11 @@ export function SignupForm({
   cta?: string;
   compact?: boolean;
 }) {
-  const [email, setEmail] = useState("");
-  const [honeypot, setHoneypot] = useState("");
   const [state, setState] = useState<"idle" | "busy" | "sent">("idle");
   const [error, setError] = useState<string | null>(null);
   const successRef = useRef<HTMLParagraphElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
+  const honeypotRef = useRef<HTMLInputElement>(null);
   // True only once hydrated, so the submit button stays disabled for a pre-hydration
   // native form submit — one that `onSubmit` never gets a chance to intercept and that
   // would otherwise navigate the page away and lose the typed email.
@@ -37,10 +36,19 @@ export function SignupForm({
     if (state === "sent") successRef.current?.focus();
   }, [state]);
 
+  // Runs only once `error` becomes non-null, after the render that sets
+  // `aria-invalid`/`aria-describedby` on the input — focusing inside submit()
+  // instead would move focus before those attributes exist on the DOM node.
+  useEffect(() => {
+    if (error) emailRef.current?.focus();
+  }, [error]);
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setState("busy");
     setError(null);
+    const email = emailRef.current?.value ?? "";
+    const honeypot = honeypotRef.current?.value ?? "";
     try {
       const res = await fetch("/api/subscribe", {
         method: "POST",
@@ -54,10 +62,8 @@ export function SignupForm({
       }
       const body = await res.json().catch(() => ({}));
       setError(body.error ?? "Something went wrong. Try again.");
-      emailRef.current?.focus();
     } catch {
       setError("Couldn't reach the server. Check your connection and try again.");
-      emailRef.current?.focus();
     }
     setState("idle");
   }
@@ -81,13 +87,13 @@ export function SignupForm({
         <input
           ref={emailRef}
           id={id}
+          name="email"
           type="email"
           required
           autoComplete="email"
           placeholder="you@example.com"
           className="input sm:max-w-sm"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          defaultValue=""
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? errorId : undefined}
         />
@@ -95,7 +101,7 @@ export function SignupForm({
         <div aria-hidden="true" className="absolute -left-[9999px] h-px w-px overflow-hidden">
           <label>
             Leave this empty
-            <input tabIndex={-1} autoComplete="off" value={honeypot} onChange={(e) => setHoneypot(e.target.value)} name="website" />
+            <input ref={honeypotRef} tabIndex={-1} autoComplete="off" defaultValue="" name="website" />
           </label>
         </div>
         {/* Disabled until hydrated: a pre-hydration native submit can't be intercepted by

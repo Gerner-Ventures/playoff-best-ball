@@ -20,6 +20,7 @@ test("the footer signup confirms by email and stores a pending, lowercased addre
   const email = uniqueEmail("Footer");
   await page.goto("/");
   const footer = page.getByRole("contentinfo");
+  await expect(footer.getByRole("button", { name: /get the weekly digest/i })).toBeEnabled();
   await footer.getByLabel(/email address/i).fill(`  ${email.toUpperCase()}  `);
   await footer.getByRole("button", { name: /get the weekly digest/i }).click();
   // Covers a cold compile plus the form's 1.2s padding.

@@ -34,5 +34,10 @@ if (!key || !host) {
     capture_exceptions: true,
     debug: process.env.NODE_ENV === "development",
     before_send: beforeSend,
+    // The app uses no PostHog feature flags, and the /flags request itself sends
+    // person_properties (including $initial_current_url, which can carry a confirm/
+    // unsubscribe token on a device's first visit) straight to PostHog — before_send
+    // never sees that request, so scrubTokens can't scrub it. Skip the request entirely.
+    advanced_disable_flags: true,
   });
 }

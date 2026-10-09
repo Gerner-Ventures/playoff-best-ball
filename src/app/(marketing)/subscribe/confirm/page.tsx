@@ -38,7 +38,8 @@ export default async function ConfirmPage({
       <p className="mt-3 text-ink-soft">
         Confirm you want the weekly playoff-race digest and a heads-up when it&apos;s time to set up your league.
       </p>
-      <form method="post" action="/api/subscribe/confirm" className="mt-6">
+      {/* ph-no-capture: the hidden token input must never land in a session recording. */}
+      <form method="post" action="/api/subscribe/confirm" className="mt-6 ph-no-capture">
         <input type="hidden" name="token" value={token} />
         <button type="submit" className="btn btn-primary">
           Confirm my email

@@ -32,7 +32,8 @@ export default async function UnsubscribePage({
       <Section className="max-w-2xl pt-16">
         <h1 className="text-3xl font-semibold">You&apos;re unsubscribed</h1>
         <p className="mt-3 text-ink-soft">You won&apos;t get the weekly digest anymore. Clicked by mistake?</p>
-        <form method="post" action="/api/unsubscribe/undo" className="mt-6">
+        {/* ph-no-capture: the hidden token input must never land in a session recording. */}
+        <form method="post" action="/api/unsubscribe/undo" className="mt-6 ph-no-capture">
           <input type="hidden" name="token" value={token} />
           <button type="submit" className="btn">
             Resubscribe
@@ -54,7 +55,8 @@ export default async function UnsubscribePage({
   return (
     <Section className="max-w-2xl pt-16">
       <h1 className="text-3xl font-semibold">Unsubscribe from the weekly digest?</h1>
-      <form method="post" action="/api/unsubscribe" className="mt-6">
+      {/* ph-no-capture: the hidden token input must never land in a session recording. */}
+      <form method="post" action="/api/unsubscribe" className="mt-6 ph-no-capture">
         <input type="hidden" name="token" value={token} />
         <button type="submit" className="btn btn-primary">
           Unsubscribe

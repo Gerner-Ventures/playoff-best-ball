@@ -3,8 +3,9 @@
 // hours long, deadlines don't need sub-minute precision, and walking avoids hand-rolled
 // timezone math (Intl handles ET, including DST if a draft ever runs outside January).
 
-const PAUSE_START_HOUR_ET = 1; // inclusive
-const PAUSE_END_HOUR_ET = 8; // exclusive
+// Exported so marketing copy can state the pause window without hand-typing it.
+export const PAUSE_START_HOUR_ET = 1; // inclusive
+export const PAUSE_END_HOUR_ET = 8; // exclusive
 const MINUTE_MS = 60_000;
 
 const etHour = new Intl.DateTimeFormat("en-US", {

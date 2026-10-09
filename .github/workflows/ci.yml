@@ -41,11 +41,13 @@ jobs:
           DATABASE_URL: postgresql://pbb:pbb@localhost:5433/pbb_test
           SHADOW_DATABASE_URL: postgresql://pbb:pbb@localhost:5433/pbb_shadow
       - run: npm run lint
+      - run: npm run check:contrast
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
         env:
           DATABASE_URL: postgresql://pbb:pbb@localhost:5433/pbb_test
           BETTER_AUTH_SECRET: ci-secret-0123456789abcdef0123456789abcdef
+      - run: npm run check:static
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e

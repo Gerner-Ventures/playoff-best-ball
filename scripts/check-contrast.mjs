@@ -82,6 +82,17 @@ for (const [theme, T] of [["light", LIGHT], ["dark", DARK]]) {
   check(theme, "brand-on over brand fill", T["brand-on"], T.brand, 4.5);
   check(theme, "good on surface", T.good, T.surface, 4.5);
   check(theme, "warn on surface", T.warn, T.surface, 4.5);
+  // Errors (failed sends, invalid input). Amber --warn reads as a warning, not a failure.
+  check(theme, "bad on surface", T.bad, T.surface, 4.5);
+  check(theme, "bad on ground", T.bad, T.ground, 4.5);
+  // The hovered primary button's label, a pair the gate previously skipped.
+  check(theme, "brand-on over brand-hover fill", T["brand-on"], T["brand-hover"], 4.5);
+  // Text inside tinted callouts (marketing key dates, on-clock banners).
+  check(theme, "ink on brand-tint", T.ink, T["brand-tint"], 4.5);
+  check(theme, "ink-soft on brand-tint", T["ink-soft"], T["brand-tint"], 4.5);
+  check(theme, "brand on brand-tint", T.brand, T["brand-tint"], 4.5);
+  // 1.4.11: link focus ring on the page ground.
+  check(theme, "brand focus ring on ground", T.brand, T.ground, 3);
 
   // 1.4.11: a control's own boundary must clear 3:1. --rule is a divider and is
   // deliberately exempt — it is never the only thing identifying a control.

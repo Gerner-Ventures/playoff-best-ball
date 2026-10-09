@@ -204,6 +204,39 @@ subdomain, so that complaints about marketing mail cannot hurt magic-link delive
    "Unsubscribe" link next to the sender (that is the `List-Unsubscribe` header
    working).
 
+### Signup rate limit (Vercel Firewall)
+
+The signup form is public once the marketing pages deploy. The app already limits
+confirmation emails to one per address per 10 minutes. This rule stops floods of *new*
+addresses from one IP.
+
+The team is on Vercel **Pro** (checked 2026-10-09). In the Vercel dashboard:
+
+1. Open the project → Firewall → Rules → New rule.
+2. Name it "Subscribe rate limit". Condition: Request Path equals `/api/subscribe` AND
+   Method equals `POST`.
+3. Then: Rate Limit, fixed window 60 s, 10 requests, keyed by IP, action Deny (429).
+4. Confirm the Rate Limit action is offered. If it isn't, skip this step; the
+   per-address throttle still applies.
+5. Smoke test: 11 quick POSTs to `/api/subscribe` from one IP, each with an invalid
+   `{}` JSON body (never a real-looking address) — the first 10 return 400 from the
+   zod parse, and the 11th returns 429 from the firewall rule before the route ever
+   runs.
+
+### Before the marketing pages (PR 2) deploy
+
+1. `news.playoffbestball.com` is verified in Resend.
+2. `MARKETING_FROM_EMAIL` is set in production.
+3. The "Subscribe rate limit" Firewall rule is created, or it's confirmed the Rate
+   Limit action isn't offered.
+4. PostHog session replay is effectively off while `advanced_disable_flags` is set
+   in `instrumentation-client.ts` (it disables remote config, which replay needs to
+   start). Turning replay on requires removing that option; once it's removed, the
+   `ph-no-capture` classes on the token forms (`subscribe/confirm`, `unsubscribe`)
+   keep the hidden token values out of recordings.
+
+Until items 1 and 2 are done, every signup returns 502 by design.
+
 ## 7. OAuth
 
 - **Google (now):** create an OAuth client in Google Cloud Console with authorized

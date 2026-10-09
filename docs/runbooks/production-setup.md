@@ -67,6 +67,7 @@ integrations from earlier ones.
 | `BETTER_AUTH_SECRET` | Generate: `openssl rand -base64 32` |
 | `BETTER_AUTH_URL` | The deployment URL — `https://<app>.vercel.app` for the beta |
 | `RESEND_API_KEY` | Resend dashboard (step 6). Production **throws** on magic-link/notification sends without it |
+| `MARKETING_FROM_EMAIL` | List mail sender on the news subdomain, e.g. `Playoff Best Ball <hello@news.playoffbestball.com>` (step 6). Without it, production signups return 502 — the subscribe form is broken |
 | `STRIPE_SECRET_KEY` | Stripe **test** key for the beta (step 5); live key at launch |
 | `STRIPE_WEBHOOK_SECRET` | From the Stripe webhook endpoint (step 5) |
 | `ADMIN_EMAILS` | Comma-separated operator emails — unlocks `/admin` (case-insensitive match) |
@@ -179,6 +180,29 @@ flow; checkout is server-created and hosted. It is kept in sync out of tidiness 
 > both `MAGIC_LINK_FROM_EMAIL` and `NOTIFY_FROM_EMAIL` with addresses on a domain you
 > control and have verified. Unverified From domains = Resend rejects the send = nobody
 > can sign in. At launch, swap to the real domain and update/unset both overrides.
+
+### Marketing sender (news subdomain)
+
+List mail (signup confirmations now, the weekly digest later) sends from its own
+subdomain, so that complaints about marketing mail cannot hurt magic-link delivery on
+`transactional.`.
+
+1. In Resend → Domains, add `news.playoffbestball.com`. Add the SPF and DKIM records
+   it shows in Route 53. If Resend doesn't list a DMARC record, add one yourself:
+   `_dmarc.news.playoffbestball.com` TXT `v=DMARC1; p=none;` (Gmail and Yahoo's
+   bulk-sender rules require DMARC, not just SPF/DKIM). Wait for "Verified".
+2. Set `MARKETING_FROM_EMAIL=Playoff Best Ball <hello@news.playoffbestball.com>` in Doppler
+   (it syncs to Vercel). The confirm and unsubscribe links inside list emails are built
+   from `BETTER_AUTH_URL`. Until launch that's still the `https://<app>.vercel.app`
+   placeholder (§3), so those links won't match the `news.` sending domain — that's
+   expected for the beta. The "Real domain" step in the launch checklist, which moves
+   `BETTER_AUTH_URL` to the production domain, fixes this; don't change `BETTER_AUTH_URL`
+   early just for this.
+3. Smoke test (do this after the marketing pages (PR 2) deploy, since the smoke test
+   needs the footer form): submit the footer form on production with an address you
+   control. The email should arrive from `news.`, and Gmail should show an
+   "Unsubscribe" link next to the sender (that is the `List-Unsubscribe` header
+   working).
 
 ## 7. OAuth
 

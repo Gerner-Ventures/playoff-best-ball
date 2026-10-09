@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { formatPriceUsd, PREMIUM_PRICE_CENTS } from "../src/lib/pricing";
 
 const PAGES = [
   { path: "/how-it-works", h1: /how playoff best ball works/i, title: /How it works · Playoff Best Ball/ },
@@ -33,5 +34,6 @@ test("scoring shows the preset values from the engine", async ({ page }) => {
 test("faq answers quote the real dates and price", async ({ page }) => {
   await page.goto("/faq");
   await expect(page.getByText(/Sun, Jan 10/).first()).toBeVisible();
-  await expect(page.getByText(/\$25 per league, per season/)).toBeVisible();
+  const price = formatPriceUsd(PREMIUM_PRICE_CENTS);
+  await expect(page.getByText(`${price} per league, per season`)).toBeVisible();
 });

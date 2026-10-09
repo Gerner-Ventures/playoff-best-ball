@@ -22,7 +22,8 @@ test("the footer signup confirms by email and stores a pending, lowercased addre
   const footer = page.getByRole("contentinfo");
   await footer.getByLabel(/email address/i).fill(`  ${email.toUpperCase()}  `);
   await footer.getByRole("button", { name: /get the weekly digest/i }).click();
-  await expect(footer.getByText(/check your inbox/i)).toBeVisible();
+  // Covers a cold compile plus the form's 1.2s padding.
+  await expect(footer.getByText(/check your inbox/i)).toBeVisible({ timeout: 15_000 });
   await expect(footer.getByRole("status")).toBeFocused();
 
   const row = await testDb.emailSubscriber.findUniqueOrThrow({ where: { email: email.toLowerCase() } });

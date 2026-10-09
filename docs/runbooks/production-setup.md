@@ -218,7 +218,21 @@ The team is on Vercel **Pro** (checked 2026-10-09). In the Vercel dashboard:
 3. Then: Rate Limit, fixed window 60 s, 10 requests, keyed by IP, action Deny (429).
 4. Confirm the Rate Limit action is offered. If it isn't, skip this step; the
    per-address throttle still applies.
-5. Smoke test: 11 quick POSTs from one IP; the 11th returns 429.
+5. Smoke test: 11 quick POSTs to `/api/subscribe` from one IP, each with an invalid
+   `{}` JSON body (never a real-looking address) — the first 10 return 400 from the
+   zod parse, and the 11th returns 429 from the firewall rule before the route ever
+   runs.
+
+### Before the marketing pages (PR 2) deploy
+
+1. `news.playoffbestball.com` is verified in Resend.
+2. `MARKETING_FROM_EMAIL` is set in production.
+3. The "Subscribe rate limit" Firewall rule is created, or it's confirmed the Rate
+   Limit action isn't offered.
+4. PostHog session replay is either off, or confirmed to honour `ph-no-capture` on
+   the token pages.
+
+Until items 1 and 2 are done, every signup returns 502 by design.
 
 ## 7. OAuth
 

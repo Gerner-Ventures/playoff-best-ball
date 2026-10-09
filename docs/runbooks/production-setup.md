@@ -187,13 +187,19 @@ List mail (signup confirmations now, the weekly digest later) sends from its own
 subdomain, so that complaints about marketing mail cannot hurt magic-link delivery on
 `transactional.`.
 
-1. In Resend → Domains, add `news.playoffbestball.com`. Add the SPF, DKIM and DMARC
-   records it shows in Route 53, then wait for "Verified".
+1. In Resend → Domains, add `news.playoffbestball.com`. Add the SPF and DKIM records
+   it shows in Route 53. If Resend doesn't list a DMARC record, add one yourself:
+   `_dmarc.news.playoffbestball.com` TXT `v=DMARC1; p=none;` (Gmail and Yahoo's
+   bulk-sender rules require DMARC, not just SPF/DKIM). Wait for "Verified".
 2. Set `MARKETING_FROM_EMAIL=Playoff Best Ball <hello@news.playoffbestball.com>` in Doppler
-   (it syncs to Vercel).
-3. Smoke test: submit the footer form on production with an address you control. The
-   email should arrive from `news.`, and Gmail should show an "Unsubscribe" link next to
-   the sender (that is the `List-Unsubscribe` header working).
+   (it syncs to Vercel). The confirm and unsubscribe links inside list emails are built
+   from `BETTER_AUTH_URL`, so it must already be the production domain for those links
+   to match the sending domain.
+3. Smoke test (do this after the marketing pages (PR 2) deploy, since the smoke test
+   needs the footer form): submit the footer form on production with an address you
+   control. The email should arrive from `news.`, and Gmail should show an
+   "Unsubscribe" link next to the sender (that is the `List-Unsubscribe` header
+   working).
 
 ## 7. OAuth
 

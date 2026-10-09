@@ -24,14 +24,16 @@ export async function ensureAccountSubscriber(
     if (byEmail.userId && byEmail.userId !== user.id) return null;
     // Conditional writes: a concurrent unsubscribe (or confirm) between this read and
     // these writes must not be clobbered. Link only if still unlinked, and only flip
-    // PENDING -> ACTIVE if the row is still PENDING at write time (signing in proves
-    // the address, so no confirm click is needed) — then re-read to report the truth.
+    // PENDING -> ACTIVE if the row is still PENDING *and has never been unsubscribed*
+    // at write time (signing in proves the address, so no confirm click is needed —
+    // but it is not a fresh opt-in, so it must not undo a prior unsubscribe that a
+    // resubmitted form put back into PENDING) — then re-read to report the truth.
     await db.emailSubscriber.updateMany({
       where: { id: byEmail.id, userId: null },
       data: { userId: user.id },
     });
     await db.emailSubscriber.updateMany({
-      where: { id: byEmail.id, status: "PENDING" },
+      where: { id: byEmail.id, status: "PENDING", unsubscribedAt: null },
       data: { status: "ACTIVE", confirmedAt: now },
     });
     const current = await db.emailSubscriber.findUnique({ where: { id: byEmail.id } });

@@ -50,7 +50,7 @@ export async function requestSubscription(
       }
       throw err;
     }
-    await sendOrRollBack(db, sender, urls, created, token, null);
+    await sendOrRollBack(db, sender, urls, created, token, null, "PENDING");
     return { outcome: "sent", subscriberId: created.id };
   }
 
@@ -67,6 +67,7 @@ export async function requestSubscription(
   //     updates zero rows instead of rotating a second token no one will get.
   const token = newToken();
   const previousSentAt = existing.confirmSentAt;
+  const previousStatus = existing.status;
   const throttleCutoff = new Date(input.now.getTime() - RESEND_THROTTLE_MS);
   const { count } = await db.emailSubscriber.updateMany({
     where: {
@@ -88,7 +89,7 @@ export async function requestSubscription(
 
   // email and unsubscribeToken are immutable, so `existing` (read before the write) is still
   // correct to send from.
-  await sendOrRollBack(db, sender, urls, existing, token, previousSentAt);
+  await sendOrRollBack(db, sender, urls, existing, token, previousSentAt, previousStatus);
   return { outcome: "sent", subscriberId: existing.id };
 }
 
@@ -99,6 +100,7 @@ async function sendOrRollBack(
   row: EmailSubscriber,
   token: string,
   previousSentAt: Date | null,
+  previousStatus: EmailSubscriber["status"],
 ): Promise<void> {
   try {
     await sender.send(
@@ -113,11 +115,14 @@ async function sendOrRollBack(
     // Un-stamp the send, so the throttle doesn't block an immediate retry of mail that never left.
     // Scoped to *this* request's own token: if a concurrent resend for the same row already
     // rotated confirmTokenHash again (e.g. its own send succeeded), that newer stamp belongs to
-    // mail that did go out, and this rollback must not clobber it.
+    // mail that did go out, and this rollback must not clobber it. Also restores the row's
+    // previous status: a failed resend of a once-UNSUBSCRIBED row must leave it UNSUBSCRIBED,
+    // not stranded in PENDING with unsubscribedAt still set (which would let a later signup or
+    // confirm resubscribe it without re-proving consent).
     try {
       await db.emailSubscriber.updateMany({
         where: { id: row.id, confirmTokenHash: hashToken(token) },
-        data: { confirmSentAt: previousSentAt },
+        data: { confirmSentAt: previousSentAt, status: previousStatus },
       });
     } catch (rollbackErr) {
       // The send already failed; a DB hiccup on the rollback must not hide that from the caller.

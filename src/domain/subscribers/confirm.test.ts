@@ -81,6 +81,25 @@ describe("confirmSubscription", () => {
     expect(await confirmSubscription(testDb, { token, now: at(11) })).toEqual({ result: "invalid" });
   });
 
+  it("clears a stale unsubscribedAt when a resubmitted address re-confirms", async () => {
+    const email = "gone@example.com";
+    await testDb.emailSubscriber.create({
+      data: { email, source: "footer", status: "UNSUBSCRIBED", unsubscribeToken: newToken(), unsubscribedAt: at(0) },
+    });
+    const mail = fakeSender();
+    await requestSubscription(testDb, mail.sender, TEST_URLS, { email, source: "footer", now: at(1) });
+    const token = tokenFromEmail(mail.sent[0]);
+    const row = await testDb.emailSubscriber.findUniqueOrThrow({ where: { email } });
+    expect(row).toMatchObject({ status: "PENDING" });
+    expect(row.unsubscribedAt).not.toBeNull();
+
+    const outcome = await confirmSubscription(testDb, { token, now: at(5) });
+
+    expect(outcome).toMatchObject({ result: "confirmed" });
+    const after = await testDb.emailSubscriber.findUniqueOrThrow({ where: { id: row.id } });
+    expect(after).toMatchObject({ status: "ACTIVE", unsubscribedAt: null });
+  });
+
   it("never reports confirmed when an unsubscribe lands between the read and the write", async () => {
     const { token, row } = await pending();
     const db = racingDb(() => unsubscribeByToken(testDb, { token: row.unsubscribeToken, now: at(6) }));

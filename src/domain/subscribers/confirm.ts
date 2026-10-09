@@ -30,10 +30,12 @@ export async function confirmSubscription(
   // Conditional on PENDING *and* this token's hash: of two concurrent clicks, exactly one wins.
   // Binding to the hash also means a concurrent unsubscribe, or a new signup that rotates the
   // hash, makes this write match nothing — so a raced or stale link can never report "confirmed"
-  // for a row it no longer describes.
+  // for a row it no longer describes. Clearing unsubscribedAt too: a confirm click re-proves
+  // consent, so a row that was once UNSUBSCRIBED and then resubmitted through the form must not
+  // carry that stale flag onto this freshly-reconfirmed ACTIVE row.
   const { count } = await db.emailSubscriber.updateMany({
     where: { id: row.id, status: "PENDING", confirmTokenHash: hashToken(input.token) },
-    data: { status: "ACTIVE", confirmedAt: input.now },
+    data: { status: "ACTIVE", confirmedAt: input.now, unsubscribedAt: null },
   });
   if (count === 1) return { result: "confirmed", subscriberId: row.id, source: row.source };
   // Lost the race (or never qualified): re-read to report what's actually true now, rather than

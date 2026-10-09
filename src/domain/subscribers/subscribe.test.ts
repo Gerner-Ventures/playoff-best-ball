@@ -122,4 +122,27 @@ describe("requestSubscription", () => {
     expect(row.status).toBe("PENDING");
     expect(row.confirmSentAt?.getTime()).toBe(at(0).getTime());
   });
+
+  it("rolls back status too: a failed resend of an UNSUBSCRIBED row stays UNSUBSCRIBED", async () => {
+    await testDb.emailSubscriber.create({
+      data: {
+        email: "gone@example.com",
+        source: "footer",
+        status: "UNSUBSCRIBED",
+        unsubscribeToken: newToken(),
+        confirmSentAt: at(0),
+        unsubscribedAt: at(0),
+      },
+    });
+    const mail = fakeSender();
+    mail.failNext();
+    // Past the throttle window so the resend is eligible to go out (and fail).
+    const sent = subscribe(mail.sender, "gone@example.com", 11);
+
+    await expect(sent).rejects.toBeInstanceOf(ConfirmationEmailFailedError);
+
+    const row = await testDb.emailSubscriber.findUniqueOrThrow({ where: { email: "gone@example.com" } });
+    expect(row.status).toBe("UNSUBSCRIBED");
+    expect(row.confirmSentAt?.getTime()).toBe(at(0).getTime());
+  });
 });

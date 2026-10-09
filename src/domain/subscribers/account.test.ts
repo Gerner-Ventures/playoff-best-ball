@@ -4,7 +4,8 @@ import { testDb, resetDb, createTestUser } from "../../../tests/helpers/db";
 import { ensureAccountSubscriber, getDigestPreference, setDigestPreference } from "./account";
 import { newToken } from "./tokens";
 import { unsubscribeByToken } from "./unsubscribe";
-import { at } from "./test-support";
+import { requestSubscription } from "./subscribe";
+import { at, fakeSender, TEST_URLS } from "./test-support";
 
 async function formRow(email: string, status: "PENDING" | "ACTIVE" | "UNSUBSCRIBED") {
   return testDb.emailSubscriber.create({ data: { email, source: "footer", status, unsubscribeToken: newToken() } });
@@ -64,6 +65,37 @@ describe("ensureAccountSubscriber", () => {
     await formRow(user.email.toLowerCase(), "UNSUBSCRIBED");
     const row = await ensureAccountSubscriber(testDb, user);
     expect(row).toMatchObject({ userId: user.id, status: "UNSUBSCRIBED" });
+  });
+
+  it("links a prior ACTIVE form row, keeping both its status and its source", async () => {
+    const user = await createTestUser("Active");
+    await formRow(user.email.toLowerCase(), "ACTIVE");
+    const row = await ensureAccountSubscriber(testDb, user);
+    expect(row).toMatchObject({ userId: user.id, status: "ACTIVE", source: "footer" });
+  });
+
+  it("never resubscribes without re-consent: a form resignup after an unsubscribe stays PENDING on sign-in", async () => {
+    const user = await createTestUser("Resignup");
+    const email = user.email.toLowerCase();
+    await testDb.emailSubscriber.create({
+      data: { email, source: "footer", status: "UNSUBSCRIBED", unsubscribeToken: newToken(), unsubscribedAt: at(0) },
+    });
+
+    // Someone (anyone) resubmits the address through the form; it goes back to PENDING,
+    // but unsubscribedAt is left behind on the row until a confirm click clears it.
+    const mail = fakeSender();
+    await requestSubscription(testDb, mail.sender, TEST_URLS, { email, source: "footer", now: at(1) });
+    const resubmitted = await testDb.emailSubscriber.findUniqueOrThrow({ where: { email } });
+    expect(resubmitted).toMatchObject({ status: "PENDING" });
+    expect(resubmitted.unsubscribedAt).not.toBeNull();
+
+    const row = await ensureAccountSubscriber(testDb, { id: user.id, email }, at(2));
+
+    // Signing in links the row, but must not activate it — that would undo the
+    // unsubscribe without the address ever re-proving consent via a confirm click.
+    expect(row).toMatchObject({ userId: user.id, status: "PENDING" });
+    const after = await testDb.emailSubscriber.findUniqueOrThrow({ where: { email } });
+    expect(after).toMatchObject({ userId: user.id, status: "PENDING" });
   });
 
   it("leaves an address held by a different account alone", async () => {

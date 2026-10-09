@@ -4,6 +4,7 @@ import { magicLink } from "better-auth/plugins/magic-link";
 import { Resend } from "resend";
 import { db } from "./db";
 import { DEMO_MODE_REQUESTED } from "./demo-mode";
+import { ensureAccountSubscriber } from "@/domain/subscribers/account";
 
 if (process.env.GOOGLE_CLIENT_ID && !process.env.GOOGLE_CLIENT_SECRET) {
   throw new Error("GOOGLE_CLIENT_ID is set but GOOGLE_CLIENT_SECRET is missing");
@@ -16,6 +17,23 @@ const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KE
 
 export const auth = betterAuth({
   database: prismaAdapter(db, { provider: "postgresql" }),
+
+  // Account holders are on the weekly digest by default (marketing spec §5.5). Never
+  // allowed to fail sign-up: a missing row is repaired when the notification settings
+  // page loads, and piece 3's digest sender backfills before each send.
+  databaseHooks: {
+    user: {
+      create: {
+        after: async (user) => {
+          try {
+            await ensureAccountSubscriber(db, { id: user.id, email: user.email });
+          } catch (err) {
+            console.error(`[subscribers] could not create the digest row for user ${user.id}`, err);
+          }
+        },
+      },
+    },
+  },
 
   // Password auth exists for two callers that have no inbox: Playwright, and the
   // demo deployment. This only MOUNTS the endpoints — reaching them additionally

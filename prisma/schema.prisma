@@ -46,9 +46,11 @@ model Account {
   id                    String    @id
   accountId             String
   providerId            String
-  // better-auth 1.7 scopes account identity by issuer: `local:credential` for
-  // password/magic-link accounts, `local:oauth:<providerId>` for social.
-  issuer                String
+  // Vestigial. better-auth 1.7.0–1.7.2 wrote an issuer here; 1.7.3 dropped it and
+  // went back to identifying accounts by (providerId, accountId). Nothing reads or
+  // writes it now. Kept nullable rather than dropped so a rollback to a 1.7.2
+  // build still finds it — see 20261009000000_relax_account_issuer.
+  issuer                String?
   userId                String
   user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   accessToken           String?
@@ -61,7 +63,6 @@ model Account {
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
-  @@unique([issuer, accountId])
   @@index([userId])
   @@map("account")
 }
@@ -174,7 +175,12 @@ model Player {
 
   @@unique([season, name, position])
   @@index([season, position])
-  @@index([season, defaultRank])
+  // Unique, not just indexed: autodraft picks by `orderBy: defaultRank asc` with no
+  // tiebreak, so two players sharing a rank makes the board depend on undefined
+  // ordering. The code already assumed this — applyDefaultRanks' offset shuffle
+  // exists because of it — but nothing enforced it, which is how a fixture player
+  // ended up tied with a real one at rank 7 and draftable in round 1.
+  @@unique([season, defaultRank])
 }
 
 enum DraftStatus {

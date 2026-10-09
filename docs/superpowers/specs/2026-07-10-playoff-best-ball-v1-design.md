@@ -152,6 +152,16 @@ Premium upgrade via Stripe hosted checkout at gate moments or from league settin
 
 ## 11. Open items
 
-- Product name and domain (currently "Playoff Best Ball"; decide before launch marketing, not before implementation)
-- Exact Premium price point ($20–30 range; A/B or just pick $25 at Stripe setup time)
-- Ad network choice for the single free-tier ad slot (decide in Phase 4; AdSense is the default assumption)
+**Settled since approval:**
+
+- **Product name and domain** — "Playoff Best Ball" on `playoffbestball.com`, live in
+  production. Transactional mail sends from `auth@transactional.playoffbestball.com`,
+  verified in Resend.
+- **Premium price** — $25, config-driven via `PREMIUM_PRICE_CENTS` (default `2500`).
+  `src/lib/pricing.ts` is the single source the pricing page and gates both read.
+
+**Still open:**
+
+- Ad network for the free-tier slot. Deferred rather than decided: the 2026-07-13
+  decision was **no ads this season**, so `NEXT_PUBLIC_ADSENSE_CLIENT`/`_SLOT` stay
+  unset and the slot renders nothing. Revisit only if a second season justifies it.

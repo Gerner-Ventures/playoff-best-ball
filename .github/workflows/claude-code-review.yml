@@ -12,11 +12,11 @@ on:
 
 jobs:
   claude-review:
-    # Optional: Filter by PR author
-    # if: |
-    #   github.event.pull_request.user.login == 'external-contributor' ||
-    #   github.event.pull_request.user.login == 'new-developer' ||
-    #   github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR'
+    # Skip Dependabot's own pushes: the action refuses bot actors ("Workflow
+    # initiated by non-human actor"), so those runs only ever fail. Keyed on the
+    # actor rather than the PR author, so a human commit on a Dependabot PR — a
+    # fix for a breaking bump — still gets reviewed.
+    if: github.actor != 'dependabot[bot]'
 
     runs-on: ubuntu-latest
     permissions:

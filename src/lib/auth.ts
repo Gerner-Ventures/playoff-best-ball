@@ -16,11 +16,6 @@ const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KE
 
 export const auth = betterAuth({
   database: prismaAdapter(db, { provider: "postgresql" }),
-  // No account.identityStrategy here on purpose: 1.7.2 does not expose that option
-  // (the upgrade guide describes it, the shipped types don't have it). The defaults
-  // already write the issuers we want — `local:credential` for password/magic-link
-  // accounts and `local:oauth:<providerId>` for social — which is what the
-  // 20260830000000_account_issuer backfill reproduces for pre-1.7 rows.
 
   // Password auth exists for two callers that have no inbox: Playwright, and the
   // demo deployment. This only MOUNTS the endpoints — reaching them additionally
@@ -61,7 +56,6 @@ export const auth = betterAuth({
           return;
         }
         const { error } = await resend.emails.send({
-          // TODO: finalize sending domain before launch (spec open item: product name/domain)
           // `||` not `??`: the var ships as "" in .env.example, and an empty
           // string is a defined value, so `??` would pass from: "" to Resend.
           from: process.env.MAGIC_LINK_FROM_EMAIL || "Playoff Best Ball <auth@transactional.playoffbestball.com>",

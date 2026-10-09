@@ -1,0 +1,616 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Cobalt system — draft room preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================================
+   TOKENS AND PRIMITIVES — copied verbatim from src/app/globals.css.
+   Every hex below is the one that ships. Do not "improve" them here; edit the
+   real file and re-copy, or this preview stops being evidence.
+   ========================================================================= */
+:root {
+  --surface: #ffffff;
+  --ground: #f7f8fa;
+  --ink: #14161c;
+  --ink-soft: #3c424e;
+  --ink-muted: #5c6270;
+  --rule: #e3e6ec;
+  --border-control: #858fa0;
+
+  --brand: #1b4fe8;
+  --brand-hover: #1740c4;
+  --brand-tint: #edf1fe;
+  --brand-on: #ffffff;
+
+  --good: #0f7a52;
+  --warn: #b45309;
+  --out: #5c6270;
+
+  --pos-qb: #6d28d9;  --pos-qb-tint: #f0eafb;
+  --pos-rb: #047857;  --pos-rb-tint: #e6f2ee;
+  --pos-wr: #b03d0b;  --pos-wr-tint: #f7ece7;
+  --pos-te: #a21caf;  --pos-te-tint: #f6e8f7;
+  --pos-k: #0e7490;   --pos-k-tint: #e7f1f4;
+  --pos-dst: #52525b; --pos-dst-tint: #eeeeef;
+}
+
+.theme-dark {
+  color-scheme: dark;
+  background-color: var(--ground);
+  color: var(--ink);
+
+  --surface: #16181d;
+  --ground: #0e1014;
+  --ink: #eceef3;
+  --ink-soft: #b4bac6;
+  --ink-muted: #858c9b;
+  --rule: #2a2e37;
+  --border-control: #606875;
+
+  --brand: #6b9bff;
+  --brand-hover: #8db1ff;
+  --brand-tint: #182238;
+  --brand-on: #0e1014;
+
+  --good: #34d399;
+  --warn: #fbbf24;
+  --out: #858c9b;
+
+  --pos-qb: #a78bfa;  --pos-qb-tint: #2c293e;
+  --pos-rb: #34d399;  --pos-rb-tint: #1a3430;
+  --pos-wr: #fb923c;  --pos-wr-tint: #382a22;
+  --pos-te: #e879f9;  --pos-te-tint: #36273e;
+  --pos-k: #22d3ee;   --pos-k-tint: #18343c;
+  --pos-dst: #a1a1aa; --pos-dst-tint: #2b2d32;
+}
+
+.tabular {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.card {
+  border: 1px solid var(--rule);
+  border-radius: 0.75rem;
+  background: var(--surface);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0.5rem 1.1rem;
+  border: 1px solid var(--border-control);
+  border-radius: 0.5rem;
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 500;
+  font-family: inherit;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+.btn:hover { border-color: var(--ink-muted); }
+
+.btn-primary {
+  border-color: transparent;
+  background: var(--brand);
+  color: var(--brand-on);
+  font-weight: 600;
+}
+.btn-primary:hover { border-color: transparent; background: var(--brand-hover); }
+
+.btn-sm { min-height: 36px; padding: 0.3rem 0.75rem; font-size: 0.875rem; }
+
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn:disabled:hover { border-color: var(--border-control); background: var(--surface); }
+.btn-primary:disabled:hover { border-color: transparent; background: var(--brand); }
+
+.input {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--border-control);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 1rem;
+}
+.input::placeholder { color: var(--ink-muted); }
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 0.1rem 0.55rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.pos-chip {
+  --chip: var(--ink-muted);
+  --chip-tint: var(--rule);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.5rem;
+  padding: 0.1rem 0.375rem;
+  border-radius: 0.3rem;
+  background: var(--chip-tint);
+  color: var(--chip);
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+}
+.pos-chip[data-pos="QB"]  { --chip: var(--pos-qb);  --chip-tint: var(--pos-qb-tint); }
+.pos-chip[data-pos="RB"]  { --chip: var(--pos-rb);  --chip-tint: var(--pos-rb-tint); }
+.pos-chip[data-pos="WR"]  { --chip: var(--pos-wr);  --chip-tint: var(--pos-wr-tint); }
+.pos-chip[data-pos="TE"]  { --chip: var(--pos-te);  --chip-tint: var(--pos-te-tint); }
+.pos-chip[data-pos="K"]   { --chip: var(--pos-k);   --chip-tint: var(--pos-k-tint); }
+.pos-chip[data-pos="DST"] { --chip: var(--pos-dst); --chip-tint: var(--pos-dst-tint); }
+
+.is-out { color: var(--out); text-decoration: line-through; text-decoration-thickness: 1px; }
+.on-clock { border-color: var(--brand); background: var(--brand-tint); }
+
+.btn:focus-visible, .input:focus-visible, a:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+.input:focus-visible { border-color: var(--brand); }
+
+@media (prefers-reduced-motion: reduce) { .btn { transition: none; } }
+
+/* ============================================================================
+   LAYOUT — hand-reproduced from the Tailwind utilities in the real components.
+   Structure and spacing mirror the JSX; small differences from compiled output
+   are possible. The tokens above are exact; this part is a faithful copy, not
+   the same source.
+   ========================================================================= */
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: #eef0f3;
+  color: #14161c;
+  font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.chrome {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+  padding: 0.85rem 1.5rem;
+  background: #ffffffee;
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid #dcdfe4;
+}
+.chrome h1 { margin: 0; font-size: 0.95rem; font-weight: 600; }
+.chrome p { margin: 0; font-size: 0.8rem; color: #5c6270; }
+.chrome .spacer { margin-left: auto; }
+.toggle { display: inline-flex; border: 1px solid #c6cad1; border-radius: 0.5rem; overflow: hidden; }
+.toggle button {
+  border: 0; background: #fff; color: #14161c; font-family: inherit;
+  font-size: 0.8rem; padding: 0.4rem 0.8rem; cursor: pointer; min-height: 34px;
+}
+.toggle button[aria-pressed="true"] { background: #14161c; color: #fff; }
+.toggle button:focus-visible { outline: 2px solid #1b4fe8; outline-offset: -2px; }
+
+.wrap { max-width: 78rem; margin: 0 auto; padding: 2rem 1.5rem 5rem; }
+.sec-label {
+  display: flex; align-items: baseline; gap: 0.75rem; flex-wrap: wrap;
+  margin: 2.5rem 0 0.85rem;
+}
+.sec-label h2 { margin: 0; font-size: 1rem; font-weight: 600; }
+.sec-label span { font-size: 0.8rem; color: #5c6270; }
+.sec-label:first-of-type { margin-top: 0; }
+
+/* The frame that holds each preview; narrows to a phone when toggled. */
+.frame { border-radius: 1rem; overflow: hidden; border: 1px solid #dcdfe4; }
+.viewport { transition: max-width 200ms ease; }
+body[data-vw="phone"] .viewport { max-width: 375px; }
+@media (prefers-reduced-motion: reduce) { .viewport { transition: none; } }
+
+/* --- draft room, mirroring the JSX ------------------------------------- */
+.room { padding: 1.5rem 1rem; }
+@media (min-width: 640px) { .room { padding: 1.5rem; } }
+
+.nav {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1rem; padding: 0.75rem 1.5rem;
+  border-bottom: 1px solid var(--rule);
+}
+.nav-brand { font-weight: 600; color: var(--ink); }
+.nav-links { display: flex; gap: 1rem; font-size: 0.875rem; color: var(--ink-muted); }
+
+.room-head {
+  display: flex; flex-wrap: wrap; align-items: baseline;
+  justify-content: space-between; gap: 0.25rem 1rem;
+}
+.room-head h3 { margin: 0; font-size: 1.5rem; font-weight: 600; color: var(--ink); }
+@media (min-width: 640px) { .room-head h3 { font-size: 1.875rem; } }
+.room-head .count { font-size: 0.875rem; color: var(--ink-muted); }
+
+.banner {
+  display: flex; flex-wrap: wrap; align-items: center;
+  justify-content: space-between; gap: 0.75rem 1.5rem;
+  margin-top: 1rem; padding: 1rem;
+}
+@media (min-width: 640px) { .banner { padding: 1.25rem; } }
+.banner .lede { margin: 0; font-size: 1.25rem; font-weight: 600; color: var(--brand); }
+.banner .lede-alt { margin: 0; font-size: 1.125rem; font-weight: 600; color: var(--ink); }
+.banner .lede-alt em { font-style: normal; font-weight: 400; color: var(--ink-muted); }
+.banner .owner { margin: 0.125rem 0 0; font-size: 0.875rem; color: var(--ink-muted); }
+.banner .clock { text-align: right; }
+.banner .clock .t { margin: 0; font-size: 1.5rem; font-weight: 600; }
+.banner .clock .l { margin: 0; font-size: 0.75rem; color: var(--ink-muted); }
+
+.nudge { margin: 0.5rem 0 0; font-size: 0.875rem; }
+.nudge a { color: var(--ink-muted); }
+.nudge a:hover { color: var(--ink); }
+
+.board-wrap { margin-top: 1.5rem; overflow-x: auto; }
+table.board { width: 100%; min-width: 44rem; border-collapse: separate; border-spacing: 0; font-size: 0.875rem; }
+table.board th, table.board td { padding: 0.5rem; text-align: left; }
+@media (min-width: 768px) { table.board th, table.board td { padding: 0.375rem; } }
+table.board thead th { border-bottom: 1px solid var(--rule); vertical-align: bottom; }
+table.board tbody td { border-top: 1px solid var(--rule); vertical-align: top; }
+table.board .rd {
+  position: sticky; left: 0; z-index: 10; background: var(--surface);
+  font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.05em; color: var(--ink-muted);
+}
+table.board tbody .rd { font-weight: 400; text-transform: none; letter-spacing: 0; }
+.team-name { font-weight: 600; color: var(--ink); }
+.team-name.live { color: var(--brand); }
+.team-owner { font-weight: 400; color: var(--ink-muted); }
+.pick { display: flex; flex-direction: column; gap: 0.25rem; }
+.pick .who { font-weight: 500; color: var(--ink); }
+.pick .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.375rem; font-size: 0.75rem; color: var(--ink-muted); }
+.empty { color: var(--ink-muted); }
+.empty.live { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--brand); }
+
+.panels { display: grid; gap: 2rem; margin-top: 2rem; }
+@media (min-width: 768px) { .panels { grid-template-columns: 1fr 1fr; } }
+.panels h4 { margin: 0; font-size: 1.125rem; font-weight: 600; color: var(--ink); }
+.panels .hint { margin: 0.25rem 0 0; font-size: 0.875rem; color: var(--ink-muted); }
+.filters { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: 0.75rem; }
+.filters .search { margin-left: auto; width: 100%; }
+@media (min-width: 640px) { .filters .search { width: 10rem; } }
+.btn.active { border-color: var(--brand); color: var(--brand); }
+
+ul.list { list-style: none; margin: 0.75rem 0 0; padding: 0; max-height: 24rem; overflow-y: auto; }
+ul.list li {
+  display: flex; flex-direction: column; gap: 0.5rem;
+  padding: 0.75rem; border-bottom: 1px solid var(--rule);
+}
+ul.list li:last-child { border-bottom: 0; }
+@media (min-width: 640px) {
+  ul.list li { flex-direction: row; align-items: center; justify-content: space-between; gap: 1rem; }
+}
+@media (min-width: 768px) { ul.list li { padding: 0.5rem; } }
+.who-block { display: flex; min-width: 0; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.who-block .nm { font-weight: 500; color: var(--ink); }
+.who-block .tm { font-size: 0.875rem; color: var(--ink-muted); }
+.who-block .idx { font-size: 0.875rem; color: var(--ink-muted); }
+.acts { display: flex; flex-shrink: 0; gap: 0.5rem; }
+.acts.tight { gap: 0.25rem; }
+
+/* --- light surfaces ------------------------------------------------------ */
+.light-demo { background: var(--ground); padding: 1.5rem; }
+table.lb { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+table.lb th, table.lb td { padding: 0.5rem; text-align: left; }
+table.lb th { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-muted); border-bottom: 1px solid var(--rule); }
+table.lb td { border-bottom: 1px solid var(--rule); }
+table.lb tr:last-child td { border-bottom: 0; }
+table.lb .num { text-align: right; }
+table.lb .tot { text-align: right; font-weight: 600; }
+
+/* --- swatches ------------------------------------------------------------ */
+.swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); gap: 0.75rem; }
+.sw { border: 1px solid #dcdfe4; border-radius: 0.6rem; overflow: hidden; background: #fff; }
+.sw .chip { height: 3rem; }
+.sw .meta { padding: 0.5rem 0.65rem; }
+.sw .nm { font-size: 0.8rem; font-weight: 600; }
+.sw .hx { font-family: "IBM Plex Mono", monospace; font-size: 0.72rem; color: #5c6270; }
+.sw .ct { font-family: "IBM Plex Mono", monospace; font-size: 0.72rem; color: #0f7a52; }
+
+.chips-row { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 1rem; }
+.note {
+  margin: 1rem 0 0; padding: 0.85rem 1rem; border-left: 3px solid #1b4fe8;
+  background: #f4f7ff; font-size: 0.85rem; line-height: 1.55; color: #3c424e;
+}
+.note strong { color: #14161c; }
+.note code { font-family: "IBM Plex Mono", monospace; font-size: 0.8rem; }
+</style>
+</head>
+<body data-vw="desktop">
+
+<div class="chrome">
+  <h1>Cobalt system — draft room</h1>
+  <p>Tokens copied verbatim from <code>globals.css</code></p>
+  <div class="spacer"></div>
+  <div class="toggle" role="group" aria-label="Preview width">
+    <button type="button" data-vw="desktop" aria-pressed="true">Desktop</button>
+    <button type="button" data-vw="phone" aria-pressed="false">Phone 375px</button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="sec-label">
+    <h2>1 — Draft room, your turn</h2>
+    <span>the dark route; brand colour appears here and on controls, nowhere else</span>
+  </div>
+  <div class="viewport">
+    <div class="frame theme-dark">
+      <div class="nav">
+        <span class="nav-brand">Playoff Best Ball</span>
+        <span class="nav-links"><span>Mock draft</span><span>Pricing</span><span>Austin</span></span>
+      </div>
+      <div class="room">
+        <div class="room-head">
+          <h3>The Boys 2027 — Draft</h3>
+          <p class="count tabular">Pick 7 of 36</p>
+        </div>
+
+        <div class="card on-clock banner">
+          <div>
+            <p class="lede">You're on the clock</p>
+          </div>
+          <div class="clock">
+            <p class="t tabular" style="color: var(--brand);">4h 12m</p>
+            <p class="l">left to pick</p>
+          </div>
+        </div>
+
+        <p class="nudge"><a href="#0">Get texted or pinged when you're on the clock &rarr;</a></p>
+
+        <div class="card board-wrap">
+          <table class="board">
+            <thead>
+              <tr>
+                <th class="rd">Rd</th>
+                <th><div class="team-name live">Sunday Scaries</div><div class="team-owner">Austin</div></th>
+                <th><div class="team-name">Punt Intended</div><div class="team-owner">Dave</div></th>
+                <th><div class="team-name">Mahomies</div><div class="team-owner">Kev</div></th>
+                <th><div class="team-name">Wide Right Club</div><div class="team-owner">Sam</div></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="rd tabular">1</td>
+                <td><div class="pick"><span class="who">Patrick Mahomes</span><span class="meta"><span class="pos-chip" data-pos="QB">QB</span>KC</span></div></td>
+                <td><div class="pick"><span class="who">Saquon Barkley</span><span class="meta"><span class="pos-chip" data-pos="RB">RB</span>PHI</span></div></td>
+                <td><div class="pick"><span class="who">Ja'Marr Chase</span><span class="meta"><span class="pos-chip" data-pos="WR">WR</span>CIN</span></div></td>
+                <td><div class="pick"><span class="who">Travis Kelce</span><span class="meta"><span class="pos-chip" data-pos="TE">TE</span>KC</span></div></td>
+              </tr>
+              <tr>
+                <td class="rd tabular">2</td>
+                <td><div class="pick"><span class="who">CeeDee Lamb</span><span class="meta"><span class="pos-chip" data-pos="WR">WR</span>DAL</span></div></td>
+                <td><div class="pick"><span class="who">Derrick Henry</span><span class="meta"><span class="pos-chip" data-pos="RB">RB</span>BAL &middot; auto</span></div></td>
+                <td class="on-clock"><span class="empty live">On the clock</span></td>
+                <td><span class="empty tabular">#8</span></td>
+              </tr>
+              <tr>
+                <td class="rd tabular">3</td>
+                <td><span class="empty tabular">#9</span></td>
+                <td><span class="empty tabular">#10</span></td>
+                <td><span class="empty tabular">#11</span></td>
+                <td><span class="empty tabular">#12</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="panels">
+          <section>
+            <h4>Available players</h4>
+            <div class="filters">
+              <button type="button" class="btn btn-sm active">ALL</button>
+              <button type="button" class="btn btn-sm">QB</button>
+              <button type="button" class="btn btn-sm">RB</button>
+              <button type="button" class="btn btn-sm">WR</button>
+              <button type="button" class="btn btn-sm">TE</button>
+              <button type="button" class="btn btn-sm">K</button>
+              <button type="button" class="btn btn-sm">DST</button>
+              <input class="input search" placeholder="Search" aria-label="Search players" />
+            </div>
+            <ul class="list card">
+              <li>
+                <span class="who-block"><span class="pos-chip" data-pos="WR">WR</span><span class="nm">Justin Jefferson</span><span class="tm tabular">MIN</span></span>
+                <span class="acts"><button type="button" class="btn btn-sm">Queue</button><button type="button" class="btn btn-primary">Draft</button></span>
+              </li>
+              <li>
+                <span class="who-block"><span class="pos-chip" data-pos="RB">RB</span><span class="nm">Bijan Robinson</span><span class="tm tabular">ATL</span></span>
+                <span class="acts"><button type="button" class="btn btn-sm">Queue</button><button type="button" class="btn btn-primary">Draft</button></span>
+              </li>
+              <li>
+                <span class="who-block"><span class="pos-chip" data-pos="QB">QB</span><span class="nm">Josh Allen</span><span class="tm tabular">BUF</span></span>
+                <span class="acts"><button type="button" class="btn btn-sm">Queue</button><button type="button" class="btn btn-primary">Draft</button></span>
+              </li>
+              <li>
+                <span class="who-block"><span class="pos-chip" data-pos="DST">DST</span><span class="nm">Ravens D/ST</span><span class="tm tabular">BAL</span></span>
+                <span class="acts"><button type="button" class="btn btn-sm">Queue</button><button type="button" class="btn btn-primary">Draft</button></span>
+              </li>
+              <li>
+                <span class="who-block"><span class="pos-chip" data-pos="K">K</span><span class="nm">Harrison Butker</span><span class="tm tabular">KC</span></span>
+                <span class="acts"><button type="button" class="btn btn-sm">Queue</button><button type="button" class="btn btn-primary">Draft</button></span>
+              </li>
+            </ul>
+          </section>
+
+          <section>
+            <h4>My queue</h4>
+            <p class="hint">If your clock runs out, we draft the highest available player from this list (skipping any that don't fit your roster), then best-available.</p>
+            <ul class="list card">
+              <li>
+                <span class="who-block"><span class="idx tabular">1</span><span class="pos-chip" data-pos="WR">WR</span><span class="nm">Justin Jefferson</span><span class="tm tabular">MIN</span></span>
+                <span class="acts tight"><button type="button" class="btn btn-sm" aria-label="Move up">&uarr;</button><button type="button" class="btn btn-sm" aria-label="Move down">&darr;</button><button type="button" class="btn btn-sm" aria-label="Remove">&#10005;</button></span>
+              </li>
+              <li>
+                <span class="who-block"><span class="idx tabular">2</span><span class="pos-chip" data-pos="TE">TE</span><span class="is-out nm">Travis Kelce</span><span class="tm tabular">KC</span></span>
+                <span class="acts tight"><button type="button" class="btn btn-sm" aria-label="Move up">&uarr;</button><button type="button" class="btn btn-sm" aria-label="Move down">&darr;</button><button type="button" class="btn btn-sm" aria-label="Remove">&#10005;</button></span>
+              </li>
+              <li>
+                <span class="who-block"><span class="idx tabular">3</span><span class="pos-chip" data-pos="RB">RB</span><span class="nm">Bijan Robinson</span><span class="tm tabular">ATL</span></span>
+                <span class="acts tight"><button type="button" class="btn btn-sm" aria-label="Move up">&uarr;</button><button type="button" class="btn btn-sm" aria-label="Move down">&darr;</button><button type="button" class="btn btn-sm" aria-label="Remove">&#10005;</button></span>
+              </li>
+            </ul>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="note">
+    <strong>Row 2, column 3</strong> is the on-the-clock cell, and <strong>Kelce in the queue</strong> shows
+    <code>.is-out</code> — struck through but still at 5.6:1, because you still have to read who you lost.
+    The <strong>Draft</strong> buttons hold a 44px touch target on a phone and tighten to 36px from
+    <code>md</code> up. Flip the toggle to see it.
+  </p>
+
+  <div class="sec-label">
+    <h2>2 — Draft room, someone else's turn</h2>
+    <span>the quiet state; no brand colour at all until it's yours</span>
+  </div>
+  <div class="viewport">
+    <div class="frame theme-dark">
+      <div class="room" style="padding-bottom: 1.5rem;">
+        <div class="room-head">
+          <h3>The Boys 2027 — Draft</h3>
+          <p class="count tabular">Pick 7 of 36</p>
+        </div>
+        <div class="card banner">
+          <div>
+            <p class="lede-alt">Mahomies <em>is on the clock</em></p>
+            <p class="owner">Kev</p>
+          </div>
+          <div class="clock">
+            <p class="t tabular" style="color: var(--ink);">1h 48m</p>
+            <p class="l">left to pick</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec-label">
+    <h2>3 — Light surfaces</h2>
+    <span>the other 90% of the app; leaderboard deliberately carries no position colour</span>
+  </div>
+  <div class="viewport">
+    <div class="frame">
+      <div class="light-demo">
+        <div class="card" style="padding: 1rem;">
+          <table class="lb">
+            <thead>
+              <tr><th>#</th><th>Team</th><th class="num">Alive</th><th class="num">WC</th><th class="num">DIV</th><th class="num">Total</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="tabular">1</td><td><strong>Sunday Scaries</strong> <span style="color: var(--ink-muted);">Austin</span></td><td class="num tabular">7/9</td><td class="num tabular">142.80</td><td class="num tabular">131.45</td><td class="tot tabular">274.25</td></tr>
+              <tr><td class="tabular">2</td><td><strong>Punt Intended</strong> <span style="color: var(--ink-muted);">Dave</span></td><td class="num tabular">6/9</td><td class="num tabular">138.10</td><td class="num tabular">120.05</td><td class="tot tabular">258.15</td></tr>
+              <tr><td class="tabular">3</td><td><strong>Mahomies</strong> <span style="color: var(--ink-muted);">Kev</span></td><td class="num tabular">4/9</td><td class="num tabular">96.15</td><td class="num tabular">128.90</td><td class="tot tabular">225.05</td></tr>
+              <tr><td class="tabular">4</td><td><span class="is-out"><strong>Wide Right Club</strong></span> <span style="color: var(--ink-muted);">Sam</span></td><td class="num tabular">0/9</td><td class="num tabular">88.40</td><td class="num tabular">—</td><td class="tot tabular">88.40</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1rem; align-items: center;">
+          <button type="button" class="btn btn-primary">Create a league</button>
+          <button type="button" class="btn">Invite link</button>
+          <button type="button" class="btn" disabled>Draft not started</button>
+          <span class="badge" style="color: var(--good);">Paid</span>
+          <span class="badge" style="color: var(--warn);">Dues owed</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec-label">
+    <h2>4 — Position chips, both grounds</h2>
+    <span>letters always present; colour is redundant reinforcement, never the sole signal</span>
+  </div>
+  <div class="viewport">
+    <div class="frame">
+      <div class="chips-row" style="background: var(--ground);">
+        <span class="pos-chip" data-pos="QB">QB</span>
+        <span class="pos-chip" data-pos="RB">RB</span>
+        <span class="pos-chip" data-pos="WR">WR</span>
+        <span class="pos-chip" data-pos="TE">TE</span>
+        <span class="pos-chip" data-pos="K">K</span>
+        <span class="pos-chip" data-pos="DST">DST</span>
+        <span class="pos-chip" data-pos="XX">XX</span>
+      </div>
+      <div class="chips-row theme-dark">
+        <span class="pos-chip" data-pos="QB">QB</span>
+        <span class="pos-chip" data-pos="RB">RB</span>
+        <span class="pos-chip" data-pos="WR">WR</span>
+        <span class="pos-chip" data-pos="TE">TE</span>
+        <span class="pos-chip" data-pos="K">K</span>
+        <span class="pos-chip" data-pos="DST">DST</span>
+        <span class="pos-chip" data-pos="XX">XX</span>
+      </div>
+    </div>
+  </div>
+  <p class="note">
+    The last chip in each row is an unrecognised value, showing the neutral fallback —
+    a draft board should not blank out because a position string surprised us.
+  </p>
+
+  <div class="sec-label">
+    <h2>5 — Palette, with measured contrast</h2>
+    <span>every ratio computed, not eyeballed; all 29 pairs pass</span>
+  </div>
+  <div class="swatches">
+    <div class="sw"><div class="chip" style="background:#1b4fe8;"></div><div class="meta"><div class="nm">brand — light</div><div class="hx">#1B4FE8</div><div class="ct">6.31:1 as text · 6.31:1 white on fill</div></div></div>
+    <div class="sw"><div class="chip" style="background:#6b9bff;"></div><div class="meta"><div class="nm">brand — dark</div><div class="hx">#6B9BFF</div><div class="ct">6.56:1 on dark surface</div></div></div>
+    <div class="sw"><div class="chip" style="background:#5c6270;"></div><div class="meta"><div class="nm">ink-muted / out — light</div><div class="hx">#5C6270</div><div class="ct">5.75:1 on ground</div></div></div>
+    <div class="sw"><div class="chip" style="background:#858fa0;"></div><div class="meta"><div class="nm">border-control — light</div><div class="hx">#858FA0</div><div class="ct">3.26:1 · control boundary</div></div></div>
+    <div class="sw"><div class="chip" style="background:#e3e6ec;"></div><div class="meta"><div class="nm">rule — light</div><div class="hx">#E3E6EC</div><div class="ct">1.25:1 · divider only</div></div></div>
+    <div class="sw"><div class="chip" style="background:#606875;"></div><div class="meta"><div class="nm">border-control — dark</div><div class="hx">#606875</div><div class="ct">3.16:1 · control boundary</div></div></div>
+    <div class="sw"><div class="chip" style="background:#6d28d9;"></div><div class="meta"><div class="nm">QB</div><div class="hx">#6D28D9 / #A78BFA</div><div class="ct">6.04:1 · 5.17:1</div></div></div>
+    <div class="sw"><div class="chip" style="background:#047857;"></div><div class="meta"><div class="nm">RB</div><div class="hx">#047857 / #34D399</div><div class="ct">4.78:1 · 6.92:1</div></div></div>
+    <div class="sw"><div class="chip" style="background:#b03d0b;"></div><div class="meta"><div class="nm">WR</div><div class="hx">#B03D0B / #FB923C</div><div class="ct">5.15:1 · 6.09:1</div></div></div>
+    <div class="sw"><div class="chip" style="background:#a21caf;"></div><div class="meta"><div class="nm">TE</div><div class="hx">#A21CAF / #E879F9</div><div class="ct">5.36:1 · 5.63:1</div></div></div>
+    <div class="sw"><div class="chip" style="background:#0e7490;"></div><div class="meta"><div class="nm">K</div><div class="hx">#0E7490 / #22D3EE</div><div class="ct">4.67:1 · 7.28:1</div></div></div>
+    <div class="sw"><div class="chip" style="background:#52525b;"></div><div class="meta"><div class="nm">DST</div><div class="hx">#52525B / #A1A1AA</div><div class="ct">6.67:1 · 5.38:1</div></div></div>
+  </div>
+
+  <p class="note">
+    <strong>What this page is not.</strong> The tokens and primitives above are copied byte-for-byte from
+    <code>globals.css</code>, so colour, contrast and component styling are exact. The layout CSS is
+    hand-reproduced from the Tailwind utilities in the real components — structure and spacing mirror
+    the JSX, but this is a faithful copy, not the same compiled source. For pixel-exactness you still
+    need <code>npm run dev</code> against a database.
+  </p>
+
+</div>
+
+<script>
+  const body = document.body;
+  document.querySelectorAll(".toggle button").forEach((b) => {
+    b.addEventListener("click", () => {
+      body.dataset.vw = b.dataset.vw;
+      document.querySelectorAll(".toggle button").forEach((o) =>
+        o.setAttribute("aria-pressed", String(o === b))
+      );
+    });
+  });
+</script>
+
+</body>
+</html>

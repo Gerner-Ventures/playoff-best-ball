@@ -6,7 +6,9 @@ import { db } from "./db";
 import { DEMO_MODE_REQUESTED } from "./demo-mode";
 import { assertBetterAuthSecret } from "./auth-env";
 
-assertBetterAuthSecret(process.env.BETTER_AUTH_SECRET, process.env.NODE_ENV);
+// Must stay at module scope: `next build` evaluates this module while collecting
+// page data, which is what turns a missing secret into a failed build.
+assertBetterAuthSecret(process.env);
 
 if (process.env.GOOGLE_CLIENT_ID && !process.env.GOOGLE_CLIENT_SECRET) {
   throw new Error("GOOGLE_CLIENT_ID is set but GOOGLE_CLIENT_SECRET is missing");

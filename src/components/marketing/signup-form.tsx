@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { captureClientEvent } from "@/lib/analytics-client";
 import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
 import type { SubscribeSource } from "@/domain/subscribers/sources";
@@ -18,6 +18,15 @@ export function SignupForm({
   const [honeypot, setHoneypot] = useState("");
   const [state, setState] = useState<"idle" | "busy" | "sent">("idle");
   const [error, setError] = useState<string | null>(null);
+  const successRef = useRef<HTMLParagraphElement>(null);
+
+  // The success message mounts already filled in, so a screen reader announcing
+  // the live region alone is unreliable; moving focus to it is what makes the
+  // confirmation dependable, and it also carries the footer form's focus down to
+  // where the message is rather than leaving it at <body>.
+  useEffect(() => {
+    if (state === "sent") successRef.current?.focus();
+  }, [state]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -44,7 +53,7 @@ export function SignupForm({
 
   if (state === "sent") {
     return (
-      <p role="status" className="rounded-lg bg-brand-tint p-4 text-ink">
+      <p ref={successRef} role="status" tabIndex={-1} className="rounded-lg bg-brand-tint p-4 text-ink">
         Check your inbox to confirm. The link works for 7 days.
       </p>
     );

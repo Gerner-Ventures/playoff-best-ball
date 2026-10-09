@@ -18,8 +18,7 @@ import { faqItems } from "@/components/marketing/faq-content";
 
 export const metadata: Metadata = {
   title: { absolute: "Playoff Best Ball — draft once, watch all playoffs" },
-  description:
-    "Run an NFL playoff best ball league with your friends: a slow draft over a few days, then nothing to manage through the Super Bowl. Free for up to 10 teams.",
+  description: `Run an NFL playoff best ball league with your friends: a slow draft over a few days, then nothing to manage through the Super Bowl. Free for up to ${FREE_TIER_MAX_ENTRIES} teams.`,
   alternates: { canonical: "/" },
 };
 

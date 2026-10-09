@@ -16,13 +16,27 @@ const bodySchema = z.object({
 const OK = { ok: true } as const;
 const SEND_FAILED = { error: "We couldn't send the confirmation email — try again." } as const;
 
+// An already-active address returns immediately, while a new one waits on the
+// Resend round trip. Left alone, that gap lets response timing reveal list
+// membership (spec §5.2), so every 200 — the honeypot path included — is padded
+// out to this floor. 400s (bad input) and 502s (the spec's accepted send-failure
+// exception) are deliberately left unpadded.
+export const MIN_SUBSCRIBE_RESPONSE_MS = 1200;
+
+async function padTo200(startedAt: number) {
+  const remaining = MIN_SUBSCRIBE_RESPONSE_MS - (Date.now() - startedAt);
+  if (remaining > 0) await new Promise((resolve) => setTimeout(resolve, remaining));
+  return NextResponse.json(OK);
+}
+
 export async function POST(req: Request) {
+  const startedAt = Date.now();
   const parsed = bodySchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid input" }, { status: 400 });
   }
   // Indistinguishable from success, so a bot learns nothing.
-  if (parsed.data.website) return NextResponse.json(OK);
+  if (parsed.data.website) return padTo200(startedAt);
 
   // Checked before any DB access: in production with no sender configured, we must
   // not create/touch an EmailSubscriber row, and the response must not differ from
@@ -50,5 +64,5 @@ export async function POST(req: Request) {
     throw err;
   }
   // The same response whatever the outcome: the form must not reveal who is on the list.
-  return NextResponse.json(OK);
+  return padTo200(startedAt);
 }

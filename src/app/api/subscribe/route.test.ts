@@ -14,7 +14,7 @@ vi.mock("@/lib/email/marketing", () => ({
   isMarketingSenderReady: () => mail.ready,
 }));
 
-import { POST } from "./route";
+import { POST, MIN_SUBSCRIBE_RESPONSE_MS } from "./route";
 
 const post = (body: unknown) =>
   POST(
@@ -88,5 +88,18 @@ describe("POST /api/subscribe", () => {
     expect(
       await testDb.emailSubscriber.findUniqueOrThrow({ where: { email: "member@example.com" } }),
     ).toMatchObject({ status: "ACTIVE" });
+  });
+
+  it("pads an already-active address's 200 so response timing can't reveal list membership", async () => {
+    await testDb.emailSubscriber.create({
+      data: { email: "member@example.com", source: "footer", status: "ACTIVE", unsubscribeToken: newToken() },
+    });
+
+    const start = Date.now();
+    const res = await post({ email: "member@example.com", source: "footer" });
+    const elapsed = Date.now() - start;
+
+    expect(res.status).toBe(200);
+    expect(elapsed).toBeGreaterThanOrEqual(MIN_SUBSCRIBE_RESPONSE_MS - 25);
   });
 });

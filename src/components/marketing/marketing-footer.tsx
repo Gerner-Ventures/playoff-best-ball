@@ -18,7 +18,7 @@ export function MarketingFooter() {
           <h2 className="text-lg font-semibold">The playoff race, once a week</h2>
           <p className="text-ink-soft">
             Through the regular season: whose playoff stock is rising, who clinched, who&apos;s out. Plus a
-            heads-up the day leagues open.
+            heads-up when it&apos;s time to set up your league.
           </p>
           <SignupForm source="footer" compact />
         </div>

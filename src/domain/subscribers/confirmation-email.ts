@@ -10,7 +10,7 @@ export function buildConfirmationEmail(input: {
   oneClickUnsubscribeUrl: string;
 }): MarketingEmail {
   const text = [
-    "Confirm you want Playoff Best Ball updates: one email a week through the NFL regular season, plus a heads-up when leagues open.",
+    "Confirm you want Playoff Best Ball updates: one email a week through the NFL regular season, plus a heads-up when it's time to set up your league.",
     "",
     `Confirm: ${input.confirmUrl}`,
     "",
@@ -22,7 +22,7 @@ export function buildConfirmationEmail(input: {
   const confirm = escapeHtml(input.confirmUrl);
   const unsubscribe = escapeHtml(input.unsubscribePageUrl);
   const html = `<!doctype html><html><body style="font-family:system-ui,sans-serif;color:#14161c;line-height:1.5">
-<p>Confirm you want Playoff Best Ball updates: one email a week through the NFL regular season, plus a heads-up when leagues open.</p>
+<p>Confirm you want Playoff Best Ball updates: one email a week through the NFL regular season, plus a heads-up when it's time to set up your league.</p>
 <p><a href="${confirm}" style="display:inline-block;background:#1b4fe8;color:#ffffff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:600">Confirm my email</a></p>
 <p>Or paste this link into your browser:<br>${confirm}</p>
 <p style="color:#5c6270">The link works for 7 days. If you didn't ask for this, ignore this email and you won't hear from us.</p>

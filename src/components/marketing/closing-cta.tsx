@@ -13,8 +13,11 @@ export function ClosingCta({ page, source }: { page: string; source: SubscribeSo
       <div className="card flex flex-col gap-4 p-8">
         {phase === "list" ? (
           <>
-            <h2 className="text-2xl font-semibold">Leagues open in December</h2>
-            <p className="text-ink-soft">Get the weekly playoff race in your inbox, and a heads-up the day you can start a league.</p>
+            <h2 className="text-2xl font-semibold">Get the playoff race in your inbox</h2>
+            <p className="text-ink-soft">
+              One email a week through the regular season, plus a heads-up when it&apos;s time to set up your
+              league.
+            </p>
             <SignupForm source={source} />
           </>
         ) : (

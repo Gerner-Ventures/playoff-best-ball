@@ -35,7 +35,9 @@ export default async function ConfirmPage({
   return (
     <Section className="max-w-2xl pt-16">
       <h1 className="text-3xl font-semibold">One more step</h1>
-      <p className="mt-3 text-ink-soft">Confirm you want the weekly playoff-race digest and a heads-up when leagues open.</p>
+      <p className="mt-3 text-ink-soft">
+        Confirm you want the weekly playoff-race digest and a heads-up when it&apos;s time to set up your league.
+      </p>
       <form method="post" action="/api/subscribe/confirm" className="mt-6">
         <input type="hidden" name="token" value={token} />
         <button type="submit" className="btn btn-primary">

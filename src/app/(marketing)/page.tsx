@@ -70,7 +70,8 @@ export default function HomePage() {
             <>
               <SignupForm source="home_hero" />
               <p className="mt-3 text-sm text-ink-muted">
-                Free. One email a week through the regular season, plus a heads-up when leagues open.
+                Free. One email a week through the regular season, plus a heads-up when it&apos;s time to set up
+                your league.
               </p>
             </>
           ) : (

@@ -46,7 +46,8 @@ export function DigestToggle({ initial }: { initial: boolean }) {
         <span>
           <span className="font-semibold">Weekly playoff-race digest</span>
           <span className="block text-sm text-chalk-dim">
-            One email a week through the regular season, plus a heads-up when leagues open.
+            One email a week through the regular season, plus a heads-up when it&apos;s time to set up your
+            league.
           </span>
         </span>
       </label>

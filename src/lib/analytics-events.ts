@@ -1,6 +1,6 @@
 /**
  * The monetization-learning event set for the beta season. Deliberately small:
- * funnel = create/join → draft → upgrade; plus the dues-collection fake door.
+ * funnel = create/join → draft → upgrade; the dues-collection fake door; and the marketing list (visit → subscribe → confirm).
  * Pageviews come free from posthog-js autocapture.
  */
 export const ANALYTICS_EVENTS = {
@@ -16,6 +16,11 @@ export const ANALYTICS_EVENTS = {
   UPGRADE_CHECKOUT_STARTED: "upgrade_checkout_started",
   LEAGUE_UPGRADED: "league_upgraded",
   DUES_INTEREST: "dues_interest",
+  MARKETING_CTA_CLICKED: "marketing_cta_clicked",
+  SUBSCRIBE_SUBMITTED: "subscribe_submitted",
+  SUBSCRIBE_CONFIRMED: "subscribe_confirmed",
+  UNSUBSCRIBED: "unsubscribed",
+  INVITE_PAGE_VIEWED: "invite_page_viewed",
 } as const;
 
 export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EVENTS];

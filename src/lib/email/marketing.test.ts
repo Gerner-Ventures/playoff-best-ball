@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { createMarketingSender, type ResendLike } from "./marketing";
+import { describe, it, expect, afterEach, vi } from "vitest";
+import { createMarketingSender, isMarketingSenderReady, type ResendLike } from "./marketing";
 import type { MarketingEmail } from "@/domain/subscribers/sender";
 
 const email: MarketingEmail = {
@@ -48,5 +48,36 @@ describe("createMarketingSender", () => {
     const lines: string[] = [];
     await createMarketingSender({ resend: null, from: undefined, mustSend: false, log: (l) => lines.push(l) }).send(email);
     expect(lines.join("\n")).toContain("https://x.test/subscribe/confirm?token=abc");
+  });
+});
+
+describe("isMarketingSenderReady", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("is true outside of mandatory-send production, regardless of config", () => {
+    vi.stubEnv("NODE_ENV", "test");
+    vi.stubEnv("RESEND_API_KEY", "");
+    vi.stubEnv("MARKETING_FROM_EMAIL", "");
+    expect(isMarketingSenderReady()).toBe(true);
+  });
+
+  it("is false in production when RESEND_API_KEY or MARKETING_FROM_EMAIL is missing", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("RESEND_API_KEY", "re_123");
+    vi.stubEnv("MARKETING_FROM_EMAIL", "");
+    expect(isMarketingSenderReady()).toBe(false);
+
+    vi.stubEnv("RESEND_API_KEY", "");
+    vi.stubEnv("MARKETING_FROM_EMAIL", "x@news.test");
+    expect(isMarketingSenderReady()).toBe(false);
+  });
+
+  it("is true in production once both are set", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("RESEND_API_KEY", "re_123");
+    vi.stubEnv("MARKETING_FROM_EMAIL", "x@news.test");
+    expect(isMarketingSenderReady()).toBe(true);
   });
 });

@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import type { MarketingEmail } from "@/domain/subscribers/sender";
+import { newToken } from "@/domain/subscribers/tokens";
 import { testDb, resetDb } from "../../../../tests/helpers/db";
 
-const mail = vi.hoisted(() => ({ sent: [] as MarketingEmail[], fail: false }));
+const mail = vi.hoisted(() => ({ sent: [] as MarketingEmail[], fail: false, ready: true }));
 vi.mock("@/lib/email/marketing", () => ({
   getMarketingSender: () => ({
     async send(email: MarketingEmail) {
@@ -10,6 +11,7 @@ vi.mock("@/lib/email/marketing", () => ({
       mail.sent.push(email);
     },
   }),
+  isMarketingSenderReady: () => mail.ready,
 }));
 
 import { POST } from "./route";
@@ -28,6 +30,7 @@ describe("POST /api/subscribe", () => {
     await resetDb();
     mail.sent.length = 0;
     mail.fail = false;
+    mail.ready = true;
   });
 
   it("returns the same 200 for a new address and an already-active one", async () => {
@@ -65,5 +68,25 @@ describe("POST /api/subscribe", () => {
     mail.fail = false;
     expect((await post({ email: "fan@example.com", source: "footer" })).status).toBe(200);
     expect(mail.sent).toHaveLength(1);
+  });
+
+  it("502s before touching the database when the marketing sender isn't ready, for member and stranger alike", async () => {
+    await testDb.emailSubscriber.create({
+      data: { email: "member@example.com", source: "footer", status: "ACTIVE", unsubscribeToken: newToken() },
+    });
+    mail.ready = false;
+
+    const memberRes = await post({ email: "member@example.com", source: "footer" });
+    const strangerRes = await post({ email: "new@example.com", source: "footer" });
+
+    expect(memberRes.status).toBe(502);
+    expect(strangerRes.status).toBe(502);
+    expect(await memberRes.json()).toEqual({ error: "We couldn't send the confirmation email — try again." });
+    expect(await strangerRes.json()).toEqual({ error: "We couldn't send the confirmation email — try again." });
+    expect(mail.sent).toHaveLength(0);
+    expect(await testDb.emailSubscriber.count()).toBe(1);
+    expect(
+      await testDb.emailSubscriber.findUniqueOrThrow({ where: { email: "member@example.com" } }),
+    ).toMatchObject({ status: "ACTIVE" });
   });
 });

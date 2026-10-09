@@ -55,14 +55,37 @@ export function createMarketingSender(opts: {
   };
 }
 
-let cached: MarketingSender | null = null;
-
-export function getMarketingSender(): MarketingSender {
-  cached ??= createMarketingSender({
-    resend: process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null,
+/** Reads the env once per call, so `getMarketingSender` and `isMarketingSenderReady` can't disagree. */
+function readMarketingEnv() {
+  return {
+    resendApiKey: process.env.RESEND_API_KEY,
     // `||` not `??`: .env.example ships the var as "", which must count as unset.
     from: process.env.MARKETING_FROM_EMAIL || undefined,
     mustSend: process.env.NODE_ENV === "production" && !DEMO_MODE_REQUESTED,
-  });
+  };
+}
+
+/**
+ * False only where sending is mandatory (real production, not dev or demo) and the
+ * config needed to actually send is missing. Callers that must not leak list
+ * membership (spec §5.2) check this before touching the database at all.
+ */
+export function isMarketingSenderReady(): boolean {
+  const { resendApiKey, from, mustSend } = readMarketingEnv();
+  if (!mustSend) return true;
+  return Boolean(resendApiKey) && Boolean(from);
+}
+
+let cached: MarketingSender | null = null;
+
+export function getMarketingSender(): MarketingSender {
+  cached ??= (() => {
+    const { resendApiKey, from, mustSend } = readMarketingEnv();
+    return createMarketingSender({
+      resend: resendApiKey ? new Resend(resendApiKey) : null,
+      from,
+      mustSend,
+    });
+  })();
   return cached;
 }

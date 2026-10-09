@@ -90,6 +90,7 @@ for (const [theme, T] of [["light", LIGHT], ["dark", DARK]]) {
   // Text inside tinted callouts (marketing key dates, on-clock banners).
   check(theme, "ink on brand-tint", T.ink, T["brand-tint"], 4.5);
   check(theme, "ink-soft on brand-tint", T["ink-soft"], T["brand-tint"], 4.5);
+  check(theme, "brand on brand-tint", T.brand, T["brand-tint"], 4.5);
   // 1.4.11: link focus ring on the page ground.
   check(theme, "brand focus ring on ground", T.brand, T.ground, 3);
 

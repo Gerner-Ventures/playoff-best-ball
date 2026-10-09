@@ -1,4 +1,11 @@
-import posthog from "posthog-js";
+import posthog, { type BeforeSendFn, type CaptureResult } from "posthog-js";
+import { scrubTokens } from "@/lib/analytics-scrub";
+
+// scrubTokens<T> is generic so analytics-scrub.ts stays import-free and
+// framework-agnostic; this wrapper pins T to posthog-js's own CaptureResult so
+// its type lines up with BeforeSendFn directly, rather than leaning on TS to
+// infer the generic through a bare assignment to `before_send`.
+const beforeSend: BeforeSendFn = (event: CaptureResult | null) => scrubTokens(event);
 
 const key = process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN;
 const host = process.env.NEXT_PUBLIC_POSTHOG_HOST;
@@ -26,5 +33,6 @@ if (!key || !host) {
     defaults: "2026-01-30",
     capture_exceptions: true,
     debug: process.env.NODE_ENV === "development",
+    before_send: beforeSend,
   });
 }

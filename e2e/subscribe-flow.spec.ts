@@ -22,7 +22,10 @@ async function pendingSubscription(baseURL: string) {
 test("confirm, unsubscribe and resubscribe through the real pages", async ({ page, baseURL }) => {
   const { confirmUrl, row } = await pendingSubscription(baseURL!);
 
+  // The scanner guarantee: merely GETting the emailed link (no click) must not confirm.
   await page.goto(confirmUrl);
+  expect((await testDb.emailSubscriber.findUniqueOrThrow({ where: { id: row.id } })).status).toBe("PENDING");
+
   await page.getByRole("button", { name: /confirm my email/i }).click();
   await expect(page).toHaveURL(/\/subscribe\/confirmed$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/you're on the list/i);
@@ -33,7 +36,10 @@ test("confirm, unsubscribe and resubscribe through the real pages", async ({ pag
   await page.getByRole("button", { name: /confirm my email/i }).click();
   await expect(page).toHaveURL(/\/subscribe\/confirmed$/);
 
+  // Same scanner guarantee on the unsubscribe link: the GET that lands on this page must not unsubscribe.
   await page.goto(`/unsubscribe?token=${row.unsubscribeToken}`);
+  expect((await testDb.emailSubscriber.findUniqueOrThrow({ where: { id: row.id } })).status).toBe("ACTIVE");
+
   await page.getByRole("button", { name: /^unsubscribe$/i }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/you're unsubscribed/i);
   expect((await testDb.emailSubscriber.findUniqueOrThrow({ where: { id: row.id } })).status).toBe("UNSUBSCRIBED");
@@ -56,6 +62,7 @@ test("one-click unsubscribe works without a page", async ({ page, baseURL }) => 
     form: { "List-Unsubscribe": "One-Click" },
   });
   expect(res.status()).toBe(200);
+  expect((await testDb.emailSubscriber.findUniqueOrThrow({ where: { id: row.id } })).status).toBe("UNSUBSCRIBED");
 });
 
 test("a signed-in visitor using the header's Sign in lands on the dashboard", async ({ page }) => {

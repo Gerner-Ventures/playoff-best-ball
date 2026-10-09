@@ -193,8 +193,11 @@ subdomain, so that complaints about marketing mail cannot hurt magic-link delive
    bulk-sender rules require DMARC, not just SPF/DKIM). Wait for "Verified".
 2. Set `MARKETING_FROM_EMAIL=Playoff Best Ball <hello@news.playoffbestball.com>` in Doppler
    (it syncs to Vercel). The confirm and unsubscribe links inside list emails are built
-   from `BETTER_AUTH_URL`, so it must already be the production domain for those links
-   to match the sending domain.
+   from `BETTER_AUTH_URL`. Until launch that's still the `https://<app>.vercel.app`
+   placeholder (§3), so those links won't match the `news.` sending domain — that's
+   expected for the beta. The "Real domain" step in the launch checklist, which moves
+   `BETTER_AUTH_URL` to the production domain, fixes this; don't change `BETTER_AUTH_URL`
+   early just for this.
 3. Smoke test (do this after the marketing pages (PR 2) deploy, since the smoke test
    needs the footer form): submit the footer form on production with an address you
    control. The email should arrive from `news.`, and Gmail should show an

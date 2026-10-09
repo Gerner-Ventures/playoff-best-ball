@@ -10,6 +10,8 @@ test("new accounts get the weekly digest by default and can turn it off", async 
   await expect(toggle).toBeChecked();
 
   await toggle.uncheck();
+  // The toggle is disabled while the PATCH is in flight; wait for the save before reloading.
+  await expect(toggle).toBeEnabled();
   await expect(toggle).not.toBeChecked();
   await page.reload();
   await expect(page.getByLabel(/weekly playoff-race digest/i)).not.toBeChecked();

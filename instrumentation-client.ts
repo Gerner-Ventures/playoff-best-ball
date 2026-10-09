@@ -38,6 +38,12 @@ if (!key || !host) {
     // person_properties (including $initial_current_url, which can carry a confirm/
     // unsubscribe token on a device's first visit) straight to PostHog — before_send
     // never sees that request, so scrubTokens can't scrub it. Skip the request entirely.
+    //
+    // In posthog-js 1.433.5 this option also disables remote config, which session
+    // replay needs to start, and which dashboard-controlled heatmaps, surveys and web
+    // vitals rely on — all of those are off as a side effect. Exception capture still
+    // works, since it reads local config, not remote config. Acceptable here: the app
+    // uses no flags, replay or surveys.
     advanced_disable_flags: true,
   });
 }

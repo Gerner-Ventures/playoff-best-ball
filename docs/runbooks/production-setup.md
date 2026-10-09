@@ -229,8 +229,11 @@ The team is on Vercel **Pro** (checked 2026-10-09). In the Vercel dashboard:
 2. `MARKETING_FROM_EMAIL` is set in production.
 3. The "Subscribe rate limit" Firewall rule is created, or it's confirmed the Rate
    Limit action isn't offered.
-4. PostHog session replay is either off, or confirmed to honour `ph-no-capture` on
-   the token pages.
+4. PostHog session replay is effectively off while `advanced_disable_flags` is set
+   in `instrumentation-client.ts` (it disables remote config, which replay needs to
+   start). Turning replay on requires removing that option; once it's removed, the
+   `ph-no-capture` classes on the token forms (`subscribe/confirm`, `unsubscribe`)
+   keep the hidden token values out of recordings.
 
 Until items 1 and 2 are done, every signup returns 502 by design.
 

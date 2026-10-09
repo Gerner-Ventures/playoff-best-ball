@@ -478,9 +478,12 @@ body > * {
     background: var(--brand-tint);
   }
 
+  /* Bare links only inside the draft room: outside it --brand is #1b4fe8, ~1.8:1
+     on the chalk pages' asphalt and under the 3:1 a focus ring needs, so those
+     pages keep the browser's ring. Widens as the rest of the app converts. */
   .btn:focus-visible,
   .input:focus-visible,
-  a:focus-visible {
+  .theme-dark a:focus-visible {
     outline: 2px solid var(--brand);
     outline-offset: 2px;
   }

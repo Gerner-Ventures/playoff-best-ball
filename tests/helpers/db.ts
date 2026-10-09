@@ -75,21 +75,28 @@ let playerCounter = 0;
  */
 const AUTO_RANK_BASE = 10_000;
 
-/** Creates a player with a unique name; lower defaultRank = drafted earlier by fallback autodraft. */
-export async function createTestPlayer(
-  position: PlayerPosition,
-  overrides: { defaultRank?: number; name?: string; season?: number } = {},
-) {
+type TestPlayerOverrides = { defaultRank?: number; name?: string; season?: number };
+
+/**
+ * The one place a test player's row is shaped. createTestPlayer and
+ * createStandardPool both build through it, so an auto-assigned rank always goes
+ * through AUTO_RANK_BASE — the pool once inlined its own copy without the offset
+ * and collided with ranks tests set by hand.
+ */
+function testPlayerRow(position: PlayerPosition, overrides: TestPlayerOverrides = {}) {
   playerCounter += 1;
-  return testDb.player.create({
-    data: {
-      season: overrides.season ?? CURRENT_SEASON,
-      name: overrides.name ?? `Player ${playerCounter} (${position})`,
-      position,
-      nflTeam: "KC",
-      defaultRank: overrides.defaultRank ?? AUTO_RANK_BASE + playerCounter,
-    },
-  });
+  return {
+    season: overrides.season ?? CURRENT_SEASON,
+    name: overrides.name ?? `Player ${playerCounter} (${position})`,
+    position,
+    nflTeam: "KC",
+    defaultRank: overrides.defaultRank ?? AUTO_RANK_BASE + playerCounter,
+  };
+}
+
+/** Creates a player with a unique name; lower defaultRank = drafted earlier by fallback autodraft. */
+export async function createTestPlayer(position: PlayerPosition, overrides: TestPlayerOverrides = {}) {
+  return testDb.player.create({ data: testPlayerRow(position, overrides) });
 }
 
 /** Upserts a stat line for a player-week; partial overrides merge over an empty line. */
@@ -112,7 +119,10 @@ export async function setTestStat(
  *
  * One createMany, not ~130 awaited inserts. Callers still get the rows back in
  * insertion order, which `defaultRank` encodes, so ordering semantics are
- * unchanged from the row-at-a-time version this replaced.
+ * unchanged from the row-at-a-time version this replaced. createManyAndReturn
+ * hands back exactly the rows inserted, rather than a lookup by name that could
+ * also match another season's players; the sort makes the order explicit instead
+ * of trusting RETURNING to preserve it.
  */
 export async function createStandardPool(entryCount: number) {
   const counts: [PlayerPosition, number][] = [
@@ -125,20 +135,8 @@ export async function createStandardPool(entryCount: number) {
   ];
   const data = [];
   for (const [position, n] of counts) {
-    for (let i = 0; i < n; i++) {
-      playerCounter += 1;
-      data.push({
-        season: CURRENT_SEASON,
-        name: `Player ${playerCounter} (${position})`,
-        position,
-        nflTeam: "KC",
-        defaultRank: playerCounter,
-      });
-    }
+    for (let i = 0; i < n; i++) data.push(testPlayerRow(position));
   }
-  await testDb.player.createMany({ data });
-  return testDb.player.findMany({
-    where: { name: { in: data.map((d) => d.name) } },
-    orderBy: { defaultRank: "asc" },
-  });
+  const players = await testDb.player.createManyAndReturn({ data });
+  return players.sort((a, b) => a.defaultRank - b.defaultRank);
 }

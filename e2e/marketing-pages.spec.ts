@@ -4,6 +4,8 @@ const PAGES = [
   { path: "/how-it-works", h1: /how playoff best ball works/i, title: /How it works · Playoff Best Ball/ },
   { path: "/commissioners", h1: /run the league, skip the spreadsheet/i, title: /Commissioners · Playoff Best Ball/ },
   { path: "/scoring", h1: /^scoring$/i, title: /Scoring · Playoff Best Ball/ },
+  { path: "/pricing", h1: /^pricing$/i, title: /Pricing · Playoff Best Ball/ },
+  { path: "/faq", h1: /questions/i, title: /FAQ · Playoff Best Ball/ },
 ];
 
 for (const p of PAGES) {
@@ -26,4 +28,10 @@ test("scoring shows the preset values from the engine", async ({ page }) => {
   const reception = page.getByRole("row", { name: /^Reception/ });
   await expect(reception).toContainText("+0.5");
   await expect(reception).toContainText("+1");
+});
+
+test("faq answers quote the real dates and price", async ({ page }) => {
+  await page.goto("/faq");
+  await expect(page.getByText(/Sun, Jan 10/).first()).toBeVisible();
+  await expect(page.getByText(/\$25 per league, per season/)).toBeVisible();
 });

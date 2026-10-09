@@ -8,7 +8,7 @@ const DATES = [
 
 export function KeyDates() {
   return (
-    <ol className="grid gap-3 sm:grid-cols-3">
+    <ol data-testid="key-dates" className="grid gap-3 sm:grid-cols-3">
       {DATES.map((d) => (
         <li key={d.day} className="rounded-lg bg-brand-tint p-4">
           <p className="font-mono text-sm font-semibold text-brand">{formatCalendarDay(d.day)}</p>

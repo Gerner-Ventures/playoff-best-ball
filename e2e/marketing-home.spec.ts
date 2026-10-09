@@ -6,8 +6,9 @@ import { uniqueEmail } from "./helpers/auth";
 test("home renders the pitch, the key dates and a phase-appropriate call to action", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/draft once\. watch all playoffs\./i);
-  await expect(page.getByText("Sun, Jan 10")).toBeVisible();
-  await expect(page.getByText("Sat, Jan 16")).toBeVisible();
+  const keyDates = page.getByTestId("key-dates");
+  await expect(keyDates.getByText("Sun, Jan 10")).toBeVisible();
+  await expect(keyDates.getByText("Sat, Jan 16")).toBeVisible();
   if (getLaunchPhase() === "list") {
     await expect(page.getByRole("main").getByRole("button", { name: /get the weekly digest/i })).toBeVisible();
   } else {

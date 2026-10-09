@@ -125,9 +125,7 @@ export default function HomePage() {
       </Section>
 
       <Section eyebrow="Questions" title="The short version">
-        {/* "when" is excluded here: its answer quotes the same calendar dates as
-            KeyDates above, which would make them ambiguous to a page-wide text query. */}
-        <FaqList items={faqItems().filter((f) => ["what", "eliminated", "online"].includes(f.id))} />
+        <FaqList items={faqItems().filter((f) => ["what", "when", "online"].includes(f.id))} />
         <p className="mt-6">
           <Link href="/faq" className="font-semibold text-brand underline-offset-4 hover:underline">
             All questions

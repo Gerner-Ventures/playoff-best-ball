@@ -204,6 +204,22 @@ subdomain, so that complaints about marketing mail cannot hurt magic-link delive
    "Unsubscribe" link next to the sender (that is the `List-Unsubscribe` header
    working).
 
+### Signup rate limit (Vercel Firewall)
+
+The signup form is public once the marketing pages deploy. The app already limits
+confirmation emails to one per address per 10 minutes. This rule stops floods of *new*
+addresses from one IP.
+
+The team is on Vercel **Pro** (checked 2026-10-09). In the Vercel dashboard:
+
+1. Open the project → Firewall → Rules → New rule.
+2. Name it "Subscribe rate limit". Condition: Request Path equals `/api/subscribe` AND
+   Method equals `POST`.
+3. Then: Rate Limit, fixed window 60 s, 10 requests, keyed by IP, action Deny (429).
+4. Confirm the Rate Limit action is offered. If it isn't, skip this step; the
+   per-address throttle still applies.
+5. Smoke test: 11 quick POSTs from one IP; the 11th returns 429.
+
 ## 7. OAuth
 
 - **Google (now):** create an OAuth client in Google Cloud Console with authorized

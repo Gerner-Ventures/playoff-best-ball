@@ -46,9 +46,11 @@ model Account {
   id                    String    @id
   accountId             String
   providerId            String
-  // better-auth 1.7 scopes account identity by issuer: `local:credential` for
-  // password/magic-link accounts, `local:oauth:<providerId>` for social.
-  issuer                String
+  // Vestigial. better-auth 1.7.0–1.7.2 wrote an issuer here; 1.7.3 dropped it and
+  // went back to identifying accounts by (providerId, accountId). Nothing reads or
+  // writes it now. Kept nullable rather than dropped so a rollback to a 1.7.2
+  // build still finds it — see 20261009000000_relax_account_issuer.
+  issuer                String?
   userId                String
   user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   accessToken           String?
@@ -61,7 +63,6 @@ model Account {
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
-  @@unique([issuer, accountId])
   @@index([userId])
   @@map("account")
 }

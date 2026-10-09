@@ -1,12 +1,8 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { getSessionUser } from "@/lib/session";
 import { ChalkPlayDiagram } from "@/components/chalk-play-diagram";
 import { formatPriceUsd, PREMIUM_PRICE_CENTS } from "@/lib/pricing";
 
 export default async function LandingPage() {
-  const user = await getSessionUser();
-  if (user) redirect("/dashboard");
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-10 sm:px-10">
       <div className="flex items-center justify-between gap-6">

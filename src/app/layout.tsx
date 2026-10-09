@@ -4,7 +4,7 @@ import "./globals.css";
 import { PwaRegister } from "@/components/pwa-register";
 import { ChalkFilter } from "@/components/chalk-filter";
 import { AnalyticsIdentity } from "@/components/analytics-provider";
-import { getSessionUser } from "@/lib/session";
+import { CANONICAL_ORIGIN } from "@/lib/site-url";
 
 // Chalk headings and flourishes. Caveat is variable (400–700).
 const caveat = Caveat({
@@ -28,17 +28,19 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
+  // Absolute URLs for canonical links and share images resolve against production.
+  metadataBase: new URL(CANONICAL_ORIGIN),
   title: "Playoff Best Ball",
   description: "Run an NFL playoff best ball league with your friends.",
 };
 
-export default async function RootLayout({
+// No session read here: it would make every route, marketing pages included, render
+// per request. Pages that need the user call getSessionUser() themselves.
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const user = await getSessionUser();
-
   return (
     <html
       lang="en"
@@ -47,7 +49,7 @@ export default async function RootLayout({
       <body className="min-h-full flex flex-col">
         <ChalkFilter />
         <PwaRegister />
-        {user && <AnalyticsIdentity userId={user.id} email={user.email} name={user.name} />}
+        <AnalyticsIdentity />
         {children}
       </body>
     </html>

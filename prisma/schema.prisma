@@ -23,6 +23,7 @@ model User {
   memberships   Membership[]
   pushSubscriptions PushSubscription[]
   mockDraft     MockDraft?
+  emailSubscriber   EmailSubscriber?
 
   @@map("user")
 }
@@ -65,6 +66,30 @@ model Account {
 
   @@index([userId])
   @@map("account")
+}
+
+enum SubscriberStatus {
+  PENDING
+  ACTIVE
+  UNSUBSCRIBED
+}
+
+/// One row per address on the marketing list, whether it came from the signup form or from an account.
+/// See docs/superpowers/specs/2026-10-09-marketing-foundation-design.md §5.
+model EmailSubscriber {
+  id               String           @id @default(cuid())
+  email            String           @unique // normalizeEmail(): trimmed + lowercased
+  userId           String?          @unique
+  user             User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  source           String // a SUBSCRIBE_SOURCES value, or "account"
+  status           SubscriberStatus
+  confirmTokenHash String?          @unique // sha256 hex of the emailed token; kept after confirm so re-clicks are idempotent
+  confirmSentAt    DateTime?
+  confirmedAt      DateTime?
+  unsubscribeToken String           @unique // in every email; proves control of the address
+  unsubscribedAt   DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 }
 
 model Verification {

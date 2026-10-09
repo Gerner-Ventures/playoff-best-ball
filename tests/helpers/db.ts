@@ -24,6 +24,7 @@ export async function resetDb() {
   // (see src/lib/demo-mode.ts) and is a property of the database, not of any test's
   // data. Wiping it here would silently downgrade a demo database on the next reset
   // and turn password sign-in off. tests/demo-mode-integration.test.ts pins this.
+  await testDb.emailSubscriber.deleteMany();
   await testDb.mockDraft.deleteMany();
   await testDb.substitution.deleteMany();
   await testDb.draftQueueItem.deleteMany();

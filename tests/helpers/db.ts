@@ -58,6 +58,15 @@ export async function createTestUser(name = "Test User") {
 
 let playerCounter = 0;
 
+/**
+ * Auto-assigned ranks live above anything a test writes by hand. Tests use small
+ * explicit ranks (1, 2, …) to mean "this is the best available"; the counter used to
+ * hand out those same low numbers to pool filler, so the two collided — which the
+ * unique (season, defaultRank) index now rejects outright. Filler stays mutually
+ * ordered, just never in the range a test is making a point with.
+ */
+const AUTO_RANK_BASE = 10_000;
+
 /** Creates a player with a unique name; lower defaultRank = drafted earlier by fallback autodraft. */
 export async function createTestPlayer(
   position: PlayerPosition,
@@ -70,7 +79,7 @@ export async function createTestPlayer(
       name: overrides.name ?? `Player ${playerCounter} (${position})`,
       position,
       nflTeam: "KC",
-      defaultRank: overrides.defaultRank ?? playerCounter,
+      defaultRank: overrides.defaultRank ?? AUTO_RANK_BASE + playerCounter,
     },
   });
 }

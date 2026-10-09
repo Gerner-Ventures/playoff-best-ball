@@ -174,7 +174,12 @@ model Player {
 
   @@unique([season, name, position])
   @@index([season, position])
-  @@index([season, defaultRank])
+  // Unique, not just indexed: autodraft picks by `orderBy: defaultRank asc` with no
+  // tiebreak, so two players sharing a rank makes the board depend on undefined
+  // ordering. The code already assumed this — applyDefaultRanks' offset shuffle
+  // exists because of it — but nothing enforced it, which is how a fixture player
+  // ended up tied with a real one at rank 7 and draftable in round 1.
+  @@unique([season, defaultRank])
 }
 
 enum DraftStatus {

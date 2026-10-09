@@ -118,10 +118,15 @@ async function sendOrRollBack(
     // mail that did go out, and this rollback must not clobber it. Also restores the row's
     // previous status: a failed resend of a once-UNSUBSCRIBED row must leave it UNSUBSCRIBED,
     // not stranded in PENDING with unsubscribedAt still set (which would let a later signup or
-    // confirm resubscribe it without re-proving consent).
+    // confirm resubscribe it without re-proving consent). Also scoped to `status: "PENDING"`:
+    // this request is the one that put the row into PENDING, so that's the only state it's
+    // entitled to undo. Other writers (the sign-up hook, unsubscribeByToken, setDigestPreference)
+    // never touch confirmTokenHash, so without this guard a status change that lands while the
+    // send is in flight would otherwise be overwritten by this rollback even though it's not the
+    // change this rollback is undoing.
     try {
       await db.emailSubscriber.updateMany({
-        where: { id: row.id, confirmTokenHash: hashToken(token) },
+        where: { id: row.id, status: "PENDING", confirmTokenHash: hashToken(token) },
         data: { confirmSentAt: previousSentAt, status: previousStatus },
       });
     } catch (rollbackErr) {

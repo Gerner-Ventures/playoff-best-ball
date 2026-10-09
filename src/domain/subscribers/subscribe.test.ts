@@ -1,11 +1,24 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { testDb, resetDb } from "../../../tests/helpers/db";
+import { testDb, resetDb, createTestUser } from "../../../tests/helpers/db";
 import { requestSubscription, ConfirmationEmailFailedError } from "./subscribe";
 import { hashToken, newToken } from "./tokens";
 import { at, fakeSender, TEST_URLS, tokenFromEmail } from "./test-support";
+import type { MarketingSender } from "./sender";
+import { ensureAccountSubscriber } from "./account";
+import { unsubscribeByToken } from "./unsubscribe";
 
 const subscribe = (sender: ReturnType<typeof fakeSender>["sender"], email: string, minutes = 0, source = "footer" as const) =>
   requestSubscription(testDb, sender, TEST_URLS, { email, source, now: at(minutes) });
+
+/** A sender whose send() performs a competing write on the row, then fails like a dead provider. */
+function racingSender(race: () => Promise<unknown>): MarketingSender {
+  return {
+    async send() {
+      await race();
+      throw new Error("resend down");
+    },
+  };
+}
 
 describe("requestSubscription", () => {
   beforeEach(resetDb);
@@ -144,5 +157,34 @@ describe("requestSubscription", () => {
     const row = await testDb.emailSubscriber.findUniqueOrThrow({ where: { email: "gone@example.com" } });
     expect(row.status).toBe("UNSUBSCRIBED");
     expect(row.confirmSentAt?.getTime()).toBe(at(0).getTime());
+  });
+
+  it("does not clobber the sign-up hook's activation when the racing confirmation send fails", async () => {
+    const user = await createTestUser("Racer");
+    const email = user.email.toLowerCase();
+    const sender = racingSender(() => ensureAccountSubscriber(testDb, user, at(0)));
+
+    await expect(requestSubscription(testDb, sender, TEST_URLS, { email, source: "footer", now: at(0) })).rejects.toBeInstanceOf(
+      ConfirmationEmailFailedError,
+    );
+
+    const row = await testDb.emailSubscriber.findUniqueOrThrow({ where: { email } });
+    expect(row.status).toBe("ACTIVE");
+    expect(row.userId).toBe(user.id);
+  });
+
+  it("does not clobber an in-flight unsubscribe when the racing confirmation send fails", async () => {
+    const email = "unsub-race@example.com";
+    const sender = racingSender(async () => {
+      const row = await testDb.emailSubscriber.findUniqueOrThrow({ where: { email } });
+      await unsubscribeByToken(testDb, { token: row.unsubscribeToken, now: at(0) });
+    });
+
+    await expect(requestSubscription(testDb, sender, TEST_URLS, { email, source: "footer", now: at(0) })).rejects.toBeInstanceOf(
+      ConfirmationEmailFailedError,
+    );
+
+    const row = await testDb.emailSubscriber.findUniqueOrThrow({ where: { email } });
+    expect(row.status).toBe("UNSUBSCRIBED");
   });
 });

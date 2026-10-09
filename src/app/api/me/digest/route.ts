@@ -20,8 +20,9 @@ export async function PATCH(req: Request) {
   const parsed = bodySchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
 
+  const before = await getDigestPreference(db, user);
   const digest = await setDigestPreference(db, user, parsed.data.digest);
-  if (!parsed.data.digest) {
+  if (before && !parsed.data.digest) {
     await captureServerEvent(user.id, ANALYTICS_EVENTS.UNSUBSCRIBED, { via: "settings" });
   }
   return NextResponse.json({ digest });

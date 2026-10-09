@@ -10,8 +10,12 @@ export async function POST(req: Request) {
   const outcome = await confirmSubscription(db, { token: form?.get("token"), now: new Date() });
 
   if (outcome.result === "confirmed") {
-    // Awaited but can never throw (captureServerEvent swallows errors).
-    await captureServerEvent(outcome.subscriberId, ANALYTICS_EVENTS.SUBSCRIBE_CONFIRMED, { source: outcome.source });
+    // Awaited but can never throw (captureServerEvent swallows errors). $process_person_profile:
+    // false because this event is keyed by subscriberId, not a real PostHog person.
+    await captureServerEvent(outcome.subscriberId, ANALYTICS_EVENTS.SUBSCRIBE_CONFIRMED, {
+      source: outcome.source,
+      $process_person_profile: false,
+    });
   }
   const target =
     outcome.result === "confirmed" || outcome.result === "already_confirmed"

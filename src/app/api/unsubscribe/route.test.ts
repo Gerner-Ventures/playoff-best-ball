@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { testDb, resetDb } from "../../../../tests/helpers/db";
 import { newToken } from "@/domain/subscribers/tokens";
-import { POST } from "./route";
+import { GET, POST } from "./route";
 
 async function active() {
   return testDb.emailSubscriber.create({
@@ -42,5 +42,13 @@ describe("POST /api/unsubscribe", () => {
     const res = await POST(new Request("http://localhost/api/unsubscribe", { method: "POST", body: new URLSearchParams({ token: "trunc" }) }));
     expect(res.status).toBe(303);
     expect(res.headers.get("location")).toBe("http://localhost/unsubscribe?token=trunc&status=invalid");
+  });
+
+  it("GET on the List-Unsubscribe URL bounces to the human page without changing state", async () => {
+    const row = await active();
+    const res = await GET(new Request(`http://localhost/api/unsubscribe?token=${row.unsubscribeToken}`));
+    expect(res.status).toBe(303);
+    expect(res.headers.get("location")).toBe(`http://localhost/unsubscribe?token=${row.unsubscribeToken}`);
+    expect((await testDb.emailSubscriber.findUniqueOrThrow({ where: { id: row.id } })).status).toBe("ACTIVE");
   });
 });

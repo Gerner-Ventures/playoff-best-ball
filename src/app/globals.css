@@ -55,6 +55,7 @@
 
   --good: #0f7a52;
   --warn: #b45309;
+  --bad: #b42318;   /* errors: failed sends, invalid input */
   /* Eliminated. Matches --ink-muted on purpose: an eliminated player's name and
      score are still content you have to read, so the dimming is carried by the
      strikethrough, never by dropping below 4.5:1. */
@@ -94,6 +95,7 @@
 
   --good: #34d399;
   --warn: #fbbf24;
+  --bad: #f97066;
   --out: #858c9b;
 
   --pos-qb: #a78bfa;  --pos-qb-tint: #2c293e;
@@ -134,6 +136,7 @@
   --color-brand-on: var(--brand-on);
   --color-good: var(--good);
   --color-warn: var(--warn);
+  --color-bad: var(--bad);
   --color-out: var(--out);
 
   --font-sans: var(--font-sans);
@@ -343,6 +346,13 @@ body > * {
 
   /* --- cobalt primitives --------------------------------------------------- */
 
+  /* Light cobalt ground for converted pages (marketing first). It sits over the chalk
+     body background and grain, so it paints its own ground. */
+  .theme-light {
+    background: var(--ground);
+    color: var(--ink);
+  }
+
   .card {
     border: 1px solid var(--rule);
     border-radius: 0.75rem;
@@ -478,12 +488,13 @@ body > * {
     background: var(--brand-tint);
   }
 
-  /* Bare links only inside the draft room: outside it --brand is #1b4fe8, ~1.8:1
+  /* Bare links only inside converted scopes: outside them --brand is #1b4fe8, ~1.8:1
      on the chalk pages' asphalt and under the 3:1 a focus ring needs, so those
      pages keep the browser's ring. Widens as the rest of the app converts. */
   .btn:focus-visible,
   .input:focus-visible,
-  .theme-dark a:focus-visible {
+  .theme-dark a:focus-visible,
+  .theme-light a:focus-visible {
     outline: 2px solid var(--brand);
     outline-offset: 2px;
   }

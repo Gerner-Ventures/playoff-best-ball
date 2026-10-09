@@ -56,19 +56,40 @@ export async function requestSubscription(
 
   if (existing.status === "ACTIVE") return { outcome: "already_active", subscriberId: existing.id };
 
-  if (existing.confirmSentAt && input.now.getTime() - existing.confirmSentAt.getTime() < RESEND_THROTTLE_MS) {
-    return { outcome: "throttled", subscriberId: existing.id };
-  }
-
-  // PENDING (an old or lost link) or UNSUBSCRIBED (consent must be re-proven): new token, back to PENDING.
+  // PENDING (an old or lost link) or UNSUBSCRIBED (consent must be re-proven): new token, back to
+  // PENDING. The `existing` read above is stale by the time we write, so eligibility is re-checked
+  // atomically in the WHERE of this updateMany, not from the value we already have in hand:
+  //   - `status: { not: "ACTIVE" }` so a confirm landing in the gap between our read and this write
+  //     is never demoted back to PENDING.
+  //   - the `OR` reproduces the throttle check (unsent, or sent before the cutoff) against the
+  //     row's *current* confirmSentAt, so two concurrent resends for the same row serialize at the
+  //     database: the loser's predicate no longer matches once the winner's write lands, and it
+  //     updates zero rows instead of rotating a second token no one will get.
   const token = newToken();
   const previousSentAt = existing.confirmSentAt;
-  const updated = await db.emailSubscriber.update({
-    where: { id: existing.id },
+  const throttleCutoff = new Date(input.now.getTime() - RESEND_THROTTLE_MS);
+  const { count } = await db.emailSubscriber.updateMany({
+    where: {
+      id: existing.id,
+      status: { not: "ACTIVE" },
+      OR: [{ confirmSentAt: null }, { confirmSentAt: { lte: throttleCutoff } }],
+    },
     data: { status: "PENDING", confirmTokenHash: hashToken(token), confirmSentAt: input.now },
   });
-  await sendOrRollBack(db, sender, urls, updated, token, previousSentAt);
-  return { outcome: "sent", subscriberId: updated.id };
+
+  if (count === 0) {
+    // We lost the race above (or never qualified); re-read to report what's actually true now.
+    const current = await db.emailSubscriber.findUniqueOrThrow({ where: { id: existing.id } });
+    return {
+      outcome: current.status === "ACTIVE" ? "already_active" : "throttled",
+      subscriberId: current.id,
+    };
+  }
+
+  // email and unsubscribeToken are immutable, so `existing` (read before the write) is still
+  // correct to send from.
+  await sendOrRollBack(db, sender, urls, existing, token, previousSentAt);
+  return { outcome: "sent", subscriberId: existing.id };
 }
 
 async function sendOrRollBack(
@@ -90,7 +111,18 @@ async function sendOrRollBack(
     );
   } catch (err) {
     // Un-stamp the send, so the throttle doesn't block an immediate retry of mail that never left.
-    await db.emailSubscriber.update({ where: { id: row.id }, data: { confirmSentAt: previousSentAt } });
+    // Scoped to *this* request's own token: if a concurrent resend for the same row already
+    // rotated confirmTokenHash again (e.g. its own send succeeded), that newer stamp belongs to
+    // mail that did go out, and this rollback must not clobber it.
+    try {
+      await db.emailSubscriber.updateMany({
+        where: { id: row.id, confirmTokenHash: hashToken(token) },
+        data: { confirmSentAt: previousSentAt },
+      });
+    } catch (rollbackErr) {
+      // The send already failed; a DB hiccup on the rollback must not hide that from the caller.
+      console.error("failed to roll back confirmSentAt after a failed confirmation send", rollbackErr);
+    }
     throw new ConfirmationEmailFailedError(err);
   }
 }

@@ -95,4 +95,31 @@ describe("requestSubscription", () => {
     expect(await testDb.emailSubscriber.count()).toBe(1);
     expect(mail.sent).toHaveLength(1);
   });
+
+  it("serializes two parallel resends racing for one resendable row", async () => {
+    await testDb.emailSubscriber.create({
+      data: { email: "gone@example.com", source: "footer", status: "UNSUBSCRIBED", unsubscribeToken: newToken(), confirmSentAt: at(0) },
+    });
+    const mail = fakeSender();
+    const results = await Promise.all([subscribe(mail.sender, "gone@example.com", 30), subscribe(mail.sender, "gone@example.com", 30)]);
+
+    expect(results.map((r) => r.outcome).sort()).toEqual(["sent", "throttled"]);
+    expect(mail.sent).toHaveLength(1);
+  });
+
+  it("rolls back confirmSentAt on a failed resend, restoring the previous stamp", async () => {
+    await testDb.emailSubscriber.create({
+      data: { email: "fan@example.com", source: "footer", status: "PENDING", unsubscribeToken: newToken(), confirmSentAt: at(0) },
+    });
+    const mail = fakeSender();
+    mail.failNext();
+    const sent = subscribe(mail.sender, "fan@example.com", 11);
+
+    await expect(sent).rejects.toBeInstanceOf(ConfirmationEmailFailedError);
+    await expect(sent).rejects.toHaveProperty("cause.message", "resend down");
+
+    const row = await testDb.emailSubscriber.findUniqueOrThrow({ where: { email: "fan@example.com" } });
+    expect(row.status).toBe("PENDING");
+    expect(row.confirmSentAt?.getTime()).toBe(at(0).getTime());
+  });
 });

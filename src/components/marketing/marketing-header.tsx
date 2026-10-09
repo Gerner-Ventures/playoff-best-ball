@@ -11,7 +11,7 @@ export function MarketingHeader() {
   return (
     <header className="border-b border-rule bg-surface">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-2 sm:px-6">
-        <Link href="/" className="text-lg" aria-label="Playoff Best Ball home">
+        <Link href="/" className="inline-flex min-h-11 items-center text-lg" aria-label="Playoff Best Ball home">
           <Wordmark />
         </Link>
         <nav aria-label="Main" className="flex items-center gap-1 sm:gap-2">

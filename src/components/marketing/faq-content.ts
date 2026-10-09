@@ -1,4 +1,4 @@
-import { FREE_TIER_MAX_ENTRIES } from "@/domain/league-settings";
+import { FREE_TIER_MAX_ENTRIES, pickClockHoursSchema } from "@/domain/league-settings";
 import { PREMIUM_MAX_ENTRIES } from "@/domain/leagues/upgrade-league";
 import { formatPriceUsd, PREMIUM_PRICE_CENTS } from "@/lib/pricing";
 import { formatCalendarDay, SEASON_CALENDAR } from "@/lib/season-calendar";
@@ -18,6 +18,8 @@ export function faqItems(): FaqItem[] {
   const price = formatPriceUsd(PREMIUM_PRICE_CENTS);
   const fieldSet = formatCalendarDay(SEASON_CALENDAR.fieldSet);
   const wildCard = formatCalendarDay(SEASON_CALENDAR.wildCardStart);
+  const clockHours = pickClockHoursSchema.options.map((o) => o.value);
+  const clockRangeText = `${Math.min(...clockHours)} to ${Math.max(...clockHours)} hours`;
   return [
     {
       id: "what",
@@ -36,8 +38,7 @@ export function faqItems(): FaqItem[] {
       id: "online",
       category: "general",
       question: "Do I have to be online for the draft?",
-      answer:
-        "No. Each pick has a clock of 2 to 24 hours, set by your commissioner, and you're notified by email (and by text or push if you turn them on) when you're up. If the clock runs out, autodraft picks for you: your top queued player if you've set a queue, otherwise the best available.",
+      answer: `No. Each pick has a clock of ${clockRangeText}, set by your commissioner, and you're notified by email (and by text or push if you turn them on) when you're up. If the clock runs out, autodraft picks for you: your top queued player if you've set a queue, otherwise the best available.`,
     },
     {
       id: "eliminated",

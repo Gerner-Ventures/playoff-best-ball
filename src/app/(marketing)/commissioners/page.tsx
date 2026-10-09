@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { FREE_TIER_MAX_ENTRIES } from "@/domain/league-settings";
+import { DEFAULT_ROSTER_SLOTS, FREE_TIER_MAX_ENTRIES } from "@/domain/league-settings";
 import { PREMIUM_MAX_ENTRIES } from "@/domain/leagues/upgrade-league";
 import { formatPriceUsd, PREMIUM_PRICE_CENTS } from "@/lib/pricing";
 import { formatCalendarDay, SEASON_CALENDAR } from "@/lib/season-calendar";
@@ -9,8 +9,7 @@ import { ClosingCta } from "@/components/marketing/closing-cta";
 
 export const metadata: Metadata = {
   title: "Commissioners",
-  description:
-    "Run an NFL playoff best ball league in minutes: one invite link, a slow draft that runs itself, dues tracking, and free for up to 10 teams.",
+  description: `Run an NFL playoff best ball league in minutes: one invite link, a slow draft that runs itself, dues tracking, and free for up to ${FREE_TIER_MAX_ENTRIES} teams.`,
   alternates: { canonical: "/commissioners" },
 };
 
@@ -18,6 +17,8 @@ export default function CommissionersPage() {
   const fieldSet = formatCalendarDay(SEASON_CALENDAR.fieldSet);
   const wildCard = formatCalendarDay(SEASON_CALENDAR.wildCardStart);
   const price = formatPriceUsd(PREMIUM_PRICE_CENTS);
+  const freeTeams = FREE_TIER_MAX_ENTRIES;
+  const freePicks = FREE_TIER_MAX_ENTRIES * DEFAULT_ROSTER_SLOTS.length;
 
   const items: { title: string; body: React.ReactNode }[] = [
     {
@@ -30,7 +31,7 @@ export default function CommissionersPage() {
     },
     {
       title: "Plan the draft window",
-      body: `The playoff field is set on ${fieldSet}, and the draft has to finish before Wild Card kickoff on ${wildCard}. Schedule the start time, and pick a clock that fits: with ten teams there are 90 picks to make, so shorter clocks finish sooner.`,
+      body: `The playoff field is set on ${fieldSet}, and the draft has to finish before Wild Card kickoff on ${wildCard}. Schedule the start time, and pick a clock that fits: with ${freeTeams} teams there are ${freePicks} picks to make, so shorter clocks finish sooner.`,
     },
     {
       title: "The draft runs itself",

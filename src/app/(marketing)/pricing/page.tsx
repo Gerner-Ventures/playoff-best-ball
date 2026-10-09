@@ -33,7 +33,6 @@ const PREMIUM = [
   "Custom scoring — set the value of every stat",
   "Multiple entries per person",
   "Next-week projections from recent scoring and Vegas win probability",
-  "No ads",
 ];
 
 function Check() {

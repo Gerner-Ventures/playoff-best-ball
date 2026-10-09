@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { getLaunchPhase } from "@/lib/launch";
 import { formatCalendarDay, SEASON_CALENDAR } from "@/lib/season-calendar";
 import { formatPriceUsd, PREMIUM_PRICE_CENTS } from "@/lib/pricing";
-import { FREE_TIER_MAX_ENTRIES } from "@/domain/league-settings";
+import { FREE_TIER_MAX_ENTRIES, pickClockHoursSchema } from "@/domain/league-settings";
 import { PREMIUM_MAX_ENTRIES } from "@/domain/leagues/upgrade-league";
 import { SignupForm } from "@/components/marketing/signup-form";
 import { CtaLink } from "@/components/marketing/cta-link";
@@ -22,6 +22,10 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
+// Derived from the engine, so the copy can't drift from the rules.
+const CLOCK_HOURS = pickClockHoursSchema.options.map((o) => o.value);
+const CLOCK_RANGE_TEXT = `${Math.min(...CLOCK_HOURS)}- to ${Math.max(...CLOCK_HOURS)}-hour`;
+
 const STEPS = [
   {
     title: "Start a league, send one link",
@@ -29,7 +33,7 @@ const STEPS = [
   },
   {
     title: "Draft on your own time",
-    body: "A slow snake draft: each pick has a 2- to 24-hour clock, and you're notified when you're up. The clock can pause overnight, and autodraft covers a missed turn.",
+    body: `A slow snake draft: each pick has a ${CLOCK_RANGE_TEXT} clock, and you're notified when you're up. The clock can pause overnight, and autodraft covers a missed turn.`,
   },
   {
     title: "Watch it score itself",
@@ -95,7 +99,10 @@ export default function HomePage() {
       <Section eyebrow="How it works" title="Three steps, then the playoffs do the work">
         <Steps steps={STEPS} />
         <p className="mt-6">
-          <Link href="/how-it-works" className="font-semibold text-brand underline-offset-4 hover:underline">
+          <Link
+            href="/how-it-works"
+            className="inline-flex min-h-11 items-center font-semibold text-brand underline-offset-4 hover:underline"
+          >
             The full rules
           </Link>
         </p>
@@ -127,7 +134,10 @@ export default function HomePage() {
       <Section eyebrow="Questions" title="The short version">
         <FaqList items={faqItems().filter((f) => ["what", "when", "online"].includes(f.id))} />
         <p className="mt-6">
-          <Link href="/faq" className="font-semibold text-brand underline-offset-4 hover:underline">
+          <Link
+            href="/faq"
+            className="inline-flex min-h-11 items-center font-semibold text-brand underline-offset-4 hover:underline"
+          >
             All questions
           </Link>
         </p>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { DEFAULT_ROSTER_SLOTS, FREE_TIER_MAX_ENTRIES, pickClockHoursSchema } from "@/domain/league-settings";
 import { FLEX_ELIGIBLE } from "@/domain/draft/slot-assignment";
+import { PAUSE_END_HOUR_ET, PAUSE_START_HOUR_ET } from "@/domain/draft/pick-clock";
 import { PREMIUM_MAX_ENTRIES } from "@/domain/leagues/upgrade-league";
 import { formatCalendarDay, SEASON_CALENDAR } from "@/lib/season-calendar";
 import { Section } from "@/components/marketing/section";
@@ -18,6 +19,8 @@ export const metadata: Metadata = {
 const ROSTER = DEFAULT_ROSTER_SLOTS.map((s) => (s.slot === "FLEX" ? `FLEX (${FLEX_ELIGIBLE.join("/")})` : s.slot)).join(", ");
 const CLOCKS = pickClockHoursSchema.options.map((o) => o.value);
 const CLOCK_TEXT = `${CLOCKS.slice(0, -1).join(", ")} or ${CLOCKS.at(-1)} hours`;
+// Both bounds fall before noon, so "a.m." covers the whole range.
+const PAUSE_TEXT = `${PAUSE_START_HOUR_ET} to ${PAUSE_END_HOUR_ET} a.m. Eastern`;
 
 const SECTIONS: { title: string; body: React.ReactNode }[] = [
   {
@@ -35,7 +38,7 @@ const SECTIONS: { title: string; body: React.ReactNode }[] = [
     body: (
       <>
         A snake draft, nine rounds, and every NFL player can be drafted once per league. Each pick has a clock of{" "}
-        {CLOCK_TEXT}, set by the commissioner, and it can pause overnight from 1 to 8 a.m. Eastern. You&apos;re
+        {CLOCK_TEXT}, set by the commissioner, and it can pause overnight from {PAUSE_TEXT}. You&apos;re
         notified by email when you&apos;re on the clock, and by text or push if you turn those on. If time runs out,
         autodraft takes your top queued player that fits, or the best available. Drafts run between{" "}
         {formatCalendarDay(SEASON_CALENDAR.fieldSet)}, when the playoff field is set, and Wild Card kickoff on{" "}
@@ -75,7 +78,7 @@ const SECTIONS: { title: string; body: React.ReactNode }[] = [
   },
   {
     title: "Following along",
-    body: "Scores update live during games, the leaderboard moves with every touchdown, and everyone gets a preview before each round and a recap after it.",
+    body: "Scores update every couple of minutes during games, and everyone gets a preview before each round and a recap after it.",
   },
 ];
 

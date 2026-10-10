@@ -14,12 +14,18 @@ on:
       - data/players-*.json
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 concurrency:
   group: migrate-preview-db
   cancel-in-progress: false
 
 jobs:
   migrate:
+    # workflow_dispatch can target any branch, and this job runs that branch's code
+    # with the database URL. Only main's code, which has been reviewed, gets to.
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     env:
       # Direct (non-pooled) URL of the Neon integration's database, the one Vercel
@@ -27,6 +33,12 @@ jobs:
       # engine cannot connect when it is present.
       DATABASE_URL: ${{ secrets.PREVIEW_DATABASE_URL }}
     steps:
+      - name: Check the preview database URL is configured
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::Set the PREVIEW_DATABASE_URL repo secret (see docs/runbooks/schema-changes.md)"
+            exit 1
+          fi
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:

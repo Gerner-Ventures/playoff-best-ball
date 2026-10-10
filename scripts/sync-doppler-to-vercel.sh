@@ -61,9 +61,11 @@ if [ -n "${VERCEL_ORG_ID:-}" ]; then VERCEL_ARGS+=(--scope "$VERCEL_ORG_ID"); fi
 #
 # A read loop rather than `mapfile`: macOS ships bash 3.2, which has no mapfile, and
 # this script is meant to run from an operator's terminal as well as from CI.
+# Values reach python on stdin, never argv, so they stay out of the process list.
+SECRETS_JSON="$(doppler secrets download --no-file --format json --project "$PROJECT" --config "$CONFIG")"
 KEYS=()
 while IFS= read -r k; do KEYS+=("$k"); done < <(
-  doppler secrets download --no-file --format json --project "$PROJECT" --config "$CONFIG" \
+  printf '%s' "$SECRETS_JSON" \
     | python3 -c "import json,sys; [print(k) for k in json.load(sys.stdin) if not k.startswith('DOPPLER_') and not k.endswith('_LIVE')]"
 )
 # Also keeps the loops below safe: bash 3.2 treats "${KEYS[@]}" on an empty array
@@ -78,22 +80,27 @@ fi
 # included, which would have let every preview register functions with — and fire
 # crons through — the production Inngest app. Check the whole set before writing
 # anything, so a bad config fails without leaving Preview half-synced.
-#   INNGEST_*      previews deliberately run without Inngest (see production-setup.md §2)
-#   DATABASE_URL*  Preview's database is owned by the Neon integration, not Doppler
-#   Stripe keys    must be test-mode; a live key on a preview could take real money
+#   INNGEST_*            previews deliberately run without Inngest (production-setup.md §2)
+#   DATABASE_URL*, POSTGRES_*, PG*, NEON_*
+#                        Preview's database is owned by the Neon integration, not Doppler
+#   any STRIPE_* value   must not be live-mode; a live key on a preview could take real money
 if [ "$TARGET" = "preview" ]; then
   violations=()
   for k in "${KEYS[@]}"; do
     case "$k" in
-      INNGEST_*|DATABASE_URL|DATABASE_URL_UNPOOLED)
+      INNGEST_*|DATABASE_URL|DATABASE_URL_UNPOOLED|POSTGRES_*|PG*|NEON_*)
         violations+=("$k must not be set for Preview") ;;
-      STRIPE_SECRET_KEY|STRIPE_PUBLISH_KEY)
-        case "$(doppler secrets get "$k" --plain --project "$PROJECT" --config "$CONFIG")" in
-          sk_test_*|pk_test_*) ;;
-          *) violations+=("$k is not a test-mode key") ;;
-        esac ;;
     esac
   done
+  while IFS= read -r k; do
+    [ -n "$k" ] && violations+=("$k is a live-mode Stripe key")
+  done < <(
+    printf '%s' "$SECRETS_JSON" | python3 -c "
+import json, sys
+for k, v in json.load(sys.stdin).items():
+    if k.startswith('STRIPE_') and not k.endswith('_LIVE') and str(v).startswith(('sk_live_', 'pk_live_', 'rk_live_')):
+        print(k)"
+  )
   if [ ${#violations[@]} -gt 0 ]; then
     echo "Refusing to sync Doppler $PROJECT/$CONFIG -> Vercel preview:"
     printf '  ✗ %s\n' "${violations[@]}"

@@ -54,10 +54,11 @@ The sync script refuses to push Preview anything that breaks these rules:
   failed sends and carry on), but pick timers, crons and notifications don't fire.
   `stg` once held copies of the production keys, which would have hooked every preview
   into the production Inngest app.
-- **No `DATABASE_URL`.** Preview's database belongs to the Neon integration
-  (`ep-dawn-dream`, no real-user data) and follows `main` through
-  `.github/workflows/migrate-preview-db.yml`. That workflow needs the database's direct
-  URL, minus `channel_binding`, as the `PREVIEW_DATABASE_URL` repo secret.
+- **No database variables** (`DATABASE_URL*`, `POSTGRES_*`, `PG*`, `NEON_*`). Preview's
+  database belongs to the Neon integration (`ep-dawn-dream`, no real-user data) and
+  follows `main` through `.github/workflows/migrate-preview-db.yml`. That workflow needs
+  the database's direct URL, minus `channel_binding`, as the `PREVIEW_DATABASE_URL` repo
+  secret (see `schema-changes.md`).
 - **Test-mode Stripe keys only.** Checkouts started on a preview send their webhook to
   production, which logs and ignores the unknown league, so premium can't be completed
   on a preview.

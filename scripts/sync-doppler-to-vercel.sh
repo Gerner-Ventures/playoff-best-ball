@@ -58,10 +58,48 @@ if [ -n "${VERCEL_ORG_ID:-}" ]; then VERCEL_ARGS+=(--scope "$VERCEL_ORG_ID"); fi
 # STRIPE_PUBLISH_KEY_LIVE. Note the skip is silent — if you ever add a secret the app
 # genuinely needs whose name happens to end in _LIVE, it will not reach Vercel and
 # nothing will tell you. Rename it, or narrow this filter to the names above.
-mapfile -t KEYS < <(
+#
+# A read loop rather than `mapfile`: macOS ships bash 3.2, which has no mapfile, and
+# this script is meant to run from an operator's terminal as well as from CI.
+KEYS=()
+while IFS= read -r k; do KEYS+=("$k"); done < <(
   doppler secrets download --no-file --format json --project "$PROJECT" --config "$CONFIG" \
     | python3 -c "import json,sys; [print(k) for k in json.load(sys.stdin) if not k.startswith('DOPPLER_') and not k.endswith('_LIVE')]"
 )
+# Also keeps the loops below safe: bash 3.2 treats "${KEYS[@]}" on an empty array
+# as unbound under `set -u`.
+if [ ${#KEYS[@]} -eq 0 ]; then
+  echo "Doppler $PROJECT/$CONFIG returned no secrets — refusing to sync an empty set"
+  exit 1
+fi
+
+# Preview runs every PR's code, so stg must not carry credentials that reach
+# production systems. stg started life as a copy of prd, production Inngest keys
+# included, which would have let every preview register functions with — and fire
+# crons through — the production Inngest app. Check the whole set before writing
+# anything, so a bad config fails without leaving Preview half-synced.
+#   INNGEST_*      previews deliberately run without Inngest (see production-setup.md §2)
+#   DATABASE_URL*  Preview's database is owned by the Neon integration, not Doppler
+#   Stripe keys    must be test-mode; a live key on a preview could take real money
+if [ "$TARGET" = "preview" ]; then
+  violations=()
+  for k in "${KEYS[@]}"; do
+    case "$k" in
+      INNGEST_*|DATABASE_URL|DATABASE_URL_UNPOOLED)
+        violations+=("$k must not be set for Preview") ;;
+      STRIPE_SECRET_KEY|STRIPE_PUBLISH_KEY)
+        case "$(doppler secrets get "$k" --plain --project "$PROJECT" --config "$CONFIG")" in
+          sk_test_*|pk_test_*) ;;
+          *) violations+=("$k is not a test-mode key") ;;
+        esac ;;
+    esac
+  done
+  if [ ${#violations[@]} -gt 0 ]; then
+    echo "Refusing to sync Doppler $PROJECT/$CONFIG -> Vercel preview:"
+    printf '  ✗ %s\n' "${violations[@]}"
+    exit 1
+  fi
+fi
 
 echo "Syncing ${#KEYS[@]} secrets from Doppler $PROJECT/$CONFIG -> Vercel $TARGET"
 for k in "${KEYS[@]}"; do

@@ -16,14 +16,22 @@ on:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # A manual run syncs the environment it was asked for; the weekly run syncs
+        # both. Preview used to be manual-only, so it drifted for months unnoticed.
+        target: ${{ fromJSON(inputs.target && format('["{0}"]', inputs.target) || '["production","preview"]') }}
     steps:
       - uses: actions/checkout@v7
       - uses: dopplerhq/cli-action@v4
       - run: npm i -g vercel@latest
       - name: Sync secrets
-        run: ./scripts/sync-doppler-to-vercel.sh "${{ inputs.target || 'production' }}"
+        run: ./scripts/sync-doppler-to-vercel.sh "${{ matrix.target }}"
         env:
-          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
+          # Doppler service tokens are scoped to a single config, so each target needs
+          # its own: DOPPLER_TOKEN reads prd, DOPPLER_TOKEN_STG reads stg.
+          DOPPLER_TOKEN: ${{ matrix.target == 'preview' && secrets.DOPPLER_TOKEN_STG || secrets.DOPPLER_TOKEN }}
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}

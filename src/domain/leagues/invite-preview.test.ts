@@ -22,6 +22,7 @@ describe("getInvitePreview", () => {
       draftStarted: false,
       entryCount: 1,
       maxEntries: 10,
+      tier: "FREE",
     });
   });
 
@@ -70,9 +71,15 @@ describe("helpers", () => {
 
   it("firstName skips a leading honorific", () => {
     expect(firstName("Dr. Jane Smith")).toBe("Jane");
-    expect(firstName("Mr. Smith")).toBe("Smith");
-    expect(firstName("PROF. Jane")).toBe("Jane");
+    expect(firstName("PROF. Jane Doe")).toBe("Jane");
     expect(firstName("Dr.")).toBeNull();
+  });
+
+  it("firstName returns null when only a surname remains after the honorific", () => {
+    // "Mr. Smith" has one word left after the honorific, and that word is a
+    // surname, not a first name — there is nothing safe to show.
+    expect(firstName("Mr. Smith")).toBeNull();
+    expect(firstName("Ms. Lee")).toBeNull();
   });
 
   it("formatDraftTime is Eastern and says so", () => {
@@ -102,12 +109,10 @@ describe("helpers", () => {
     });
   });
 
-  it("draftTimeLabel still shows the time once the draft has started, even if it's in the past", () => {
-    const at = new Date("2027-01-01T00:00:00Z");
+  it("draftTimeLabel is started once the draft has started, scheduled time null (startDraftForLeague clears it)", () => {
     const now = new Date("2027-01-11T01:00:00Z");
-    expect(draftTimeLabel({ draftScheduledAt: at, draftStarted: true }, now)).toEqual({
-      kind: "upcoming",
-      at,
+    expect(draftTimeLabel({ draftScheduledAt: null, draftStarted: true }, now)).toEqual({
+      kind: "started",
     });
   });
 });

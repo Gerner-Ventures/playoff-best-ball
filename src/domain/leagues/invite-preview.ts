@@ -9,6 +9,7 @@ export interface InvitePreview {
   draftStarted: boolean;
   entryCount: number;
   maxEntries: number;
+  tier: "FREE" | "PREMIUM";
 }
 
 /**
@@ -34,6 +35,7 @@ export async function getInvitePreview(db: PrismaClient, code: string): Promise<
     draftStarted: league.draft !== null,
     entryCount: league._count.entries,
     maxEntries: settings?.maxEntries ?? FREE_TIER_MAX_ENTRIES,
+    tier: league.tier,
   };
 }
 
@@ -44,24 +46,34 @@ export function firstName(name: string | null | undefined): string | null {
   const words = name?.trim().split(/\s+/).filter(Boolean) ?? [];
   let i = 0;
   while (i < words.length && HONORIFICS.has(words[i].toLowerCase())) i++;
+  // An honorific followed by exactly one remaining word is a surname, e.g.
+  // "Mr. Smith" — there's no first name left to show.
+  if (i > 0 && words.length - i === 1) return null;
   const first = words[i];
   return first ? first : null;
 }
 
-export type DraftTimeLabel = { kind: "upcoming"; at: Date } | { kind: "not_started" } | { kind: "unscheduled" };
+export type DraftTimeLabel =
+  | { kind: "started" }
+  | { kind: "upcoming"; at: Date }
+  | { kind: "not_started" }
+  | { kind: "unscheduled" };
 
 /**
- * What to show for the draft time. A scheduled time only reads as "upcoming" once
- * the draft has actually started or the time is still ahead of `now` — otherwise a
- * stale schedule (commissioner picked a time, nobody started the draft, the moment
+ * What to show for the draft time. Checks `draftStarted` first: `startDraftForLeague`
+ * clears `draftScheduledAt` to null when the draft starts, so a started draft always
+ * has a null schedule and must not fall through to "unscheduled". Short of that, a
+ * scheduled time only reads as "upcoming" while it's still ahead of `now` — otherwise
+ * a stale schedule (commissioner picked a time, nobody started the draft, the moment
  * passed) would misleadingly look like it's still coming up.
  */
 export function draftTimeLabel(
   preview: Pick<InvitePreview, "draftScheduledAt" | "draftStarted">,
   now: Date,
 ): DraftTimeLabel {
+  if (preview.draftStarted) return { kind: "started" };
   if (!preview.draftScheduledAt) return { kind: "unscheduled" };
-  if (!preview.draftStarted && now >= preview.draftScheduledAt) return { kind: "not_started" };
+  if (now >= preview.draftScheduledAt) return { kind: "not_started" };
   return { kind: "upcoming", at: preview.draftScheduledAt };
 }
 

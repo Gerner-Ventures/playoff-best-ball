@@ -5,12 +5,12 @@ import { CANONICAL_ORIGIN } from "./site-url";
 export const PUBLIC_ROUTES = ["/", "/how-it-works", "/scoring", "/commissioners", "/pricing", "/faq"] as const;
 
 /**
- * Signed-in app areas. /join/ is deliberately absent: invite pages carry a noindex
- * meta tag instead, because link-preview bots that obey robots.txt (Twitterbot)
- * would otherwise never fetch the invite card, and Google can only honor noindex on
- * pages it may crawl (plan: spec clarification 2).
+ * Signed-in app areas. /join/ and /sign-in are deliberately absent: both carry a
+ * noindex meta tag instead of a robots.txt disallow, because link-preview bots that
+ * obey robots.txt (Twitterbot) would otherwise never fetch the invite card, and
+ * Google can only honor noindex on pages it may crawl (plan: spec clarification 2).
  */
-const DISALLOW = ["/api/", "/dashboard", "/leagues/", "/admin", "/settings/", "/mock-draft", "/sign-in"];
+const DISALLOW = ["/api/", "/dashboard", "/leagues/", "/admin", "/settings/", "/mock-draft"];
 
 export interface IndexingEnv {
   VERCEL_ENV?: string;

@@ -30,3 +30,20 @@ test("an unknown invite code says so", async ({ page }) => {
   await page.goto("/join/ZZZZ9999");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/invite not found/i);
 });
+
+test("a signed-out existing member of a closed league can still find their way to sign in", async ({ page }) => {
+  const commish = await createTestUser("Jordan Closed");
+  const league = await createLeague(testDb, {
+    userId: commish.id, name: `Jordan's League ${Date.now()}`, teamName: "JT",
+    scoringPreset: "standard", pickClockHours: 8,
+  });
+  // Minimal Draft row marks the league as started; see invite-preview.test.ts.
+  await testDb.draft.create({ data: { leagueId: league.id, order: [] } });
+
+  await page.goto(`/join/${league.inviteCode}`);
+  await expect(page.getByText(/closed to new teams/i)).toBeVisible();
+  await expect(page.getByRole("link", { name: /already in this league\? sign in/i })).toHaveAttribute(
+    "href",
+    `/sign-in?callbackURL=/join/${league.inviteCode}`,
+  );
+});

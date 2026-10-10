@@ -28,6 +28,23 @@ describe("getInvitePreview", () => {
   it("returns null for an unknown code", async () => {
     expect(await getInvitePreview(testDb, "NOPE1234")).toBeNull();
   });
+
+  it("reports entryCount equal to maxEntries when the league is full", async () => {
+    const commish = await createTestUser("Full House");
+    const league = await createLeague(testDb, {
+      userId: commish.id, name: "Full League", teamName: "FT",
+      scoringPreset: "standard", pickClockHours: 8,
+    });
+    const fresh = await testDb.league.findUniqueOrThrow({ where: { id: league.id } });
+    const settings = fresh.settings as Record<string, unknown>;
+    await testDb.league.update({
+      where: { id: league.id },
+      data: { settings: { ...settings, maxEntries: 1 } },
+    });
+
+    const preview = await getInvitePreview(testDb, league.inviteCode);
+    expect(preview).toMatchObject({ entryCount: 1, maxEntries: 1 });
+  });
 });
 
 describe("helpers", () => {

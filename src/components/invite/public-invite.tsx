@@ -4,6 +4,7 @@ import { TrackInviteView } from "./track-invite-view";
 
 export function PublicInvite({ code, preview }: { code: string; preview: InvitePreview }) {
   const full = preview.entryCount >= preview.maxEntries;
+  const signInHref = `/sign-in?callbackURL=/join/${code}`;
   return (
     <div className="theme-light flex flex-1 items-center justify-center p-4 sm:p-8">
       <TrackInviteView />
@@ -31,11 +32,21 @@ export function PublicInvite({ code, preview }: { code: string; preview: InviteP
         </dl>
         <div className="mt-6">
           {preview.draftStarted ? (
-            <p className="text-bad">The draft has already started, so this league is closed to new teams.</p>
+            <div className="space-y-3">
+              <p className="text-bad">The draft has already started, so this league is closed to new teams.</p>
+              <Link href={signInHref} className="btn w-full">
+                Already in this league? Sign in
+              </Link>
+            </div>
           ) : full ? (
-            <p className="text-bad">This league is full. The commissioner can upgrade to Premium for more spots.</p>
+            <div className="space-y-3">
+              <p className="text-bad">This league is full. The commissioner can upgrade to Premium for more spots.</p>
+              <Link href={signInHref} className="btn w-full">
+                Already in this league? Sign in
+              </Link>
+            </div>
           ) : (
-            <Link href={`/sign-in?callbackURL=/join/${code}`} className="btn btn-primary w-full">
+            <Link href={signInHref} className="btn btn-primary w-full">
               Sign in to join
             </Link>
           )}

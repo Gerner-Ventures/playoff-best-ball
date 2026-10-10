@@ -81,10 +81,15 @@ test("a signed-out visitor signs in and lands back on the join form", async ({ p
 
   await page.goto(`/join/${league.inviteCode}`);
   await page.getByRole("link", { name: /sign in to join/i }).click();
-  await expect(page).toHaveURL(new RegExp(`/sign-in\\?callbackURL=`));
+  await expect(page).toHaveURL(`/sign-in?callbackURL=/join/${league.inviteCode}`);
 
+  // signUp sets session cookies on the page context; reloading the sign-in URL
+  // itself — rather than navigating straight to /join/<code> by hand — is what
+  // actually exercises src/app/sign-in/page.tsx's redirect to safeCallbackURL(raw).
   await signUp(page, "Morgan Visitor", uniqueEmail("morgan-signin"));
-  await page.goto(`/join/${league.inviteCode}`);
+  await page.reload();
+  await expect(page).toHaveURL(new RegExp(`/join/${league.inviteCode}$`));
+
   await expect(page.getByRole("button", { name: /join league/i })).toBeVisible();
 });
 
@@ -104,8 +109,29 @@ test("a full league shows the full message and a sign-in path, signed out", asyn
 
   await page.goto(`/join/${league.inviteCode}`);
   await expect(page.getByText(/this league is full/i)).toBeVisible();
+  await expect(page.getByText(/the commissioner can upgrade to premium for more spots/i)).toBeVisible();
   await expect(page.getByRole("link", { name: /already in this league\? sign in/i })).toHaveAttribute(
     "href",
     `/sign-in?callbackURL=/join/${league.inviteCode}`,
   );
+});
+
+test("a full PREMIUM league shows the full message without the upgrade upsell", async ({ page }) => {
+  const commish = await createTestUser("Drew Premium");
+  const league = await createLeague(testDb, {
+    userId: commish.id, name: `Drew's Premium League ${Date.now()}`, teamName: "DPT",
+    scoringPreset: "standard", pickClockHours: 8,
+  });
+  const fresh = await testDb.league.findUniqueOrThrow({ where: { id: league.id } });
+  const settings = fresh.settings as Record<string, unknown>;
+  // Premium via a direct write, not upgradeLeaguePremium: that helper also raises
+  // maxEntries, which would make the league no longer full for this test.
+  await testDb.league.update({
+    where: { id: league.id },
+    data: { tier: "PREMIUM", settings: { ...settings, maxEntries: 1 } },
+  });
+
+  await page.goto(`/join/${league.inviteCode}`);
+  await expect(page.getByText(/this league is full/i)).toBeVisible();
+  await expect(page.getByText(/the commissioner can upgrade to premium for more spots/i)).toHaveCount(0);
 });

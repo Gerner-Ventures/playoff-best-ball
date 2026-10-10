@@ -13,6 +13,9 @@ export default async function Image({ params }: { params: Promise<{ code: string
   return renderOgImage({
     eyebrow: "You're invited",
     title: preview.leagueName,
-    footer: preview.commissionerFirstName ? `${preview.commissionerFirstName}'s playoff best ball league` : "Playoff best ball",
+    // No commissioner first name: omit the custom footer so renderOgImage falls
+    // back to its default "playoffbestball.com", rather than the vague "Playoff
+    // best ball" that carried no commissioner info anyway.
+    ...(preview.commissionerFirstName ? { footer: `${preview.commissionerFirstName}'s playoff best ball league` } : {}),
   });
 }

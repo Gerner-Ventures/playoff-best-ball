@@ -111,7 +111,7 @@ Environment currently set (Production scope):
 |---|---|
 | `DEMO_MODE` | `1` |
 | `BETTER_AUTH_URL` | `https://playoff-best-ball-demo.vercel.app` — must be on the allowlist in `src/lib/demo-mode.ts` |
-| `BETTER_AUTH_SECRET` | generated, demo-only |
+| `BETTER_AUTH_SECRET` | generated, demo-only. Preview scope has its own separate value — PR previews build this project too, and `next build` fails without one |
 | `STATS_PROVIDER` | `fake` |
 | `DEMO_DATA_SOURCE` | `historical:2024` |
 | `ADMIN_EMAILS` | `hello@njgerner.com` |

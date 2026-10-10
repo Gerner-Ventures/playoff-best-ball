@@ -64,7 +64,7 @@ integrations from earlier ones.
 | Variable | Value / how to get it |
 |---|---|
 | `DATABASE_URL` | Neon pooled connection string (step 1) |
-| `BETTER_AUTH_SECRET` | Generate: `openssl rand -base64 32` |
+| `BETTER_AUTH_SECRET` | Generate: `openssl rand -base64 32`. Preview needs its own value too: put it in Doppler `stg` and run `./scripts/sync-doppler-to-vercel.sh preview` — `next build` fails without it |
 | `BETTER_AUTH_URL` | The deployment URL — `https://<app>.vercel.app` for the beta |
 | `RESEND_API_KEY` | Resend dashboard (step 6). Production **throws** on magic-link/notification sends without it |
 | `STRIPE_SECRET_KEY` | Stripe **test** key for the beta (step 5); live key at launch |

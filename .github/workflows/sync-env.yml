@@ -13,17 +13,35 @@ on:
   schedule:
     - cron: "0 7 * * 1" # Mondays, 07:00 UTC
 
+permissions:
+  contents: read
+
 jobs:
   sync:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # A manual run syncs the environment it was asked for; the weekly run syncs
+        # both. Preview used to be manual-only, so it drifted for months unnoticed.
+        target: ${{ fromJSON(inputs.target && format('["{0}"]', inputs.target) || '["production","preview"]') }}
     steps:
       - uses: actions/checkout@v7
       - uses: dopplerhq/cli-action@v4
       - run: npm i -g vercel@latest
       - name: Sync secrets
-        run: ./scripts/sync-doppler-to-vercel.sh "${{ inputs.target || 'production' }}"
+        run: |
+          if [ -z "$DOPPLER_TOKEN" ]; then
+            echo "::error::No Doppler token for ${{ matrix.target }} — set the $TOKEN_NAME repo secret (read-only service token)"
+            exit 1
+          fi
+          ./scripts/sync-doppler-to-vercel.sh "${{ matrix.target }}"
         env:
-          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
+          # Doppler service tokens are scoped to a single config, so each target needs
+          # its own: DOPPLER_TOKEN reads prd, DOPPLER_TOKEN_STG reads stg. No fallback
+          # between them: a missing token should fail by name, not as an auth error.
+          TOKEN_NAME: ${{ matrix.target == 'preview' && 'DOPPLER_TOKEN_STG' || 'DOPPLER_TOKEN' }}
+          DOPPLER_TOKEN: ${{ matrix.target == 'preview' && secrets.DOPPLER_TOKEN_STG || matrix.target == 'production' && secrets.DOPPLER_TOKEN || '' }}
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}

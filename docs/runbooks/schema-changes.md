@@ -55,10 +55,26 @@ CI) simply runs every migration from empty and needs no baselining.
 
 ## Preview databases
 
-Preview deployments get their own Neon branch per pull request, so previews run
-against a real schema instead of an empty database. The branch is created when
-the PR opens and dropped when it closes; migrations apply during the preview
-build like any other deploy.
+All preview deployments share one database: the Neon integration's `ep-dawn-dream`,
+which holds no real-user data. Preview builds never migrate it (`scripts/vercel-build.sh`
+explains why). It follows `main` instead: `.github/workflows/migrate-preview-db.yml`
+applies migrations and reseeds the player pool when they merge. It can also be run by
+hand from the Actions tab, but only against `main`: a dispatch runs the chosen branch's
+code with the database URL, so unreviewed branches are refused.
+
+So a PR that adds a migration previews against **main's** schema until it merges.
+
+The workflow reads the database's direct URL from the `PREVIEW_DATABASE_URL` repo
+secret, with `channel_binding` removed (Prisma's migration engine can't connect with it):
+
+```bash
+neonctl connection-string --project-id muddy-block-51931627 --branch main \
+  | sed -E 's/[&?]channel_binding=[^&]*//' \
+  | gh secret set PREVIEW_DATABASE_URL
+```
+
+The old prototype data that used to live there is archived on the Neon branch
+`prototype-archive-2026-01`.
 
 ## Rolling back
 

@@ -36,12 +36,34 @@ integrations from earlier ones.
 
 ## 2. Doppler (secrets)
 
-1. Create a Doppler project `playoff-best-ball` with config `prd` (add `stg` if desired).
+1. Create a Doppler project `playoff-best-ball` with configs `prd` (Production) and `stg`
+   (Preview).
 2. Load **all** variables from `.env.example` into `prd` with production values (the full
    table is in step 3 below).
-3. Install the [Doppler ↔ Vercel integration](https://docs.doppler.com/docs/vercel) and
-   sync `prd` → the Vercel project's Production environment, so Vercel env stays in
-   lockstep with Doppler.
+3. Sync with `./scripts/sync-doppler-to-vercel.sh production|preview` (`prd` → Production,
+   `stg` → Preview). `.github/workflows/sync-env.yml` re-runs both every Monday and on
+   demand. It needs two read-only Doppler service tokens, because each is scoped to one
+   config: `DOPPLER_TOKEN` (prd) and `DOPPLER_TOKEN_STG` (stg).
+
+### Preview (`stg`)
+
+Every PR builds a preview, so `stg` holds only what is safe to hand to unreviewed code.
+The sync script refuses to push Preview anything that breaks these rules:
+
+- **No Inngest keys.** Previews run without Inngest. Drafting works (request paths log
+  failed sends and carry on), but pick timers, crons and notifications don't fire.
+  `stg` once held copies of the production keys, which would have hooked every preview
+  into the production Inngest app.
+- **No database variables** (`DATABASE_URL*`, `POSTGRES_*`, `PG*`, `NEON_*`). Preview's
+  database belongs to the Neon integration (`ep-dawn-dream`, no real-user data) and
+  follows `main` through `.github/workflows/migrate-preview-db.yml`. That workflow needs
+  the database's direct URL, minus `channel_binding`, as the `PREVIEW_DATABASE_URL` repo
+  secret (see `schema-changes.md`).
+- **Test-mode Stripe keys only.** Checkouts started on a preview send their webhook to
+  production, which logs and ignores the unknown league, so premium can't be completed
+  on a preview.
+- **Its own `BETTER_AUTH_SECRET`**, separate from `prd`. Leave `BETTER_AUTH_URL` unset:
+  each preview has its own URL, and auth and Checkout fall back to the request's origin.
 
 > **Fallback:** if you skip Doppler for the beta, set the same variables manually in
 > Vercel → Project → Settings → Environment Variables. Doppler is the source-of-truth

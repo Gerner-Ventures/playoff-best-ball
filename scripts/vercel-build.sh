@@ -6,11 +6,12 @@
 # important one:
 #
 # 1. Preview deploys point at a different database. Vercel resolves DATABASE_URL
-#    per environment, and the Preview/Development value still comes from the
-#    original Neon integration (ep-dawn-dream-…), which holds the pre-rebuild
-#    prototype schema — Owner, Roster, PlayerScore — and no _prisma_migrations
-#    table. `prisma migrate deploy` against it fails with P3005 ("The database
-#    schema is not empty"), which is why every PR's preview deploy was red.
+#    per environment, and the Preview/Development value comes from the original
+#    Neon integration (ep-dawn-dream-…). That database held the pre-rebuild
+#    prototype schema until 2026-10-09 — archived to the Neon branch
+#    `prototype-archive-2026-01` — and is now built from these migrations. It
+#    follows main: .github/workflows/migrate-preview-db.yml applies migrations
+#    when they merge, never when a PR deploys.
 #
 # 2. A build must never migrate a database on a PR's say-so. `migrate deploy`
 #    applies whatever migrations the branch contains, to whatever DATABASE_URL

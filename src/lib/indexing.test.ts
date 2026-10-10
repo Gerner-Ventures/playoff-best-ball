@@ -15,6 +15,7 @@ describe("indexing policy", () => {
     expect(rule.allow).toBe("/");
     expect(rule.disallow).toEqual(expect.arrayContaining(["/api/", "/dashboard", "/leagues/", "/admin", "/settings/", "/mock-draft"]));
     expect(rule.disallow).not.toContain("/join/");
+    expect(rule.disallow).not.toContain("/sign-in");
     expect(robots.sitemap).toBe("https://playoffbestball.com/sitemap.xml");
   });
 

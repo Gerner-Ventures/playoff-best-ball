@@ -3,6 +3,24 @@ import { expect, type Page } from "@playwright/test";
 export const E2E_PASSWORD = "e2e-password-123";
 
 /**
+ * better-auth's origin-check middleware requires an Origin header once a request
+ * carries any cookie (e.g. the PostHog analytics cookie, set after any page visit)
+ * — see node_modules/better-auth/dist/api/middlewares/origin-check.mjs. A freshly
+ * created page has no cookies yet, so the check is skipped and no header is
+ * needed; a page that has already navigated does need one. `page.request` is a
+ * Node-side fetch, not the real browser network stack, so it never sets Origin on
+ * its own the way an in-page `fetch()` would.
+ */
+function originHeader(page: Page): Record<string, string> {
+  try {
+    const origin = new URL(page.url()).origin;
+    return origin.startsWith("http") ? { origin } : {};
+  } catch {
+    return {};
+  }
+}
+
+/**
  * Creates an account and a session via the API.
  *
  * Password auth is normally off. It is mounted here because playwright.config.ts
@@ -14,6 +32,7 @@ export const E2E_PASSWORD = "e2e-password-123";
 export async function signUp(page: Page, name: string, email: string): Promise<void> {
   const res = await page.request.post("/api/auth/sign-up/email", {
     data: { name, email, password: E2E_PASSWORD },
+    headers: originHeader(page),
   });
   expect(res.ok(), `sign-up failed: ${res.status()} ${await res.text()}`).toBeTruthy();
 }
@@ -22,6 +41,7 @@ export async function signUp(page: Page, name: string, email: string): Promise<v
 export async function signInAs(page: Page, email: string, password: string): Promise<void> {
   const res = await page.request.post("/api/auth/sign-in/email", {
     data: { email, password },
+    headers: originHeader(page),
   });
   expect(res.ok(), `sign-in failed: ${res.status()} ${await res.text()}`).toBeTruthy();
 }

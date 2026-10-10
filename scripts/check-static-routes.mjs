@@ -36,4 +36,29 @@ if (wrongRevalidate.length) {
   process.exit(1);
 }
 
+// Also catch metadataBase resolving to the wrong origin. The e2e suite runs in demo
+// mode (DEMO_MODE=1), where metadataBase intentionally resolves to the deployment's
+// own origin (design doc §6), so its canonical assertions never exercise the
+// production value. CI's build is non-demo and check:static runs right after it
+// (ci.yml), so this is the only check that would catch CANONICAL_ORIGIN regressing.
+const CANONICAL_ROUTE = "/faq";
+const EXPECTED_CANONICAL = 'rel="canonical" href="https://playoffbestball.com/faq"';
+const faqHtmlUrl = new URL("../.next/server/app/faq.html", import.meta.url);
+
+let faqHtml;
+try {
+  faqHtml = readFileSync(faqHtmlUrl, "utf8");
+} catch (err) {
+  console.error(`Could not read the prerendered HTML for ${CANONICAL_ROUTE} at ${faqHtmlUrl.pathname}: ${err.message}`);
+  process.exit(1);
+}
+
+if (!faqHtml.includes(EXPECTED_CANONICAL)) {
+  console.error(`${CANONICAL_ROUTE} is not canonicalized to production.`);
+  console.error(`Expected to find: ${EXPECTED_CANONICAL}`);
+  console.error("Check metadataBase in src/app/layout.tsx and DEMO_MODE_REQUESTED.");
+  process.exit(1);
+}
+
 console.log(`All ${STATIC_ROUTES.length} marketing routes prerendered and revalidate every ${EXPECTED_REVALIDATE_SECONDS}s.`);
+console.log(`${CANONICAL_ROUTE} canonicalizes to production.`);

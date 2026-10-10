@@ -307,9 +307,20 @@ Until items 1 and 2 are done, every signup returns 502 by design.
 
 ## 12. Search, launch switch, share previews (marketing site)
 
-1. **Google Search Console:** add the `playoffbestball.com` domain property, verify it
-   with the DNS TXT record in Route 53, then submit `https://playoffbestball.com/sitemap.xml`.
-   Only production is indexable: previews and the demo serve `Disallow: /`.
+1. **Google Search Console:** do this as soon as the search, share cards and invite
+   previews PR (PR 3) deploys — it does not wait for the launch flip in §11. Search
+   traffic in Nov–Dec is a goal in its own right, and Search Console needs the lead
+   time to crawl and index before the flip anyway. Add the `playoffbestball.com`
+   domain property, verify it with the DNS TXT record in Route 53, then submit
+   `https://playoffbestball.com/sitemap.xml`. Only production is indexable: previews
+   and the demo serve `Disallow: /`. Check it:
+   - `curl -s https://playoffbestball.com/robots.txt` shows `Allow: /` and a
+     `Sitemap:` line.
+   - The demo's robots.txt (its `*.vercel.app` host, or `demo.playoffbestball.com`
+     once that DNS record exists) shows `Disallow: /`.
+   - Optionally, run Search Console's URL Inspection on a real `/join/…` invite
+     link; it should report the page as excluded by a noindex meta tag (crawlable,
+     never indexed — see spec clarification 2).
 2. **Launch switch:** the homepage asks for an email until `SIGNUPS_OPEN_AT` in
    `src/lib/launch.ts`, then asks visitors to start a league. Set the final date in a
    reviewed PR. The home page revalidates hourly, so no deploy is needed at the moment

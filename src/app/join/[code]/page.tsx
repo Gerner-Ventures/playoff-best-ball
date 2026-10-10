@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { getSessionUser } from "@/lib/session";
 import { tryParseLeagueSettings } from "@/domain/league-settings";
-import { getInvitePreview, formatDraftTime } from "@/domain/leagues/invite-preview";
+import { draftTimeLabel, getInvitePreview, formatDraftTime } from "@/domain/leagues/invite-preview";
 import { JoinLeagueForm } from "@/components/join-league-form";
 import { PublicInvite } from "@/components/invite/public-invite";
 
@@ -13,7 +13,13 @@ export async function generateMetadata({ params }: { params: Promise<{ code: str
   // noindex everywhere: crawlable for link previews, never in search (plan: spec clarification 2).
   if (!preview) return { title: "Invite not found", robots: { index: false } };
   const who = preview.commissionerFirstName ? `${preview.commissionerFirstName}'s` : "A";
-  const when = preview.draftScheduledAt ? `Draft ${formatDraftTime(preview.draftScheduledAt)}.` : "Draft time to be set.";
+  const label = draftTimeLabel(preview, new Date());
+  const when =
+    label.kind === "upcoming"
+      ? `Draft ${formatDraftTime(label.at)}.`
+      : label.kind === "not_started"
+        ? "Draft not started yet."
+        : "Draft time to be set.";
   return {
     title: { absolute: `You're invited to ${preview.leagueName}` },
     description: `${who} ${preview.season} playoff best ball league on Playoff Best Ball. ${when}`,

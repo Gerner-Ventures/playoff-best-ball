@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { formatDraftTime, type InvitePreview } from "@/domain/leagues/invite-preview";
+import { draftTimeLabel, formatDraftTime, type InvitePreview } from "@/domain/leagues/invite-preview";
 import { TrackInviteView } from "./track-invite-view";
 
 export function PublicInvite({ code, preview }: { code: string; preview: InvitePreview }) {
   const full = preview.entryCount >= preview.maxEntries;
+  const label = draftTimeLabel(preview, new Date());
   const signInHref = `/sign-in?callbackURL=/join/${code}`;
   return (
     <div className="theme-light flex flex-1 items-center justify-center p-4 sm:p-8">
@@ -20,7 +21,11 @@ export function PublicInvite({ code, preview }: { code: string; preview: InviteP
           <div className="rounded-lg bg-brand-tint p-3">
             <dt className="text-sm text-ink-soft">Draft</dt>
             <dd className="font-semibold text-ink">
-              {preview.draftScheduledAt ? formatDraftTime(preview.draftScheduledAt) : "Not scheduled yet"}
+              {label.kind === "upcoming"
+                ? formatDraftTime(label.at)
+                : label.kind === "not_started"
+                  ? "Not started yet"
+                  : "Not scheduled yet"}
             </dd>
           </div>
           <div className="rounded-lg bg-brand-tint p-3">

@@ -20,6 +20,8 @@ test("a signed-out invite link shows the league and previews richly", async ({ p
 
   await expect(page).toHaveTitle(`You're invited to ${league.name}`);
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
+  const description = await page.locator('meta[name="description"]').getAttribute("content");
+  expect(description).not.toContain("Example"); // first name only, same as the page body
   const og = await page.locator('meta[property="og:image"]').getAttribute("content");
   const img = await page.request.get(new URL(og!).pathname + new URL(og!).search);
   expect(img.status()).toBe(200);

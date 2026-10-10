@@ -37,9 +37,32 @@ export async function getInvitePreview(db: PrismaClient, code: string): Promise<
   };
 }
 
+// Case-insensitive; matched against a whole word including its trailing period.
+const HONORIFICS = new Set(["dr.", "mr.", "mrs.", "ms.", "mx.", "prof."]);
+
 export function firstName(name: string | null | undefined): string | null {
-  const first = name?.trim().split(/\s+/)[0];
+  const words = name?.trim().split(/\s+/).filter(Boolean) ?? [];
+  let i = 0;
+  while (i < words.length && HONORIFICS.has(words[i].toLowerCase())) i++;
+  const first = words[i];
   return first ? first : null;
+}
+
+export type DraftTimeLabel = { kind: "upcoming"; at: Date } | { kind: "not_started" } | { kind: "unscheduled" };
+
+/**
+ * What to show for the draft time. A scheduled time only reads as "upcoming" once
+ * the draft has actually started or the time is still ahead of `now` — otherwise a
+ * stale schedule (commissioner picked a time, nobody started the draft, the moment
+ * passed) would misleadingly look like it's still coming up.
+ */
+export function draftTimeLabel(
+  preview: Pick<InvitePreview, "draftScheduledAt" | "draftStarted">,
+  now: Date,
+): DraftTimeLabel {
+  if (!preview.draftScheduledAt) return { kind: "unscheduled" };
+  if (!preview.draftStarted && now >= preview.draftScheduledAt) return { kind: "not_started" };
+  return { kind: "upcoming", at: preview.draftScheduledAt };
 }
 
 export function formatDraftTime(date: Date): string {

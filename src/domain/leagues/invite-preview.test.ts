@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { testDb, resetDb, createTestUser } from "../../../tests/helpers/db";
 import { createLeague } from "./create-league";
-import { firstName, formatDraftTime, getInvitePreview } from "./invite-preview";
+import { draftTimeLabel, firstName, formatDraftTime, getInvitePreview } from "./invite-preview";
 
 describe("getInvitePreview", () => {
   beforeEach(resetDb);
@@ -45,6 +45,19 @@ describe("getInvitePreview", () => {
     const preview = await getInvitePreview(testDb, league.inviteCode);
     expect(preview).toMatchObject({ entryCount: 1, maxEntries: 1 });
   });
+
+  it("reports draftStarted when a draft row exists", async () => {
+    const commish = await createTestUser("Casey Draftly");
+    const league = await createLeague(testDb, {
+      userId: commish.id, name: "Casey's League", teamName: "CT",
+      scoringPreset: "standard", pickClockHours: 8,
+    });
+    // Minimal Draft row: leagueId and order are the only fields without a default.
+    await testDb.draft.create({ data: { leagueId: league.id, order: [] } });
+
+    const preview = await getInvitePreview(testDb, league.inviteCode);
+    expect(preview?.draftStarted).toBe(true);
+  });
 });
 
 describe("helpers", () => {
@@ -55,7 +68,46 @@ describe("helpers", () => {
     expect(firstName(null)).toBeNull();
   });
 
+  it("firstName skips a leading honorific", () => {
+    expect(firstName("Dr. Jane Smith")).toBe("Jane");
+    expect(firstName("Mr. Smith")).toBe("Smith");
+    expect(firstName("PROF. Jane")).toBe("Jane");
+    expect(firstName("Dr.")).toBeNull();
+  });
+
   it("formatDraftTime is Eastern and says so", () => {
     expect(formatDraftTime(new Date("2027-01-11T01:00:00Z"))).toBe("Sun, Jan 10, 8:00 PM EST");
+  });
+
+  it("draftTimeLabel is unscheduled when there's no date", () => {
+    expect(draftTimeLabel({ draftScheduledAt: null, draftStarted: false }, new Date())).toEqual({
+      kind: "unscheduled",
+    });
+  });
+
+  it("draftTimeLabel is upcoming when the date is ahead of now", () => {
+    const at = new Date("2027-01-11T01:00:00Z");
+    const now = new Date("2027-01-01T00:00:00Z");
+    expect(draftTimeLabel({ draftScheduledAt: at, draftStarted: false }, now)).toEqual({
+      kind: "upcoming",
+      at,
+    });
+  });
+
+  it("draftTimeLabel is not_started once the date has passed and the draft never started", () => {
+    const at = new Date("2027-01-01T00:00:00Z");
+    const now = new Date("2027-01-11T01:00:00Z");
+    expect(draftTimeLabel({ draftScheduledAt: at, draftStarted: false }, now)).toEqual({
+      kind: "not_started",
+    });
+  });
+
+  it("draftTimeLabel still shows the time once the draft has started, even if it's in the past", () => {
+    const at = new Date("2027-01-01T00:00:00Z");
+    const now = new Date("2027-01-11T01:00:00Z");
+    expect(draftTimeLabel({ draftScheduledAt: at, draftStarted: true }, now)).toEqual({
+      kind: "upcoming",
+      at,
+    });
   });
 });

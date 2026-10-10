@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { draftTimeLabel, formatDraftTime, type InvitePreview } from "@/domain/leagues/invite-preview";
+import { Wordmark } from "@/components/marketing/wordmark";
 import { TrackInviteView } from "./track-invite-view";
 
 export function PublicInvite({ code, preview }: { code: string; preview: InvitePreview }) {
@@ -10,7 +11,10 @@ export function PublicInvite({ code, preview }: { code: string; preview: InviteP
     <div className="theme-light flex flex-1 items-center justify-center p-4 sm:p-8">
       <TrackInviteView />
       <main className="card w-full max-w-md p-8 text-center">
-        <p className="text-sm font-semibold uppercase tracking-wide text-brand">You&apos;re invited</p>
+        <Link href="/" className="inline-flex min-h-11 items-center" aria-label="Playoff Best Ball home">
+          <Wordmark />
+        </Link>
+        <p className="mt-4 text-sm font-semibold uppercase tracking-wide text-brand">You&apos;re invited</p>
         <h1 className="mt-2 text-3xl font-semibold text-balance">{preview.leagueName}</h1>
         <p className="mt-2 text-ink-soft">
           {preview.commissionerFirstName
@@ -21,11 +25,13 @@ export function PublicInvite({ code, preview }: { code: string; preview: InviteP
           <div className="rounded-lg bg-brand-tint p-3">
             <dt className="text-sm text-ink-soft">Draft</dt>
             <dd className="font-semibold text-ink">
-              {label.kind === "upcoming"
-                ? formatDraftTime(label.at)
-                : label.kind === "not_started"
-                  ? "Not started yet"
-                  : "Not scheduled yet"}
+              {label.kind === "started"
+                ? "Started"
+                : label.kind === "upcoming"
+                  ? formatDraftTime(label.at)
+                  : label.kind === "not_started"
+                    ? "Not started yet"
+                    : "Not scheduled yet"}
             </dd>
           </div>
           <div className="rounded-lg bg-brand-tint p-3">
@@ -45,7 +51,10 @@ export function PublicInvite({ code, preview }: { code: string; preview: InviteP
             </div>
           ) : full ? (
             <div className="space-y-3">
-              <p className="text-bad">This league is full. The commissioner can upgrade to Premium for more spots.</p>
+              <p className="text-bad">
+                This league is full.
+                {preview.tier === "FREE" && " The commissioner can upgrade to Premium for more spots."}
+              </p>
               <Link href={signInHref} className="btn w-full">
                 Already in this league? Sign in
               </Link>

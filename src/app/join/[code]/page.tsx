@@ -19,12 +19,17 @@ export async function generateMetadata({ params }: { params: Promise<{ code: str
   if (!preview) return { title: "Invite not found", robots: { index: false } };
   const who = preview.commissionerFirstName ? `${preview.commissionerFirstName}'s` : "A";
   const label = draftTimeLabel(preview, new Date());
+  const full = preview.entryCount >= preview.maxEntries;
   const when =
-    label.kind === "upcoming"
-      ? `Draft ${formatDraftTime(label.at)}.`
-      : label.kind === "not_started"
-        ? "Draft not started yet."
-        : "Draft time to be set.";
+    label.kind === "started"
+      ? "The draft has started, so this league is closed to new teams."
+      : full
+        ? "This league is full."
+        : label.kind === "upcoming"
+          ? `Draft ${formatDraftTime(label.at)}.`
+          : label.kind === "not_started"
+            ? "Draft not started yet."
+            : "Draft time to be set.";
   return {
     title: { absolute: `You're invited to ${preview.leagueName}` },
     description: `${who} ${preview.season} playoff best ball league on Playoff Best Ball. ${when}`,

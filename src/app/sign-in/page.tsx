@@ -6,7 +6,7 @@ import { SignInForm } from "@/components/sign-in-form";
 
 // robots.txt no longer disallows /sign-in (indexing.ts); this noindex meta tag is
 // what actually keeps it out of search, the same pattern as the /join invite pages.
-export const metadata: Metadata = { title: "Sign in", robots: { index: false } };
+export const metadata: Metadata = { title: "Sign in · Playoff Best Ball", robots: { index: false } };
 
 export default async function SignInPage({
   searchParams,

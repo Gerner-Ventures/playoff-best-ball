@@ -10,11 +10,14 @@ const PAGES = [
 ];
 
 for (const p of PAGES) {
-  test(`${p.path} renders with its own title and canonical link`, async ({ page }) => {
+  test(`${p.path} renders with its own title and canonical link`, async ({ page, baseURL }) => {
     await page.goto(p.path);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(p.h1);
     await expect(page).toHaveTitle(p.title);
-    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", `https://playoffbestball.com${p.path}`);
+    // The webServer runs with DEMO_MODE=1, so metadataBase (and therefore this
+    // relative canonical path) resolves against this server's own origin, not
+    // production — see the demo-mode branch in src/app/layout.tsx.
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", `${baseURL}${p.path}`);
   });
 }
 

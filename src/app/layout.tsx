@@ -4,7 +4,8 @@ import "./globals.css";
 import { PwaRegister } from "@/components/pwa-register";
 import { ChalkFilter } from "@/components/chalk-filter";
 import { AnalyticsIdentity } from "@/components/analytics-provider";
-import { CANONICAL_ORIGIN } from "@/lib/site-url";
+import { CANONICAL_ORIGIN, appOrigin } from "@/lib/site-url";
+import { DEMO_MODE_REQUESTED } from "@/lib/demo-mode";
 
 // Chalk headings and flourishes. Caveat is variable (400–700).
 const caveat = Caveat({
@@ -28,8 +29,10 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  // Absolute URLs for canonical links and share images resolve against production.
-  metadataBase: new URL(CANONICAL_ORIGIN),
+  // Absolute URLs for canonical links and share images resolve against production,
+  // except in demo mode, where they resolve against this deployment's own origin so
+  // demo share cards don't point visitors at the real product.
+  metadataBase: new URL(DEMO_MODE_REQUESTED ? appOrigin() : CANONICAL_ORIGIN),
   title: "Playoff Best Ball",
   description: "Run an NFL playoff best ball league with your friends.",
 };

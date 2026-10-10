@@ -184,7 +184,7 @@ Input: `{ email, source, website }`, where `website` is the honeypot. It is vali
 
 ## 6. Search and sharing
 
-- **Metadata.** Every marketing page exports static `metadata`: a title from the layout template `"%s · Playoff Best Ball"`, a unique description, and `alternates.canonical`. `metadataBase` is `https://playoffbestball.com`.
+- **Metadata.** Every marketing page exports static `metadata`: a title from the layout template `"%s · Playoff Best Ball"`, a unique description, and `alternates.canonical`. `metadataBase` is `https://playoffbestball.com`. Exception: the demo deployment (DEMO_MODE) uses its own origin, so its share cards resolve locally; the demo is `Disallow: /`, so canonicals there don't matter.
 - **Sitemap.** `src/app/sitemap.ts` lists the marketing routes. Piece 3 appends the data pages.
 - **Robots.** `src/app/robots.ts`:
   - **Production (`VERCEL_ENV === "production"` and not the demo project):** allow the marketing pages; disallow `/api`, `/dashboard`, `/leagues`, `/admin`, `/settings`, `/mock-draft` and `/join`; reference the sitemap.
